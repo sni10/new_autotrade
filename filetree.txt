@@ -1,0 +1,62 @@
+my_trading_app/
+│
+├── domain/
+│   ├── entities/
+│   │   ├── deal.py
+│   │   ├── order.py
+│   │   ├── currency_pair.py
+│   │   ├── exchange_settings.py
+│   │   ...
+│   ├── factories/
+│   │   ├── deal_factory.py
+│   │   ├── order_factory.py
+│   │   └── ...
+│   ├── services/
+│   │   ├── trading_service.py
+│   │   ├── order_service.py
+│   │   ├── signal_service.py     # опционально
+│   │   └── ...
+│   ├── events/
+│   │   └── deal_opened_event.py
+│   │   ...
+│   └── __init__.py
+│
+├── application/
+│   ├── use_cases/
+│   │   ├── run_trading.py        # классический сценарий торговли
+│   │   ├── run_realtime_trading.py
+│   │   ├── handle_signals.py
+│   │   └── ...
+│   ├── trading_loop.py           # асинхронный цикл, вызывающий use-cases
+│   └── __init__.py
+│
+├── infrastructure/
+│   ├── repositories/
+│   │   ├── deals_repository.py
+│   │   ├── orders_repository.py
+│   │   ├── currency_pairs_repository.py
+│   │   └── __init__.py
+│   ├── connectors/
+│   │   ├── exchange_connector.py
+│   │   ├── market_data_connector.py
+│   │   ├── db_connector.py
+│   │   └── __init__.py
+│   └── config/
+│       ├── settings.py
+│       └── __init__.py
+│
+├── interfaces/
+│   ├── cli/
+│   │   ├── main_cli.py
+│   │   └── ...
+│   ├── # потенциально REST API
+│   └── __init__.py
+│
+├── utils/
+│   ├── utils.py
+│   └── __init__.py
+│
+├── tests/
+│   └── ...
+│
+└── main.py
