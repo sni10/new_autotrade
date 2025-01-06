@@ -2,16 +2,13 @@
 
 import time
 from typing import Optional
-
 from domain.entities.deal import Deal
-from domain.entities.order import Order
 from domain.entities.currency_pair import CurrencyPair
-from domain.factories.order_factory import OrderFactory
+from .order_factory import OrderFactory
 
 class DealFactory:
     """
     Фабрика для создания новых Сделок (Deal).
-    Может сразу создавать 2 связанных ордера (buy и sell).
     """
 
     def __init__(self, order_factory: Optional[OrderFactory] = None):
@@ -23,13 +20,16 @@ class DealFactory:
         status: str = Deal.STATUS_OPEN
     ) -> Deal:
         """
-        Создаём новую сделку и два ордера (buy/sell).
-        Пока что sell-ордер может быть пустым или сразу "грядущим".
+        Создаём новую сделку и два "пустых" ордера (buy/sell).
+        В момент создания у ордеров deal_id=None.
+        Deal сам проставит им deal_id = deal.deal_id.
         """
-        deal_id = int(time.time() * 1000000)  # или счётчик
+        deal_id = int(time.time() * 1000000)  # псевдо-уникальный ID
 
         # Создаём buy_order (с начальными нулевыми price/amount).
         buy_order = self.order_factory.create_buy_order(price=0.0, amount=0.0)
+
+        time.sleep(0.09)
 
         # Создаём sell_order (тоже пустой).
         sell_order = self.order_factory.create_sell_order(price=0.0, amount=0.0)
@@ -41,4 +41,6 @@ class DealFactory:
             buy_order=buy_order,
             sell_order=sell_order,
         )
+        # Внутри Deal есть _sync_order_deal_id(), которая проставит
+        # buy_order.deal_id = deal_id и sell_order.deal_id = deal_id
         return deal

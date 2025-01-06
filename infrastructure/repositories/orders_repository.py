@@ -18,10 +18,6 @@ class OrdersRepository(ABC):
 
     @abstractmethod
     def get_all_by_deal(self, deal_id: int) -> List[Order]:
-        """
-        Предполагаем, что у ордера где-то хранится ссылка на deal_id
-        (сейчас в Order нет этого поля, но можно добавить).
-        """
         pass
 
 
@@ -41,8 +37,10 @@ class InMemoryOrdersRepository(OrdersRepository):
         return self._storage.get(order_id)
 
     def get_all_by_deal(self, deal_id: int) -> List[Order]:
-        # На этапе 1 у нас в Order нет поля deal_id,
-        # так что пока вернём пустой список или все ордера :)
-        # Когда будем дорабатывать, добавим в Order ссылку на deal_id,
-        # или будем хранить где-то сопоставление.
-        return list(self._storage.values())
+        """
+        Теперь ищем только те ордера, у которых order.deal_id == deal_id.
+        """
+        return [
+            o for o in self._storage.values()
+            if o.deal_id == deal_id
+        ]

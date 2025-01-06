@@ -26,6 +26,7 @@ class Order:
         status: str = STATUS_OPEN,
         created_at: int = None,
         closed_at: int = None,
+        deal_id: int = None,           # <-- Связь с Deal
     ):
         self.order_id = order_id
         self.side = side
@@ -35,6 +36,7 @@ class Order:
         self.status = status
         self.created_at = created_at or int(time.time() * 1000)
         self.closed_at = closed_at
+        self.deal_id = deal_id
 
     def is_open(self) -> bool:
         return self.status == self.STATUS_OPEN
@@ -53,5 +55,5 @@ class Order:
         self.closed_at = int(time.time() * 1000)
 
     def __repr__(self):
-        return (f"<Order(id={self.order_id}, side={self.side}, type={self.order_type}, "
-                f"status={self.status}, price={self.price}, amount={self.amount})>")
+        return (f"<Order(id={self.order_id}, deal_id={self.deal_id}, side={self.side}, "
+                f"type={self.order_type}, status={self.status}, price={self.price}, amount={self.amount})>")

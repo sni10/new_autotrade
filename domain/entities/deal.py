@@ -1,4 +1,4 @@
-# new_autotrade/domain/entities/deal.py
+# my_trading_app/domain/entities/deal.py
 import time
 from .order import Order
 
@@ -29,6 +29,24 @@ class Deal:
         self.sell_order = sell_order
         self.created_at = created_at or int(time.time() * 1000)
         self.closed_at = closed_at
+
+        # Если buy_order или sell_order есть — установим им deal_id
+        self._sync_order_deal_id()
+
+    def _sync_order_deal_id(self):
+        """Вспомогательный метод, чтобы прописать deal_id в ордера."""
+        if self.buy_order:
+            self.buy_order.deal_id = self.deal_id
+        if self.sell_order:
+            self.sell_order.deal_id = self.deal_id
+
+    def attach_orders(self, buy_order: Order, sell_order: Order):
+        """
+        Если нужно задним числом «подвесить» ордера к сделке.
+        """
+        self.buy_order = buy_order
+        self.sell_order = sell_order
+        self._sync_order_deal_id()
 
     def open(self):
         """Простейший метод: пометить сделку как открытую."""
