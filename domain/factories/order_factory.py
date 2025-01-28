@@ -3,6 +3,7 @@
 import time
 from domain.entities.order import Order
 
+
 class OrderFactory:
     """
     Фабрика для создания ордеров (buy / sell).

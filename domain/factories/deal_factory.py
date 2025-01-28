@@ -4,7 +4,8 @@ import time
 from typing import Optional
 from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
-from .order_factory import OrderFactory
+from domain.factories.order_factory import OrderFactory
+
 
 class DealFactory:
     """
@@ -15,16 +16,16 @@ class DealFactory:
         self.order_factory = order_factory or OrderFactory()
 
     def create_new_deal(
-        self,
-        currency_pair: CurrencyPair,
-        status: str = Deal.STATUS_OPEN
+            self,
+            currency_pair: CurrencyPair,
+            status: str = Deal.STATUS_OPEN
     ) -> Deal:
         """
         Создаём новую сделку и два "пустых" ордера (buy/sell).
         В момент создания у ордеров deal_id=None.
         Deal сам проставит им deal_id = deal.deal_id.
         """
-        deal_id = int(time.time() * 1000000)  # псевдо-уникальный ID
+        deal_id = int(time.time() * 1000000)
 
         # Создаём buy_order (с начальными нулевыми price/amount).
         buy_order = self.order_factory.create_buy_order(price=0.0, amount=0.0)

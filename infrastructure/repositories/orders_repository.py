@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 from domain.entities.order import Order
 
+
 class OrdersRepository(ABC):
     """
     Интерфейс (абстрактный класс) для хранения и извлечения ордеров (Order).
