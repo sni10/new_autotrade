@@ -51,7 +51,7 @@ class TickerService:
         final_revenue = X_adjusted * sell_price
         net_profit = final_revenue - total_usdt_needed
 
-        return {
+        return buy_price, total_coins_needed, sell_price, X_adjusted, {
             "comment": "✅ Сделка возможна.",
             "🔹 Цена покупки (без комиссии)": f"{buy_price} USDT/монету",
             "🔹 Цена покупки (с комиссией)": f"{buy_price_with_fee_factor} USDT/монету",

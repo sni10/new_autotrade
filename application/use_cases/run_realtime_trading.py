@@ -1,7 +1,11 @@
 # application/use_cases/run_realtime_trading.py
 import math
 import time
+
+from domain.entities.currency_pair import CurrencyPair
+from domain.services.deal_service import DealService
 from domain.services.ticker_service import TickerService
+from infrastructure.connectors.pro_exchange_connector import CcxtProMarketDataConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 
 
@@ -11,11 +15,9 @@ from infrastructure.repositories.tickers_repository import InMemoryTickerReposit
 # run_realtime_trading.py (примерно)
 
 async def run_realtime_trading(
-        pro_exchange_connector,
-        # trading_service,
-        symbol: str,
-        # signal_service: SignalService,
-        # deal_service: DealService,
+        pro_exchange_connector: CcxtProMarketDataConnector,
+        currency_pair: CurrencyPair,
+        deal_service: DealService,
 ):
     repository = InMemoryTickerRepository(max_size=5000)
     ticker_service = TickerService(repository)
@@ -35,7 +37,7 @@ async def run_realtime_trading(
     while True:
         try:
             # Получаем новые сделки
-            ticker_data = await pro_exchange_connector.client.watch_ticker(symbol)
+            ticker_data = await pro_exchange_connector.client.watch_ticker(currency_pair.symbol)
 
             # """
             # ticker = {dict: 22} {'ask': 0.05515, 'askVolume': 5850.0, 'average': 0.04824, 'baseVolume': 791854721.0, 'bid': 0.0551, 'bidVolume': 1080.0, 'change': 0.01374, 'close': 0.05511, 'datetime': '2025-01-26T11:42:58.462Z', 'high': 0.064, 'indexPrice': None, 'info': {'A': '5850.000
@@ -103,6 +105,9 @@ async def run_realtime_trading(
             """
 
             repos_tickers = ticker_service.repository.get_last_n(50)
+
+            if len(repos_tickers) < 5:
+                continue
 
             if repos_tickers:
                 last_ticker = repos_tickers[-1] if len(repos_tickers) > 1 else None
@@ -189,20 +194,44 @@ async def run_realtime_trading(
             if ticker_signal == "BUY":
                 print("🟢 Сигнал на покупку! Расчет сделки...")
 
+                # 1) Создаём сделку
+                deal = deal_service.deal_factory.create_new_deal(currency_pair)
+                deal_service.deals_repo.save(deal)
+                print("New Deal:", deal)
+
+                if deal.buy_order:
+                    deal_service.order_service.orders_repo.save(deal.buy_order)
+                if deal.sell_order:
+                    deal_service.order_service.orders_repo.save(deal.sell_order)
+
+
+
                 # Устанавливаем параметры сделки
                 buy_price = ticker_data['close']
-                budget = 100  # Условный бюджет в USDT
-                min_step = 0.0001  # Минимальный шаг монеты
+                budget = currency_pair.deal_quota  # Условный бюджет в USDT
+                min_step = currency_pair.deal_quota  # Минимальный шаг монеты
                 buy_fee_percent = 0.1  # Комиссия при покупке (%)
                 sell_fee_percent = 0.1  # Комиссия при продаже (%)
-                profit_percent = 0.5  # Желаемая прибыль (%)
+                profit_percent = currency_pair.profit_markup  # Желаемая прибыль (%)
 
                 # Вызываем расчет торговой стратегии
-                trade_result = ticker_service.calculate_trading_strategy_improved(
+                buy_price_with_fee_factor, total_coins_needed, sell_price, X_adjusted, trade_result = ticker_service.calculate_trading_strategy_improved(
                     buy_price, budget, min_step,
                     buy_fee_percent, sell_fee_percent,
                     profit_percent
                 )
+
+                buy_and_sell = deal_service.order_service.orders_repo.get_all_by_deal(deal.deal_id)
+
+                print("Orders for this deal:", buy_and_sell)
+
+                deal.buy_order.price = buy_price_with_fee_factor
+                deal.buy_order.amount = total_coins_needed
+                deal_service.order_service.orders_repo.save(deal.buy_order)
+
+                deal.sell_order.price = sell_price
+                deal.sell_order.amount = X_adjusted
+                deal_service.order_service.orders_repo.save(deal.sell_order)
 
                 # Выводим детальную информацию о сделке
                 print("\n🔹 **РЕЗУЛЬТАТ РАСЧЁТА СДЕЛКИ** 🔹\n")

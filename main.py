@@ -70,13 +70,31 @@ async def main():
 
     time_sync()
 
+    base_currency = "SPELL"
+
+    quote_currency = "USDT"
+
+    symbol = f"{base_currency}/{quote_currency}"
+
     # 1. Репозитории
-    # deals_repo = InMemoryDealsRepository()
-    # orders_repo = InMemoryOrdersRepository()
+    currency_pair = CurrencyPair(
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        symbol=symbol,
+        order_life_time=1,
+        deal_quota=100.0,
+        min_step=0.0001,
+        profit_markup=0.002,
+        deal_count=1
+    )
+
+    deals_repo = InMemoryDealsRepository()
+
+    orders_repo = InMemoryOrdersRepository()
 
     # 2. Фабрики
-    # order_factory = OrderFactory()
-    # deal_factory = DealFactory(order_factory)
+    order_factory = OrderFactory()
+    deal_factory = DealFactory(order_factory)
 
     # ExchangeConnector (REST)
     # exchange_connector = CcxtExchangeConnector(
@@ -91,29 +109,21 @@ async def main():
     )
 
     # 4. Сервисы
-    # order_service = OrderService(orders_repo, order_factory, exchange_connector)
+    order_service = OrderService(orders_repo, order_factory)
 
     # TradingService сам решает, открывать ли сделку и т.д.
     # trading_service = TradingService(deals_repo, order_service, deal_factory)
 
     # signal_service = SignalService()
 
-    # deal_service = DealService(deals_repo, order_service, deal_factory)
+    deal_service = DealService(deals_repo, order_service, deal_factory)
 
     # 5. Запуск use-case: "run_realtime_trading"
 
-    quote = "D"
-
-    main_quote = "USDT"
-
-    symbol = f"{quote}/{main_quote}"
-
     await run_realtime_trading(
         pro_exchange_connector=pro_exchange_connector,
-        # trading_service=trading_service,
-        symbol=symbol,
-        # signal_service=signal_service,
-        # deal_service=deal_service
+        currency_pair=currency_pair,
+        deal_service=deal_service
     )
 
 

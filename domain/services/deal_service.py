@@ -7,6 +7,7 @@ from infrastructure.repositories.deals_repository import DealsRepository
 from domain.services.order_service import OrderService
 from typing import List, Optional
 
+
 class DealService:
     """
     Сервис для управления сделками:
@@ -28,6 +29,29 @@ class DealService:
         self.deals_repo.save(deal)
         print(f"Created new deal: {deal}")
         return deal
+
+    def open_buy_order(self, price, amount, deal_id):
+        """
+        Проверяет и обрабатывает все открытые сделки.
+        """
+        buy_order = self.order_service.create_buy_order(
+            price, amount
+        )
+        buy_order.deal_id = deal_id
+        print(f"Create BUY Order: {buy_order}")
+        return buy_order
+
+
+    def open_sell_order(self, price, amount, deal_id):
+        """
+        Проверяет и обрабатывает все открытые сделки.
+        """
+        sell_order = self.order_service.create_sell_order(
+            price, amount
+        )
+        sell_order.deal_id = deal_id
+        print(f"Create SELL Order: {sell_order}")
+        return sell_order
 
     def process_open_deals(self):
         """

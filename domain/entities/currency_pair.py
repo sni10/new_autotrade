@@ -12,7 +12,11 @@ class CurrencyPair:
         symbol: str = None,
         order_life_time: int = 1,
         deal_quota: float = 100.0,
-        profit_markup: float = 0.002,
+        min_step: float = 0.0001,
+        # """
+        # profit_markup = 0.5%.
+        # """
+        profit_markup: float = 0.5,
         deal_count: int = 1
     ):
         """
@@ -29,6 +33,7 @@ class CurrencyPair:
         self.deal_quota = deal_quota
         self.profit_markup = profit_markup
         self.deal_count = deal_count
+        self.min_step = min_step
 
     def __repr__(self):
         return (f"<CurrencyPair(symbol={self.symbol}, "
