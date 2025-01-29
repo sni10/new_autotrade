@@ -82,9 +82,10 @@ async def main():
         quote_currency=quote_currency,
         symbol=symbol,
         order_life_time=1,
-        deal_quota=100.0,
-        min_step=0.0001,
-        profit_markup=0.002,
+        deal_quota=12.0,
+        min_step=1.0,
+        price_step=0.0000001,
+        profit_markup=0.5,
         deal_count=1
     )
 

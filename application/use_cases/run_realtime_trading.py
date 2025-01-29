@@ -1,9 +1,10 @@
 # application/use_cases/run_realtime_trading.py
 import math
 import time
-
+import domain.services.ticker_service
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deal_service import DealService
+
 from domain.services.ticker_service import TickerService
 from infrastructure.connectors.pro_exchange_connector import CcxtProMarketDataConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
@@ -110,21 +111,24 @@ async def run_realtime_trading(
                 continue
 
             if repos_tickers:
-                last_ticker = repos_tickers[-1] if len(repos_tickers) > 1 else None
+                last_ticker = repos_tickers[-1] if repos_tickers else None  # Исправлено условие
 
-                print(f"Обработан тикер #{counter}: {last_ticker.symbol} |"
-                      f" Цена: {last_ticker.close} |"
-                      f" Δt: {time_diff:.3f}s"
-                      )
+                if last_ticker and hasattr(last_ticker, 'symbol') and hasattr(last_ticker, 'close'):
+                    print(f"🟢 Обработан тикер #{counter}: {str(last_ticker.symbol)} |"
+                          f" Цена: {float(last_ticker.close):.7f} |"
+                          f" Δt: {time_diff:.3f}s")
+                else:
+                    print(f"🟡 Обработан тикер #{counter}: Данные недоступны")
+                    continue
 
-                if last_ticker.signals:
-                    hist_values = [t.signals.get('histogram', 0) for t in repos_tickers[-HIST_ANALYSIS_POINTS:]]
-                    hist = last_ticker.signals.get('histogram', 0)
-                    macd = last_ticker.signals.get('macd', 0)
-                    signal = last_ticker.signals.get('signal', 0)
-                    bb_upper = last_ticker.signals.get('bb_upper', 0)
-                    bb_lower = last_ticker.signals.get('bb_lower', 0)
-                    price = last_ticker.close
+                if last_ticker and last_ticker.signals:
+                    hist_values = [t.signals.get('histogram', 0.0) for t in repos_tickers[-HIST_ANALYSIS_POINTS:]]
+                    hist = last_ticker.signals.get('histogram', 0.0)
+                    macd = last_ticker.signals.get('macd', 0.0)
+                    signal = last_ticker.signals.get('signal', 0.0)
+                    bb_upper = last_ticker.signals.get('bb_upper', 0.0)
+                    bb_lower = last_ticker.signals.get('bb_lower', 0.0)
+                    price = float(last_ticker.close) if last_ticker else 0.0
 
                     # Определяем цвет MACD vs SIGNAL
                     macd_signal_color = GREEN if macd > signal else RED
@@ -141,6 +145,7 @@ async def run_realtime_trading(
                         hist_color = YELLOW  # Недостаточно данных
 
                     if len(repos_tickers) >= ANALYSIS_POINTS:
+
                         sma_7_values = [t.signals.get("sma_7", 0) for t in repos_tickers[-ANALYSIS_POINTS:]]
                         sma_25_values = [t.signals.get("sma_25", 0) for t in repos_tickers[-ANALYSIS_POINTS:]]
                         sma_99_values = [t.signals.get("sma_99", 0) for t in repos_tickers[-ANALYSIS_POINTS:]]
@@ -152,47 +157,24 @@ async def run_realtime_trading(
                         sma_7_color = GREEN if all(diff > 0 for diff in sma_7_trend) else RED
                         sma_25_color = GREEN if all(diff > 0 for diff in sma_25_trend) else RED
                         sma_99_color = GREEN if all(diff > 0 for diff in sma_99_trend) else RED
-                    else:
-                        sma_7_color = RESET
-                        sma_25_color = RESET
-                        sma_99_color = RESET
 
+                        print(f"🟩 Сигналы база |"
+                              f" HIST: {hist_color}{hist:.8f}{RESET} |"
+                              f" MACD: {macd_signal_color}{macd:.8f}{RESET} |"
+                              f" SIGNAL: {macd_signal_color}{signal:.8f}{RESET} |"
+                              f" BB_UPPER: {bb_color}{bb_upper:.8f}{RESET} |"
+                              f" BB_MIDDLE: {last_ticker.signals.get('bb_middle', 0):.8f} |"
+                              f" BB_LOWER: {bb_color}{bb_lower:.8f}{RESET} |"
+                              f" SMA_7: {sma_7_color}{last_ticker.signals.get('sma_7', 0):.8f}{RESET} |"
+                              f" SMA_25: {sma_25_color}{last_ticker.signals.get('sma_25', 0):.8f}{RESET} |"
+                              f" SMA_99: {sma_99_color}{last_ticker.signals.get('sma_99', 0):.8f}{RESET}"
+                              )
 
-                    print(f"Сигналы база |"
-                          f" HIST: {hist_color}{hist:.8f}{RESET} |"
-                          f" MACD: {macd_signal_color}{macd:.8f}{RESET} |"
-                          f" SIGNAL: {macd_signal_color}{signal:.8f}{RESET} |"
-                          f" BB_UPPER: {bb_color}{bb_upper:.8f}{RESET} |"
-                          f" BB_MIDDLE: {last_ticker.signals.get('bb_middle', 0):.8f} |"
-                          f" BB_LOWER: {bb_color}{bb_lower:.8f}{RESET} |"
-                          f" SMA_7: {sma_7_color}{last_ticker.signals.get('sma_7', 0):.8f}{RESET} |"
-                          f" SMA_25: {sma_25_color}{last_ticker.signals.get('sma_25', 0):.8f}{RESET} |"
-                          f" SMA_99: {sma_99_color}{last_ticker.signals.get('sma_99', 0):.8f}{RESET}"
-                          )
-
-                    # print(f"Сигналы база:: |"
-                    #       f" HIST: {hist_color}{hist:.8f}{RESET} |"
-                    #       f" MACD: {macd_signal_color}{macd:.8f}{RESET} |"
-                    #       f" SIGNAL: {macd_signal_color}{signal:.8f}{RESET} |"
-                    #       f" OBV: {volume_change_color}{volume:.0f}{RESET} |"
-                    #       f" ΔVOLUME SMA7: {vol_sma_color}{sma_volume_change:.0f}{RESET} |"
-                    #       # f" VOL SMA7: {vol_sma_color}{volume_sma_7:.8f}{RESET} |"
-                    #       f" ΔVOLUME EMA7: {vol_ema_color}{ema_volume_change:.0f}{RESET} |"
-                    #       # f" VOL EMA7: {vol_ema_color}{volume_ema_7:.8f}{RESET} |"
-                    #       # f" RSI_5: {last_ticker.signals.get('rsi_5', 0):.8f} |"
-                    #       # f" RSI_15: {last_ticker.signals.get('rsi_15', 0):.8f} |"
-                    #       # f" RSI_30: {last_ticker.signals.get('rsi_30', 0):.8f} |"
-                    #       f" BB_UPPER: {bb_color}{bb_upper:.8f}{RESET} |"
-                    #       f" BB_MIDDLE: {last_ticker.signals.get('bb_middle', 0):.8f} |"
-                    #       f" BB_LOWER: {bb_color}{bb_lower:.8f}{RESET} |"
-                    #       f" SMA_7: {last_ticker.signals.get('sma_7', 0):.8f} |"
-                    #       f" SMA_25: {last_ticker.signals.get('sma_25', 0):.8f} |"
-                    #       f" SMA_99: {last_ticker.signals.get('sma_99', 0):.8f} |"
-                    #       f" VO-atr: {last_ticker.signals.get('atr', 0):.8f}"
-                    #       )
+                else:
+                    print("🟡 Нет данных сигналов для анализа")
 
             if ticker_signal == "BUY":
-                print("🟢 Сигнал на покупку! Расчет сделки...")
+                print("🟢 Сигнал на покупку! 🔥🚀 Расчет сделки... ")
 
                 # 1) Создаём сделку
                 deal = deal_service.deal_factory.create_new_deal(currency_pair)
@@ -204,26 +186,21 @@ async def run_realtime_trading(
                 if deal.sell_order:
                     deal_service.order_service.orders_repo.save(deal.sell_order)
 
-
-
                 # Устанавливаем параметры сделки
                 buy_price = ticker_data['close']
                 budget = currency_pair.deal_quota  # Условный бюджет в USDT
-                min_step = currency_pair.deal_quota  # Минимальный шаг монеты
+                min_step = currency_pair.min_step  # Минимальный шаг монеты
+                price_step = currency_pair.price_step  # Минимальный шаг юсдт цены wмонеты
                 buy_fee_percent = 0.1  # Комиссия при покупке (%)
                 sell_fee_percent = 0.1  # Комиссия при продаже (%)
                 profit_percent = currency_pair.profit_markup  # Желаемая прибыль (%)
 
                 # Вызываем расчет торговой стратегии
-                buy_price_with_fee_factor, total_coins_needed, sell_price, X_adjusted, trade_result = ticker_service.calculate_trading_strategy_improved(
-                    buy_price, budget, min_step,
+                buy_price_with_fee_factor, total_coins_needed, sell_price, X_adjusted, trade_result = ticker_service.calculate_strategy(
+                    buy_price, budget, min_step, price_step,
                     buy_fee_percent, sell_fee_percent,
                     profit_percent
                 )
-
-                buy_and_sell = deal_service.order_service.orders_repo.get_all_by_deal(deal.deal_id)
-
-                print("Orders for this deal:", buy_and_sell)
 
                 deal.buy_order.price = buy_price_with_fee_factor
                 deal.buy_order.amount = total_coins_needed

@@ -18,8 +18,7 @@ class InMemoryTickerRepository:
             self.dump_to_file()
 
     def get_last_n(self, n: int) -> List[Ticker]:
-        """Возвращает последние `n` тикеров"""
-        return self.tickers[-n:]
+        return self.tickers[-n:] if len(self.tickers) >= n else []
 
     def dump_to_file(self):
         """Сохранение данных в JSON-файл"""

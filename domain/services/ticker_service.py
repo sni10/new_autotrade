@@ -1,4 +1,5 @@
 import math
+from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP, InvalidOperation
 from typing import Dict, List
 
 import talib
@@ -7,6 +8,25 @@ from talib import MA_Type
 
 from domain.entities.ticker import Ticker
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+
+
+def safe_decimal(value, default=Decimal("0")):
+    """🔥 Жёсткий фикс: надёжное приведение к Decimal."""
+    try:
+        if value is None:
+            raise ValueError("Получен None вместо числа")
+        if isinstance(value, (float, int)):
+            return Decimal(str(value))  # Строка исключает экспоненциальный формат
+        return Decimal(value)  # Если уже строка или Decimal — используем как есть
+    except (InvalidOperation, TypeError, ValueError) as e:
+        print(f"🚨 Ошибка Decimal: {value} ({type(value)}) - {e}")
+        return Decimal(default)
+
+def floor_to_step(value, step):
+    return Decimal(value).quantize(Decimal(str(step)), rounding=ROUND_DOWN)
+
+def round_to_step(value, step):
+    return Decimal(value).quantize(Decimal(str(step)), rounding=ROUND_HALF_UP)
 
 
 class TickerService:
@@ -25,40 +45,73 @@ class TickerService:
         # Сохраняем тикер
         self.repository.save(ticker)
 
-    def calculate_trading_strategy_improved(self, buy_price, budget, min_step,
-                                            buy_fee_percent, sell_fee_percent,
-                                            profit_percent):
-        """Расчёт параметров сделки на покупку и продажу."""
+    def calculate_strategy(self, buy_price, budget, min_step, price_step,
+                        buy_fee_percent, sell_fee_percent, profit_percent):
+        """Расчёт параметров сделки с учётом шага цены и количества."""
 
-        buy_price_with_fee_factor = buy_price * (1 + buy_fee_percent / 100)
+        # 🔍 Логируем входные параметры перед преобразованием
+        print(f"🔎 buy_price={buy_price}, budget={budget}, min_step={min_step}, price_step={price_step}")
+        print(f"🔎 buy_fee_percent={buy_fee_percent}, sell_fee_percent={sell_fee_percent}, profit_percent={profit_percent}")
+
+        # Безопасное преобразование в Decimal
+        buy_price = safe_decimal(buy_price)
+        budget = safe_decimal(budget)
+        min_step = safe_decimal(min_step)  # min_step = 1 (целое число)
+        price_step = safe_decimal(price_step)  # price_step = 0.0000001
+        buy_fee_percent = safe_decimal(buy_fee_percent)
+        sell_fee_percent = safe_decimal(sell_fee_percent)
+        profit_percent = safe_decimal(profit_percent)
+
+        # Если какие-то данные некорректны (<= 0), выдаём ошибку
+        if buy_price <= 0 or budget <= 0 or min_step <= 0 or price_step <= 0:
+            print("❌ Ошибка входных данных. Проверь параметры.")  # Логируем ошибку
+            return {"comment": "❌ Ошибка входных данных. Проверь параметры."}
+
+        # 🔹 Расчёт цен с учётом комиссий и округлением до price_step
+        buy_price_with_fee = round_to_step(buy_price * (1 + buy_fee_percent / 100), price_step)
+        sell_price_raw = buy_price * (1 + profit_percent / 100)
+        sell_price = round_to_step(sell_price_raw, price_step)
+
+        # 🔍 Логируем рассчитанные цены
+        print(f"💰 buy_price_with_fee={buy_price_with_fee}, sell_price_raw={sell_price_raw}, sell_price={sell_price}")
+
+        # Проверка минимального шага цены
+        if (sell_price - buy_price) < price_step:
+            print("❌ Прибыль меньше минимального шага цены")
+            return {"comment": "❌ Прибыль меньше минимального шага цены"}
+
+        # 🔹 Расчёт количества (округляем до целых монет)
         coin_after_sell_fee_factor = (1 - sell_fee_percent / 100)
-        sell_price = buy_price * (1 + profit_percent / 100)
-
-        if coin_after_sell_fee_factor <= 0:
-            return {"comment": "❌ Комиссия продажи >= 100%. Сделка невозможна."}
-
-        def floor_to_step(value, step):
-            return math.floor(value / step) * step
-
-        raw_max_x = budget * (coin_after_sell_fee_factor / buy_price_with_fee_factor)
-        X_adjusted = floor_to_step(raw_max_x, min_step)
+        raw_max_x = budget * (coin_after_sell_fee_factor / buy_price_with_fee)
+        X_adjusted = round_to_step(raw_max_x, min_step)  # округляем до целого числа (min_step = 1)
 
         if X_adjusted <= 0:
-            return {"comment": "❌ Невозможно купить даже минимальный шаг."}
+            print("❌ Невозможно купить даже минимальный шаг")
+            return {"comment": "❌ Невозможно купить даже минимальный шаг"}
 
         total_coins_needed = X_adjusted / coin_after_sell_fee_factor
-        total_usdt_needed = total_coins_needed * buy_price_with_fee_factor
-        final_revenue = X_adjusted * sell_price
-        net_profit = final_revenue - total_usdt_needed
+        total_coins_needed = round_to_step(total_coins_needed, min_step)  # округляем до целых монет (min_step = 1)
+        total_usdt_needed = round_to_step(total_coins_needed * buy_price_with_fee, Decimal("0.01"))  # округление до 0.01
+        final_revenue = floor_to_step(X_adjusted * sell_price, Decimal("0.01"))  # округление до 0.01
+        net_profit = floor_to_step(final_revenue - total_usdt_needed, Decimal("0.01"))  # округление до 0.01
+
+        # 🔍 Логируем финальные расчёты
+        print(f"📊 total_usdt_needed={total_usdt_needed}, final_revenue={final_revenue}, net_profit={net_profit}")
+
+        # Проверка минимальной прибыли
+        if net_profit <= 0:
+            print("❌ Нулевая или отрицательная прибыль")
+            return {"comment": "❌ Нулевая или отрицательная прибыль"}
 
         return buy_price, total_coins_needed, sell_price, X_adjusted, {
             "comment": "✅ Сделка возможна.",
-            "🔹 Цена покупки (без комиссии)": f"{buy_price} USDT/монету",
-            "🔹 Цена покупки (с комиссией)": f"{buy_price_with_fee_factor} USDT/монету",
-            "🔹 Цена продажи": f"{sell_price} USDT/монету",
+            "🔹 Цена покупки (исходная)": f"{buy_price} USDT",
+            "🔹 Цена покупки (с комиссией)": f"{buy_price_with_fee} USDT",
+            "🔹 Цена продажи (округленная)": f"{sell_price} USDT",
+            "🔹 Минимальный шаг цены": f"{price_step:.7f} USDT",
             "🔹 Количество монет для продажи": f"{X_adjusted} монет",
             "🔹 Количество монет для покупки": f"{total_coins_needed} монет",
-            "🔹 Общая сумма сделки": f"{total_usdt_needed} USDT",
+            "🔹 Общая сумма покупки потратим": f"{total_usdt_needed} USDT",
             "🔹 Финальный доход": f"{final_revenue} USDT",
             "🔹 Чистая прибыль": f"{net_profit} USDT"
         }
@@ -81,7 +134,6 @@ class TickerService:
         HIST_ANALYSIS_POINTS = 3
         ANALYSIS_POINTS = 5
 
-
         if len(indicators) < HIST_ANALYSIS_POINTS:  # Проверяем, чтобы было достаточно данных
             return "HOLD"
 
@@ -95,10 +147,15 @@ class TickerService:
         sma_99_values = [t.signals.get("sma_99", 0) for t in indicators[-ANALYSIS_POINTS:]]
 
         hist_trend = [hist_values[i] - hist_values[i - 1] for i in range(1, HIST_ANALYSIS_POINTS)]
-
-        sma_7_trend = [sma_7_values[i] - sma_7_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
-        sma_25_trend = [sma_25_values[i] - sma_25_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
-        sma_99_trend = [sma_99_values[i] - sma_99_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
+        if len(sma_7_values) >= ANALYSIS_POINTS & len(sma_25_values) >= ANALYSIS_POINTS & len(
+                sma_99_values) >= ANALYSIS_POINTS:
+            sma_7_trend = [sma_7_values[i] - sma_7_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
+            sma_25_trend = [sma_25_values[i] - sma_25_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
+            sma_99_trend = [sma_99_values[i] - sma_99_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
+        else:
+            sma_7_trend = []
+            sma_25_trend = []
+            sma_99_trend = []
 
         hist_color = GREEN if all(diff > 0 for diff in hist_trend) else RED
         sma_7_color = GREEN if all(diff > 0 for diff in sma_7_trend) else RED
@@ -137,10 +194,8 @@ class TickerService:
         sma_25 = talib.MA(closes, timeperiod=25, matype=MA_Type.SMA)
         sma_99 = talib.MA(closes, timeperiod=75, matype=MA_Type.SMA)
 
-
         # Bollinger Bands (BBANDS) 20, 2
         upperband, middleband, lowerband = talib.BBANDS(closes, timeperiod=20, nbdevup=2, nbdevdn=2, matype=MA_Type.SMA)
-
 
         return {
             # MACD
