@@ -29,7 +29,8 @@ def duration_color(duration):
 
 
 async def run_realtime_trading(
-        pro_exchange_connector: CcxtProMarketDataConnector,
+        pro_exchange_connector_prod: CcxtProMarketDataConnector,
+        pro_exchange_connector_sandbox: CcxtProMarketDataConnector,
         currency_pair: CurrencyPair,
         deal_service: DealService,
 ):
@@ -59,7 +60,7 @@ async def run_realtime_trading(
             # print(colored(f"\n⏳ [{now_fmt()}] Start Ticker_data.watch_ticker", "cyan"))
             start_watch = time.time()
 
-            ticker_data = await pro_exchange_connector.client.watch_ticker(currency_pair.symbol)
+            ticker_data = await pro_exchange_connector_prod.client.watch_ticker(currency_pair.symbol)
 
             # 🚀 ОПТИМИЗИРОВАННАЯ ОБРАБОТКА
             start_process = time.time()

@@ -15,27 +15,19 @@ class CcxtProMarketDataConnector:
         with open(r'F:\HOME\new_autotrade\config\config.json', 'r') as f:
             config = json.load(f)
 
-        if self.use_sandbox:
-            pss = r'F:\HOME\new_autotrade\binance_keys\test-prv-key.pem'
-            with open(pss, 'r') as f:
-                private_key_pem = f.read()
-            config = {
-                "binance": {
-                    "sandbox": {
-                        'apiKey': '3RLY68IYS76Uz3cetlQg2IsJnfkZXxUbohJ6sDv5gCdpHbnJ5vzKcA2BdDmz3pNm',
-                        'privateKey': private_key_pem,
-                    }
-                }
-            }
+        private_key_pem = config[self.exchange_name]['sandbox']['privateKeyPath']
+        with open(private_key_pem, 'r') as f:
+            private_key_pem = f.read()
 
         self.config = config[self.exchange_name]['sandbox' if self.use_sandbox else 'production']
+        self.config['secret'] = private_key_pem
 
     def _init_exchange_client(self):
         exchange_class = getattr(ccxtpro, self.exchange_name)
 
         settings = {
             'apiKey': self.config.get('apiKey', ''),
-            'privateKey': self.config.get('privateKey', ''),  # или 'secret'
+            'privateKey': self.config.get('secret', ''),  # или 'secret'
             'enableRateLimit': True,
             'newUpdates': True,
             'options': {

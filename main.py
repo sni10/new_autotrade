@@ -105,9 +105,14 @@ async def main():
     # )
 
     # MarketDataConnector (WebSocket)
-    pro_exchange_connector = CcxtProMarketDataConnector(
+    pro_exchange_connector_prod = CcxtProMarketDataConnector(
         exchange_name="binance",
         use_sandbox=False
+    )
+
+    pro_exchange_connector_sandbox = CcxtProMarketDataConnector(
+        exchange_name="binance",
+        use_sandbox=True
     )
 
     # 4. Сервисы
@@ -123,7 +128,8 @@ async def main():
     # 5. Запуск use-case: "run_realtime_trading"
 
     await run_realtime_trading(
-        pro_exchange_connector=pro_exchange_connector,
+        pro_exchange_connector_prod=pro_exchange_connector_prod,
+        pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
         currency_pair=currency_pair,
         deal_service=deal_service
     )
