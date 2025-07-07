@@ -24,6 +24,10 @@ class CachedIndicatorService:
 
     def update_fast_indicators(self, price: float) -> Dict:
         """Быстрые индикаторы каждый тик (без TALIB)"""
+
+        if not isinstance(price, (int, float)) or np.isnan(price):
+            return self.fast_cache  # Вернуть предыдущие значения
+
         self.tick_count += 1
 
         # SMA-7 инкрементально
@@ -63,7 +67,7 @@ class CachedIndicatorService:
 
     def update_medium_indicators(self, price_history: List[float]) -> Dict:
         """Средние индикаторы каждые 10 тиков"""
-        if len(price_history) < 15:
+        if len(price_history) < 30:
             return {}
 
         closes = np.array(price_history[-30:])  # Только последние 30
@@ -97,7 +101,7 @@ class CachedIndicatorService:
             macd, macdsignal, macdhist = talib.MACD(closes, fastperiod=12, slowperiod=26, signalperiod=9)
 
             # SMA-99
-            sma_99 = talib.MA(closes, timeperiod=75, matype=MA_Type.SMA)
+            sma_75 = talib.MA(closes, timeperiod=75, matype=MA_Type.SMA)
 
             # Bollinger Bands
             upperband, middleband, lowerband = talib.BBANDS(closes, timeperiod=20, nbdevup=2, nbdevdn=2)
@@ -106,7 +110,7 @@ class CachedIndicatorService:
                 "macd": round(float(macd[-1]), 8) if len(macd) > 0 and not np.isnan(macd[-1]) else 0,
                 "signal": round(float(macdsignal[-1]), 8) if len(macdsignal) > 0 and not np.isnan(macdsignal[-1]) else 0,
                 "histogram": round(float(macdhist[-1]), 8) if len(macdhist) > 0 and not np.isnan(macdhist[-1]) else 0,
-                "sma_99": round(float(sma_99[-1]), 8) if len(sma_99) > 0 and not np.isnan(sma_99[-1]) else 0,
+                "sma_99": round(float(sma_75[-1]), 8) if len(sma_75) > 0 and not np.isnan(sma_75[-1]) else 0,
                 "bb_upper": round(float(upperband[-1]), 8) if len(upperband) > 0 and not np.isnan(upperband[-1]) else 0,
                 "bb_middle": round(float(middleband[-1]), 8) if len(middleband) > 0 and not np.isnan(middleband[-1]) else 0,
                 "bb_lower": round(float(lowerband[-1]), 8) if len(lowerband) > 0 and not np.isnan(lowerband[-1]) else 0,

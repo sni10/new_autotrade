@@ -83,11 +83,11 @@ async def main():
         quote_currency=quote_currency,
         symbol=symbol_ccxt,  # ИСПОЛЬЗУЕМ HIFIUSDT для API
         order_life_time=1,
-        deal_quota=15.0,
+        deal_quota=10.0,
         min_step=0.01,
         price_step=0.0001,
         profit_markup=1.5,
-        deal_count=1
+        deal_count=3
     )
 
     deals_repo = InMemoryDealsRepository()

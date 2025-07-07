@@ -65,10 +65,6 @@ class TickerService:
         # 6. Сохраняем тикер
         self.repository.save(ticker)
 
-    # УДАЛЯЕМ СТАРЫЙ МЕТОД compute_signals - он больше не нужен!
-    # async def compute_signals(self, history: List[Ticker]) -> Dict:
-    #     # УДАЛИТЬ ВЕСЬ ЭТОТ МЕТОД!
-
     async def get_signal(self) -> str:
         """🎯 УПРОЩЕННАЯ логика сигналов"""
         # Получаем последние тикеры БЕЗ get_last_n каждый раз
@@ -195,7 +191,7 @@ class TickerService:
         # 1) Проверки входных данных
         if (buy_price <= 0 or budget <= 0 or
                 min_step <= 0 or price_step <= 0):
-            print({"comment": "❌ Ошибка входных данных. Проверь параметры."})
+            return {"comment": "❌ Ошибка входных данных. Проверь параметры."}
 
         # 2) Цена покупки c учетом комиссии (для подсчета расхода USDT)
         buy_price_with_fee = buy_price * (1 + buy_fee_percent / 100)
@@ -215,7 +211,7 @@ class TickerService:
         # Округлим X вниз до min_step
         X_adjusted = Decimal(str(floor_to_step(raw_max_x, min_step)))
         if X_adjusted <= 0:
-            print({"comment": "❌ Невозможно купить даже минимальный шаг"})
+            return {"comment": "❌ Невозможно купить даже минимальный шаг"}
 
         # 5) Чтобы после продажи осталось X_adjusted, надо купить чуть больше:
         # total_coins_needed = X_adjusted / (1 - sell_fee)
@@ -229,7 +225,7 @@ class TickerService:
         total_usdt_needed = Decimal(str(round_to_step(total_usdt_needed, price_step)))
 
         if total_usdt_needed > budget:
-            print({"comment": "❌ Не хватает бюджета, чтобы купить нужный объём"})
+            return {"comment": "❌ Не хватает бюджета, чтобы купить нужный объём"}
 
         # 7) Финальная выручка от продажи X_adjusted монет по sell_price
         final_revenue = X_adjusted * sell_price
@@ -241,7 +237,7 @@ class TickerService:
         # 9) Проверка на минимальную прибыль (≥ 0.5% от бюджета)
         min_required_profit = budget * Decimal("0.005")  # 0.5%
         if net_profit < min_required_profit:
-            print({"comment": f"❌ Недостаточная прибыль. Нужно ≥ {min_required_profit:.6f} USDT"})
+            return {"comment": f"❌ Недостаточная прибыль. Нужно ≥ {min_required_profit:.6f} USDT"}
 
         # 10) Возвращаем результат в «красивом» виде, как у вас
         return (
