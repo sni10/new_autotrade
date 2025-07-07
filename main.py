@@ -70,22 +70,23 @@ async def main():
 
     time_sync()
 
-    base_currency = "SPELL"
-
+    base_currency = "VIC"
     quote_currency = "USDT"
 
-    symbol = f"{base_currency}/{quote_currency}"
+    # ИСПРАВЛЕНИЕ: используем формат без слэша для Binance
+    symbol_ccxt = f"{base_currency}{quote_currency}"  # "HIFIUSDT"
+    symbol_display = f"{base_currency}/{quote_currency}"  # "HIFI/USDT"
 
     # 1. Репозитории
     currency_pair = CurrencyPair(
         base_currency=base_currency,
         quote_currency=quote_currency,
-        symbol=symbol,
+        symbol=symbol_ccxt,  # ИСПОЛЬЗУЕМ HIFIUSDT для API
         order_life_time=1,
-        deal_quota=12.0,
-        min_step=1.0,
-        price_step=0.0000001,
-        profit_markup=0.5,
+        deal_quota=15.0,
+        min_step=0.01,
+        price_step=0.0001,
+        profit_markup=1.5,
         deal_count=1
     )
 

@@ -7,40 +7,42 @@ from domain.entities.ticker import Ticker
 
 class InMemoryTickerRepository:
     def __init__(self, max_size: int = 1000, dump_file: str = "tickers_dump.json"):
-        self.tickers = []  # Список тикеров
-        self.max_size = max_size  # Лимит хранения в памяти
-        self.dump_file = dump_file  # Файл для периодического сохранения
+        self.tickers = []
+        self.max_size = max_size
+        self.dump_file = dump_file
+
+        # 🆕 Кеши для оптимизации
+        self._last_n_cache = {}  # Кеш для get_last_n
+        self._cache_valid_size = 0  # Размер когда кеш был создан
 
     def save(self, ticker: Ticker):
-        """Сохраняем тикер в память, сбрасываем в файл при превышении лимита"""
+        """Оптимизированное сохранение"""
         self.tickers.append(ticker)
-        if len(self.tickers) >= self.max_size:
-            self.dump_to_file()
+
+        # Очищаем кеш при изменении размера
+        if len(self.tickers) != self._cache_valid_size:
+            self._last_n_cache.clear()
+            self._cache_valid_size = len(self.tickers)
+
+        # Ограничиваем размер
+        if len(self.tickers) > self.max_size:
+            # Удаляем старые записи батчами для производительности
+            remove_count = self.max_size // 10  # Удаляем 10%
+            self.tickers = self.tickers[remove_count:]
 
     def get_last_n(self, n: int) -> List[Ticker]:
-        return self.tickers[-n:] if len(self.tickers) >= n else []
+        """🚀 КЕШИРОВАННОЕ получение последних N тикеров"""
 
-    def dump_to_file(self):
-        """Сохранение данных в JSON-файл"""
-        if not self.tickers:
-            return
+        # Проверяем кеш
+        cache_key = f"last_{n}"
+        current_size = len(self.tickers)
 
-        with open(self.dump_file, "a") as f:
-            for ticker in self.tickers:
-                f.write(json.dumps(ticker.to_dict()) + "\n")
+        if cache_key in self._last_n_cache and current_size == self._cache_valid_size:
+            return self._last_n_cache[cache_key]
 
-        self.tickers.clear()  # Очистка памяти
+        # Создаем результат и кешируем
+        result = self.tickers[-n:] if len(self.tickers) >= n else self.tickers.copy()
+        self._last_n_cache[cache_key] = result
+        self._cache_valid_size = current_size
 
-    def load_from_file(self):
-        """Загрузка тикеров из файла"""
-        if not os.path.exists(self.dump_file):
-            return
-
-        with open(self.dump_file, "r") as f:
-            for line in f:
-                data = json.loads(line.strip())
-                self.tickers.append(Ticker(data))
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Конвертирует тикеры в DataFrame"""
-        return pd.DataFrame([t.to_dict() for t in self.tickers])
+        return result

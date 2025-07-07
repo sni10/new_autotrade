@@ -1,221 +1,265 @@
 import math
-from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP, InvalidOperation
+from decimal import Decimal, ROUND_DOWN, ROUND_UP, ROUND_HALF_UP, InvalidOperation, getcontext
 from typing import Dict, List
-
 import talib
 import numpy as np
 from talib import MA_Type
 
+# В начале файла добавить:
+from domain.services.cached_indicator_service import CachedIndicatorService
 from domain.entities.ticker import Ticker
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 
 
-def safe_decimal(value, default=Decimal("0")):
-    """🔥 Жёсткий фикс: надёжное приведение к Decimal."""
-    try:
-        if value is None:
-            raise ValueError("Получен None вместо числа")
-        if isinstance(value, (float, int)):
-            return Decimal(str(value))  # Строка исключает экспоненциальный формат
-        return Decimal(value)  # Если уже строка или Decimal — используем как есть
-    except (InvalidOperation, TypeError, ValueError) as e:
-        print(f"🚨 Ошибка Decimal: {value} ({type(value)}) - {e}")
-        return Decimal(default)
+def round_to_step(value: Decimal, step: Decimal) -> Decimal:
+    """
+    Округляет число value до ближайшего шага step (по математическим правилам).
+    """
+    # Считаем, сколько "шагов" умещается, округляем до целого, умножаем обратно
+    steps = (value / step).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return steps * step
 
-def floor_to_step(value, step):
-    return Decimal(value).quantize(Decimal(str(step)), rounding=ROUND_DOWN)
 
-def round_to_step(value, step):
-    return Decimal(value).quantize(Decimal(str(step)), rounding=ROUND_HALF_UP)
+def floor_to_step(value: Decimal, step: Decimal) -> Decimal:
+    """
+    Округляет число value вниз до ближайшего шага step.
+    """
+    steps = (value / step).to_integral_value(rounding=ROUND_DOWN)
+    return steps * step
 
 
 class TickerService:
     def __init__(self, repository: InMemoryTickerRepository):
         self.repository = repository
+        self.cached_indicators = CachedIndicatorService()  # 🆕 Добавляем кеш
+        self.price_history_cache = []  # 🆕 Кеш истории цен
+        self.volatility_window = 20
 
-    def process_ticker(self, data: Dict):
-        """Обработка нового тикера"""
+    async def process_ticker(self, data: Dict):
+        """🚀 ОПТИМИЗИРОВАННАЯ обработка тикера"""
         ticker = Ticker(data)
+        current_price = float(data.get('close', 0))
 
-        # Добавляем сигналы (на основе истории)
-        last_n_tickers = self.repository.get_last_n(100)  # Берем последние 50 значений
-        signals = self.compute_signals(last_n_tickers)
-        ticker.update_signals(signals)
+        # 1. Обновляем историю цен
+        self.price_history_cache.append(current_price)
+        if len(self.price_history_cache) > 200:  # Ограничиваем размер
+            self.price_history_cache.pop(0)
 
-        # Сохраняем тикер
+        # 2. Быстрые индикаторы (каждый тик)
+        fast_signals = self.cached_indicators.update_fast_indicators(current_price)
+
+        # 3. Средние индикаторы (каждые 10 тиков)
+        medium_signals = {}
+        if self.cached_indicators.should_update_medium():
+            medium_signals = self.cached_indicators.update_medium_indicators(self.price_history_cache)
+
+        # 4. Тяжелые индикаторы (каждые 50 тиков)
+        heavy_signals = {}
+        if self.cached_indicators.should_update_heavy():
+            heavy_signals = self.cached_indicators.update_heavy_indicators(self.price_history_cache)
+
+        # 5. Получаем все кешированные сигналы
+        all_signals = self.cached_indicators.get_all_cached_signals()
+        ticker.update_signals(all_signals)
+
+        # 6. Сохраняем тикер
         self.repository.save(ticker)
 
-    def calculate_strategy(self, buy_price, budget, min_step, price_step,
-                        buy_fee_percent, sell_fee_percent, profit_percent):
-        """Расчёт параметров сделки с учётом шага цены и количества."""
+    # УДАЛЯЕМ СТАРЫЙ МЕТОД compute_signals - он больше не нужен!
+    # async def compute_signals(self, history: List[Ticker]) -> Dict:
+    #     # УДАЛИТЬ ВЕСЬ ЭТОТ МЕТОД!
 
-        # 🔍 Логируем входные параметры перед преобразованием
-        print(f"🔎 buy_price={buy_price}, budget={budget}, min_step={min_step}, price_step={price_step}")
-        print(f"🔎 buy_fee_percent={buy_fee_percent}, sell_fee_percent={sell_fee_percent}, profit_percent={profit_percent}")
-
-        # Безопасное преобразование в Decimal
-        buy_price = safe_decimal(buy_price)
-        budget = safe_decimal(budget)
-        min_step = safe_decimal(min_step)  # min_step = 1 (целое число)
-        price_step = safe_decimal(price_step)  # price_step = 0.0000001
-        buy_fee_percent = safe_decimal(buy_fee_percent)
-        sell_fee_percent = safe_decimal(sell_fee_percent)
-        profit_percent = safe_decimal(profit_percent)
-
-        # Если какие-то данные некорректны (<= 0), выдаём ошибку
-        if buy_price <= 0 or budget <= 0 or min_step <= 0 or price_step <= 0:
-            print("❌ Ошибка входных данных. Проверь параметры.")  # Логируем ошибку
-            return {"comment": "❌ Ошибка входных данных. Проверь параметры."}
-
-        # 🔹 Расчёт цен с учётом комиссий и округлением до price_step
-        buy_price_with_fee = round_to_step(buy_price * (1 + buy_fee_percent / 100), price_step)
-        sell_price_raw = buy_price * (1 + profit_percent / 100)
-        sell_price = round_to_step(sell_price_raw, price_step)
-
-        # 🔍 Логируем рассчитанные цены
-        print(f"💰 buy_price_with_fee={buy_price_with_fee}, sell_price_raw={sell_price_raw}, sell_price={sell_price}")
-
-        # Проверка минимального шага цены
-        if (sell_price - buy_price) < price_step:
-            print("❌ Прибыль меньше минимального шага цены")
-            return {"comment": "❌ Прибыль меньше минимального шага цены"}
-
-        # 🔹 Расчёт количества (округляем до целых монет)
-        coin_after_sell_fee_factor = (1 - sell_fee_percent / 100)
-        raw_max_x = budget * (coin_after_sell_fee_factor / buy_price_with_fee)
-        X_adjusted = round_to_step(raw_max_x, min_step)  # округляем до целого числа (min_step = 1)
-
-        if X_adjusted <= 0:
-            print("❌ Невозможно купить даже минимальный шаг")
-            return {"comment": "❌ Невозможно купить даже минимальный шаг"}
-
-        total_coins_needed = X_adjusted / coin_after_sell_fee_factor
-        total_coins_needed = round_to_step(total_coins_needed, min_step)  # округляем до целых монет (min_step = 1)
-        total_usdt_needed = round_to_step(total_coins_needed * buy_price_with_fee, Decimal("0.01"))  # округление до 0.01
-        final_revenue = floor_to_step(X_adjusted * sell_price, Decimal("0.01"))  # округление до 0.01
-        net_profit = floor_to_step(final_revenue - total_usdt_needed, Decimal("0.01"))  # округление до 0.01
-
-        # 🔍 Логируем финальные расчёты
-        print(f"📊 total_usdt_needed={total_usdt_needed}, final_revenue={final_revenue}, net_profit={net_profit}")
-
-        # Проверка минимальной прибыли
-        if net_profit <= 0:
-            print("❌ Нулевая или отрицательная прибыль")
-            return {"comment": "❌ Нулевая или отрицательная прибыль"}
-
-        return buy_price, total_coins_needed, sell_price, X_adjusted, {
-            "comment": "✅ Сделка возможна.",
-            "🔹 Цена покупки (исходная)": f"{buy_price} USDT",
-            "🔹 Цена покупки (с комиссией)": f"{buy_price_with_fee} USDT",
-            "🔹 Цена продажи (округленная)": f"{sell_price} USDT",
-            "🔹 Минимальный шаг цены": f"{price_step:.7f} USDT",
-            "🔹 Количество монет для продажи": f"{X_adjusted} монет",
-            "🔹 Количество монет для покупки": f"{total_coins_needed} монет",
-            "🔹 Общая сумма покупки потратим": f"{total_usdt_needed} USDT",
-            "🔹 Финальный доход": f"{final_revenue} USDT",
-            "🔹 Чистая прибыль": f"{net_profit} USDT"
-        }
-
-    def get_signal(self) -> str:
-        """
-        Решение о покупке на основе сигналов.
-        Условия:
-        - Гистограмма HIST зеленая (восходящий тренд).
-        - MACD выше SIGNAL.
-        - Гистограмма HIST была зеленой 3 раза подряд.
-        """
-
-        RED = "\033[91m"
-        GREEN = "\033[92m"
-        YELLOW = "\033[93m"
-        RESET = "\033[0m"
-
-        indicators = self.repository.tickers
-        HIST_ANALYSIS_POINTS = 3
-        ANALYSIS_POINTS = 5
-
-        if len(indicators) < HIST_ANALYSIS_POINTS:  # Проверяем, чтобы было достаточно данных
+    async def get_signal(self) -> str:
+        """🎯 УПРОЩЕННАЯ логика сигналов"""
+        # Получаем последние тикеры БЕЗ get_last_n каждый раз
+        if len(self.repository.tickers) < 50:
             return "HOLD"
 
-        # --- Извлекаем последние `HIST_ANALYSIS_POINTS` значений ---
-        hist_values = [t.signals.get("histogram", 0) for t in indicators[-HIST_ANALYSIS_POINTS:]]
-        macd_values = [t.signals.get("macd", 0) for t in indicators[-HIST_ANALYSIS_POINTS:]]
-        signal_values = [t.signals.get("signal", 0) for t in indicators[-HIST_ANALYSIS_POINTS:]]
+        # Берем последние несколько тикеров
+        recent_tickers = self.repository.tickers[-5:]
 
-        sma_7_values = [t.signals.get("sma_7", 0) for t in indicators[-ANALYSIS_POINTS:]]
-        sma_25_values = [t.signals.get("sma_25", 0) for t in indicators[-ANALYSIS_POINTS:]]
-        sma_99_values = [t.signals.get("sma_99", 0) for t in indicators[-ANALYSIS_POINTS:]]
+        if not recent_tickers:
+            return "HOLD"
 
-        hist_trend = [hist_values[i] - hist_values[i - 1] for i in range(1, HIST_ANALYSIS_POINTS)]
-        if len(sma_7_values) >= ANALYSIS_POINTS & len(sma_25_values) >= ANALYSIS_POINTS & len(
-                sma_99_values) >= ANALYSIS_POINTS:
-            sma_7_trend = [sma_7_values[i] - sma_7_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
-            sma_25_trend = [sma_25_values[i] - sma_25_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
-            sma_99_trend = [sma_99_values[i] - sma_99_values[i - 1] for i in range(1, ANALYSIS_POINTS)]
-        else:
-            sma_7_trend = []
-            sma_25_trend = []
-            sma_99_trend = []
+        last_ticker = recent_tickers[-1]
+        if not last_ticker.signals:
+            return "HOLD"
 
-        hist_color = GREEN if all(diff > 0 for diff in hist_trend) else RED
-        sma_7_color = GREEN if all(diff > 0 for diff in sma_7_trend) else RED
-        sma_25_color = GREEN if all(diff > 0 for diff in sma_25_trend) else RED
-        sma_99_color = GREEN if all(diff > 0 for diff in sma_99_trend) else RED
+        # Упрощенная логика принятия решений
+        hist = last_ticker.signals.get('histogram', 0)
+        macd = last_ticker.signals.get('macd', 0)
+        signal = last_ticker.signals.get('signal', 0)
+        sma_7 = last_ticker.signals.get('sma_7', 0)
+        sma_25 = last_ticker.signals.get('sma_25', 0)
 
-        hist_trend_green = hist_color == GREEN
-        sma_7_trend_green = sma_7_color == GREEN
-        sma_25_trend_green = sma_25_color == GREEN
-        sma_99_trend_green = sma_99_color == GREEN
+        # Простая логика
+        macd_bullish = macd > signal
+        sma_bullish = sma_7 > sma_25 if sma_25 > 0 else False
+        hist_positive = hist > 0
 
-        macd_above_signal = macd_values[-1] > signal_values[-1]
-
-        sma_trend_green = sma_7_trend_green and sma_25_trend_green and sma_99_trend_green  # Все три SMA должны расти
-
-        # --- Финальное решение ---
-        if hist_trend_green and macd_above_signal and sma_trend_green:
+        if macd_bullish and sma_bullish and hist_positive:
             return "BUY"
         else:
             return "HOLD"
 
-    def compute_signals(self, history: List[Ticker]) -> Dict:
-        if len(history) < 20:  # Недостаточно данных
-            return {}
+    # 🆕 НОВЫЙ МЕТОД
+    def analyze_market_conditions(self) -> str:
+        """Анализирует текущие рыночные условия"""
+        if len(self.price_history_cache) < self.volatility_window:
+            return "📊 Недостаточно данных для анализа"
 
-        # Конвертируем историю в массив NumPy
-        closes = np.array([t.close for t in history])
+        # Берем последние 20 цен
+        recent_prices = self.price_history_cache[-self.volatility_window:]
 
-        macd, macdsignal, macdhist = talib.MACD(closes, fastperiod=12, slowperiod=26, signalperiod=9)
+        # Вычисляем изменения цен в процентах
+        price_changes = []
+        for i in range(1, len(recent_prices)):
+            change = abs(recent_prices[i] - recent_prices[i - 1]) / recent_prices[i - 1]
+            price_changes.append(change)
 
-        rsi_5 = talib.RSI(closes, timeperiod=5)
-        rsi_15 = talib.RSI(closes, timeperiod=15)
-        rsi_30 = talib.RSI(closes, timeperiod=30)
+        # Средняя волатильность в процентах
+        avg_volatility = sum(price_changes) / len(price_changes) * 100
 
-        sma_7 = talib.MA(closes, timeperiod=7, matype=MA_Type.SMA)
-        sma_25 = talib.MA(closes, timeperiod=25, matype=MA_Type.SMA)
-        sma_99 = talib.MA(closes, timeperiod=75, matype=MA_Type.SMA)
+        # Классифицируем волатильность
+        if avg_volatility > 0.15:
+            return f"🔥 Экстремальная волатильность ({avg_volatility:.3f}%) - Высокий риск!"
+        elif avg_volatility > 0.08:
+            return f"⚡ Высокая волатильность ({avg_volatility:.3f}%) - Активный рынок"
+        elif avg_volatility > 0.03:
+            return f"📊 Средняя волатильность ({avg_volatility:.3f}%) - Нормальный рынок"
+        else:
+            return f"😴 Низкая волатильность ({avg_volatility:.3f}%) - Спокойный рынок"
 
-        # Bollinger Bands (BBANDS) 20, 2
-        upperband, middleband, lowerband = talib.BBANDS(closes, timeperiod=20, nbdevup=2, nbdevdn=2, matype=MA_Type.SMA)
+    # 🆕 НОВЫЙ МЕТОД
+    def get_price_trend(self) -> str:
+        """Определяет общий тренд цены"""
+        if len(self.price_history_cache) < 10:
+            return "📊 Недостаточно данных"
 
-        return {
-            # MACD
-            "macd": round(float(macd[-1]), 8),
-            "signal": round(float(macdsignal[-1]), 8),
-            "histogram": round(float(macdhist[-1]), 8),
+        recent_prices = self.price_history_cache[-10:]
+        first_price = recent_prices[0]
+        last_price = recent_prices[-1]
 
-            # RSI
-            "rsi_5": round(float(rsi_5[-1]), 8),
-            "rsi_15": round(float(rsi_15[-1]), 8),
-            "rsi_30": round(float(rsi_30[-1]), 8),
+        change_percent = (last_price - first_price) / first_price * 100
 
-            # SMA
-            "sma_7": round(float(sma_7[-1]), 8),
-            "sma_25": round(float(sma_25[-1]), 8),
-            "sma_99": round(float(sma_99[-1]), 8),
+        if change_percent > 0.5:
+            return f"📈 Восходящий тренд (+{change_percent:.2f}%)"
+        elif change_percent < -0.5:
+            return f"📉 Нисходящий тренд ({change_percent:.2f}%)"
+        else:
+            return f"➡️ Боковой тренд ({change_percent:.2f}%)"
 
-            # BBANDS
-            "bb_upper": round(float(upperband[-1]), 8),
-            "bb_middle": round(float(middleband[-1]), 8),
-            "bb_lower": round(float(lowerband[-1]), 8),
+    # 🆕 НОВЫЙ МЕТОД
+    def should_trade_by_volatility(self) -> bool:
+        """Определяет, стоит ли торговать при текущей волатильности"""
+        if len(self.price_history_cache) < self.volatility_window:
+            return False
 
-        }
+        recent_prices = self.price_history_cache[-self.volatility_window:]
+        price_changes = [abs(recent_prices[i] - recent_prices[i - 1]) / recent_prices[i - 1]
+                         for i in range(1, len(recent_prices))]
+        avg_volatility = sum(price_changes) / len(price_changes) * 100
+
+        # Торгуем только при умеренной волатильности
+        return 0.03 <= avg_volatility <= 0.12
+
+    def calculate_strategy(
+            self, buy_price,  # Исходная цена монеты (без комиссии)
+            budget,  # Бюджет в USDT
+            min_step,  # Минимальный лот монеты (1 для целых, 0.00001 для BTC и т.д.)
+            price_step,  # Шаг цены (0.00001, 0.001, ...)
+            buy_fee_percent,  # Комиссия покупка (%)
+            sell_fee_percent,  # Комиссия продажа (%)
+            profit_percent  # Желаемая прибыль (%)
+    ):
+        """
+        Рассчитываем сделку с учетом:
+        - Покупки чуть большего количества монет (учет комиссии продажи).
+        - Комиссии покупки (считаем реальную стоимость 1 монеты).
+        - Проверки, что чистая прибыль >= 0.5% от бюджета.
+        - Шагов округления (мин. лот, шаг цены).
+
+        Возвращаем tuple (buy_price, total_coins_needed, sell_price, X_sell, info_dict)
+        Либо {"comment": "..."} при неудаче.
+        """
+
+        # 0) Приведение к Decimal
+        buy_price = Decimal(str(buy_price))
+        budget = Decimal(str(budget))
+        min_step = Decimal(str(min_step))
+        price_step = Decimal(str(price_step))
+        buy_fee_percent = Decimal(str(buy_fee_percent))
+        sell_fee_percent = Decimal(str(sell_fee_percent))
+        profit_percent = Decimal(str(profit_percent))
+
+        # 1) Проверки входных данных
+        if (buy_price <= 0 or budget <= 0 or
+                min_step <= 0 or price_step <= 0):
+            print({"comment": "❌ Ошибка входных данных. Проверь параметры."})
+
+        # 2) Цена покупки c учетом комиссии (для подсчета расхода USDT)
+        buy_price_with_fee = buy_price * (1 + buy_fee_percent / 100)
+        # Округлим цену вниз по price_step, чтобы не выйти за бюджет (если нужно).
+        buy_price_with_fee = Decimal(str(round_to_step(buy_price_with_fee, price_step)))
+
+        # 3) Желаемая цена продажи (без учета комиссий).
+        #    Но комиссию продажи компенсируем количеством монет, а не ценой.
+        sell_price_raw = buy_price * (1 + profit_percent / 100)
+        sell_price = Decimal(str(round_to_step(sell_price_raw, price_step)))
+
+        # 4) Считаем максимально возможное X (кол-во монет, которые реально продадим)
+        #    У нас есть budget USDT, 1 монета стоит buy_price_with_fee,
+        #    а после продажи комиссия берется монетой => купленные монеты * (1 - sell_fee)
+        raw_max_x = (budget / buy_price_with_fee) * (1 - sell_fee_percent / 100)
+
+        # Округлим X вниз до min_step
+        X_adjusted = Decimal(str(floor_to_step(raw_max_x, min_step)))
+        if X_adjusted <= 0:
+            print({"comment": "❌ Невозможно купить даже минимальный шаг"})
+
+        # 5) Чтобы после продажи осталось X_adjusted, надо купить чуть больше:
+        # total_coins_needed = X_adjusted / (1 - sell_fee)
+        total_coins_needed = X_adjusted / (1 - sell_fee_percent / 100)
+        # Округлим кол-во монет по min_step (обычно если lotSize=1, то целые).
+        total_coins_needed = Decimal(str(floor_to_step(total_coins_needed, min_step)))
+
+        # 6) Сколько USDT уйдет на покупку этих монет
+        total_usdt_needed = total_coins_needed * buy_price_with_fee
+        # Округлим по price_step, чтобы не превысить budget
+        total_usdt_needed = Decimal(str(round_to_step(total_usdt_needed, price_step)))
+
+        if total_usdt_needed > budget:
+            print({"comment": "❌ Не хватает бюджета, чтобы купить нужный объём"})
+
+        # 7) Финальная выручка от продажи X_adjusted монет по sell_price
+        final_revenue = X_adjusted * sell_price
+        final_revenue = Decimal(str(round_to_step(final_revenue, price_step)))
+
+        # 8) Чистая прибыль
+        net_profit = final_revenue - total_usdt_needed
+
+        # 9) Проверка на минимальную прибыль (≥ 0.5% от бюджета)
+        min_required_profit = budget * Decimal("0.005")  # 0.5%
+        if net_profit < min_required_profit:
+            print({"comment": f"❌ Недостаточная прибыль. Нужно ≥ {min_required_profit:.6f} USDT"})
+
+        # 10) Возвращаем результат в «красивом» виде, как у вас
+        return (
+            buy_price,  # 0
+            total_coins_needed,  # 1
+            sell_price,  # 2
+            X_adjusted,  # 3
+            {
+                "comment": "✅ Сделка возможна.",
+                "🔹 Цена покупки (исходная)": f"{buy_price} USDT",
+                "🔹 Цена покупки (с комиссией)": f"{buy_price_with_fee} USDT",
+                "🔹 Цена продажи (округленная)": f"{sell_price} USDT",
+                "🔹 Минимальный шаг цены": f"{price_step} USDT",
+                "🔹 Минимальный шаг актива": f"{min_step} монет",
+                "🔹 Количество монет для продажи": f"{X_adjusted} монет",
+                "🔹 Количество монет для покупки": f"{total_coins_needed} монет",
+                "🔹 Общая сумма покупки потратим": f"{total_usdt_needed} USDT",
+                "🔹 Финальный доход": f"{final_revenue} USDT",
+                "🔹 Чистая прибыль": f"{net_profit} USDT"
+            }
+        )
