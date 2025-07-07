@@ -195,6 +195,32 @@ async def run_realtime_trading(
                                     if key != "comment":
                                         print(f"   {key}: {value}")
 
+                                buy_price_calc, total_coins_needed, sell_price_calc, coins_to_sell, info_dict = strategy_result
+
+                                # 🆕 СОЗДАЕМ СДЕЛКУ
+                                new_deal = deal_service.create_new_deal(currency_pair)
+
+                                # 🆕 СОЗДАЕМ BUY ОРДЕР
+                                buy_order = deal_service.open_buy_order(
+                                    price=float(buy_price_calc),
+                                    amount=float(total_coins_needed),
+                                    deal_id=new_deal.deal_id
+                                )
+
+                                # 🆕 СОЗДАЕМ SELL ОРДЕР
+                                sell_order = deal_service.open_sell_order(
+                                    price=float(sell_price_calc),
+                                    amount=float(coins_to_sell),
+                                    deal_id=new_deal.deal_id
+                                )
+
+                                # 🆕 ПРИВЯЗЫВАЕМ ОРДЕРА К СДЕЛКЕ
+                                new_deal.attach_orders(buy_order, sell_order)
+
+                                print(f"🆕 Создана сделка #{new_deal.deal_id}")
+                                print(f"   🛒 BUY: {buy_order}")
+                                print(f"   🏷️ SELL: {sell_order}")
+
                         except Exception as calc_error:
                             print(f"❌ Ошибка в калькуляторе: {calc_error}")
                         
