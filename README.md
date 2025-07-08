@@ -1,4 +1,4 @@
-# 🚀 AutoTrade v2.1.0 - "Smart OrderBook Edition"
+# 🚀 AutoTrade v2.2.0 - "Smart OrderBook Edition"
 
 > **Intelligent Trading System** with OrderBook Analysis & MACD Indicators  
 > **Architecture**: Domain-Driven Design (DDD)  
@@ -27,7 +27,7 @@
 
 **AutoTrade** - профессиональная система автоматической торговли криптовалютами с интеллектуальным анализом биржевого стакана и техническими индикаторами. Система построена на принципах Domain-Driven Design и использует асинхронную архитектуру для максимальной производительности.
 
-### 🔥 Latest Release: v2.1.0 - "Smart OrderBook Edition"
+### 🔥 Latest Release: v2.2.0 - "Smart OrderBook Edition"
 - 🧠 **Интеллектуальный анализ стакана** с валидацией ликвидности
 - 📊 **Двухуровневая фильтрация сигналов**: MACD + OrderBook
 - ⚡ **Асинхронная архитектура** на базе asyncio и WebSocket
@@ -118,148 +118,6 @@ new_autotrade/
 ├── main.py                    # 🎯 Application entry point
 └── *.md                       # Documentation
 ```
-
-### 🎨 Architecture Diagram
-
-[schema-app.puml](schema-app.puml)
-
-<details>
-  <summary>📐 Plant UML Schema</summary>
-
-```
-@startuml
-namespace domain.entities {
-  class Deal {
-    - id: int
-    - currency_pair_id: int
-    - status: string
-    - buy_order: Order
-    - sell_order: Order
-    - created_at: int
-    - closed_at: int
-    + open()
-    + close()
-    + cancel()
-  }
-
-  class Order {
-    - id: int
-    - type: string
-    - side: string
-    - status: string
-    - price: float
-    - amount: float
-    - exchange_id: string
-    + place()
-    + cancel()
-    + is_open()
-    + is_closed()
-  }
-
-  class CurrencyPair {
-    - base_currency: string
-    - quote_currency: string
-    - symbol: string
-    - order_life_time: int
-    - deal_quota: float
-    - profit_markup: float
-    - deal_count: int
-  }
-
-  class Ticker {
-    - symbol: string
-    - price: float
-    - timestamp: int
-    - volume: float
-    - signals: Dict
-    + update_signals()
-  }
-}
-
-namespace domain.factories {
-  class DealFactory {
-    + create_new_deal(cp: CurrencyPair, ...): Deal
-  }
-
-  class OrderFactory {
-    + create_buy_order(cp: CurrencyPair, ...): Order
-    + create_sell_order(cp: CurrencyPair, ...): Order
-  }
-}
-
-namespace domain.services {
-  class TradingService {
-    - deal_factory: DealFactory
-    - deals_repo: DealsRepository
-    - order_service: OrderService
-    + open_deal_if_needed(signals, cp: CurrencyPair)
-    + update_deal_status(deal: Deal, orders_info): void
-  }
-
-  class OrderService {
-    - order_factory: OrderFactory
-    - orders_repo: OrdersRepository
-    - exchange_connector: ExchangeConnector
-    + place_buy_order(...)
-    + place_sell_order(...)
-    + cancel_order(...)
-  }
-
-  class OrderBookAnalyzer {
-    + analyze_spread()
-    + analyze_liquidity()
-    + find_support_resistance()
-    + calculate_slippage()
-    + generate_signal()
-  }
-
-  class TradingDecisionEngine {
-    + combine_signals()
-    + generate_modifications()
-    + calculate_confidence()
-  }
-}
-
-namespace infrastructure.connectors {
-  interface ExchangeConnector {
-    + fetch_balance()
-    + create_order(symbol, side, type, amount, price)
-    + cancel_order(order_id, symbol)
-    + fetch_ohlcv(symbol, timeframe, since, limit)
-    + fetch_orders(symbol)
-  }
-
-  class ProExchangeConnector {
-    + watch_ticker()
-    + watch_orderbook()
-    + create_order_async()
-  }
-}
-
-namespace infrastructure.repositories {
-  interface DealsRepository {
-    + save(deal: Deal)
-    + get_by_id(deal_id: int): Deal
-    + get_open_deals(): List<Deal>
-  }
-
-  interface OrdersRepository {
-    + save(order: Order)
-    + get_by_id(order_id: int): Order
-    + get_all_by_deal(deal_id: int): List<Order>
-  }
-
-  interface TickersRepository {
-    + save(ticker: Ticker)
-    + get_latest(): Ticker
-    + get_history(): List<Ticker>
-  }
-}
-
-@enduml
-```
-
-</details>
 
 ---
 
@@ -485,59 +343,59 @@ python main.py
 
 ## 🎯 Issues Overview
 
-**Полный план разработки** разбит на 15 детальных issues в папке [`project_management/issues/`](project_management/issues/). Общая стоимость: **$2,700** (180 часов) за ~11 недель.
+**Полный план разработки** разбит на 15 детальных issues в GitLab. Общая стоимость: **$2,700** (180 часов) за ~11 недель.
 
 ### 🔥 **Critical Issues** (Must Have для v3.0.0)
 
-#### **Issue #001**: [TradingOrchestrator](project_management/issues/issue_001_trading_orchestrator.md) - $240 (16h)
+#### **Issue #6**: [🎯 Trading Orchestrator](https://gitlab.com/velostour/new_autotrade/-/issues/6) - $240 (16h)
 🏗️ **M1** | Главный дирижер - разделить монолитную логику run_realtime_trading.py на управляемые компоненты
 
-#### **Issue #002**: [OrderExecutionService](project_management/issues/issue_002_order_execution_service.md) - $300 (20h)  
+#### **Issue #7**: [💰 Order Execution Service](https://gitlab.com/velostour/new_autotrade/-/issues/7) - $300 (20h)  
 🏗️ **M1** | Реальное выставление ордеров - бот фактически торгует и зарабатывает деньги
 
-#### **Issue #006**: [DatabaseService](project_management/issues/issue_006_database_service.md) - $360 (24h)
+#### **Issue #9**: [💾 Database Service](https://gitlab.com/velostour/new_autotrade/-/issues/9) - $360 (24h)
 🏗️ **M2** | Система хранения данных - данные не теряются при перезапуске
 
 ### ⚡ **High Priority Issues** (Important для стабильности)
 
-#### **Issue #003**: [RiskManagementService](project_management/issues/issue_003_risk_management_service.md) - $180 (12h)
+#### **Issue #8**: [🛡️ Risk Management Service](https://gitlab.com/velostour/new_autotrade/-/issues/8) - $180 (12h)
 🏗️ **M1** | Управление рисками - защита от потери средств через stop-loss и лимиты
 
-#### **Issue #007**: [StateManagementService](project_management/issues/issue_007_state_management_service.md) - $240 (16h)
+#### **Issue #10**: [🔄 State Management Service](https://gitlab.com/velostour/new_autotrade/-/issues/10) - $240 (16h)
 🏗️ **M2** | Управление состоянием - graceful restart без потери контекста
 
-#### **Issue #008**: [ConfigurationService](project_management/issues/issue_008_configuration_service.md) - $150 (10h)
+#### **Issue #11**: [⚙️ Configuration Service](https://gitlab.com/velostour/new_autotrade/-/issues/11) - $150 (10h)
 🏗️ **M2** | Управление конфигурацией - security compliance и удобство настройки
 
-#### **Issue #010**: [ErrorHandlingService](project_management/issues/issue_010_error_handling_service.md) - $180 (12h)
+#### **Issue #12**: [🚨 Error Handling Service](https://gitlab.com/velostour/new_autotrade/-/issues/12) - $180 (12h)
 🏗️ **M3** | Обработка ошибок - устойчивость к сбоям и автовосстановление
 
-#### **Issue #011**: [SecurityService](project_management/issues/issue_011_security_service.md) - $120 (8h)
+#### **Issue #13**: [🔐 Security Service](https://gitlab.com/velostour/new_autotrade/-/issues/13) - $120 (8h)
 🏗️ **M3** | Безопасность - шифрование sensitive данных и защита от атак
 
 ### 📈 **Medium Priority Issues** (Nice to Have улучшения)
 
-#### **Issue #004**: [MarketDataAnalyzer](project_management/issues/issue_004_market_data_analyzer.md) - $210 (14h)
+#### **Issue #18**: [📊 Market Data Analyzer](https://gitlab.com/velostour/new_autotrade/-/issues/18) - $210 (14h)
 🏗️ **M1** | Улучшенный анализ рынка - лучшие торговые решения
 
-#### **Issue #005**: [SignalAggregationService](project_management/issues/issue_005_signal_aggregation_service.md) - $120 (8h)
+#### **Issue #19**: [🎯 Signal Aggregation Service](https://gitlab.com/velostour/new_autotrade/-/issues/19) - $120 (8h)
 🏗️ **M1** | Агрегация сигналов - меньше ложных сигналов
 
-#### **Issue #012**: [HealthCheckService](project_management/issues/issue_012_health_check_service.md) - $150 (10h)
+#### **Issue #21**: [🏥 Health Check Service](https://gitlab.com/velostour/new_autotrade/-/issues/21) - $150 (10h)
 🏗️ **M3** | Мониторинг системы - proactive обнаружение проблем
 
-#### **Issue #014**: [PerformanceOptimizationService](project_management/issues/issue_014_performance_optimization_service.md) - $180 (12h)
+#### **Issue #14**: [⚡ Performance Optimization](https://gitlab.com/velostour/new_autotrade/-/issues/14) - $180 (12h)
 🏗️ **M4** | Оптимизация производительности - < 1ms обработка тика в 95% случаев
 
 ### 🎯 **Low Priority Issues** (Future Features)
 
-#### **Issue #009**: [DataRepositories](project_management/issues/issue_009_data_repositories.md) - $60 (4h)
+#### **Issue #20**: [🗃️ Data Repositories](https://gitlab.com/velostour/new_autotrade/-/issues/20) - $60 (4h)
 🏗️ **M2** | Улучшенные репозитории - быстрые database операции
 
-#### **Issue #013**: [BackupService](project_management/issues/issue_013_backup_service.md) - $105 (7h)
+#### **Issue #22**: [💾 Backup Service](https://gitlab.com/velostour/new_autotrade/-/issues/22) - $105 (7h)
 🏗️ **M3** | Резервное копирование - защита от потери данных
 
-#### **Issue #015**: [MultiPairTradingService](project_management/issues/issue_015_multi_pair_trading_service.md) - $105 (7h)
+#### **Issue #15**: [🔀 Multi-Pair Trading](https://gitlab.com/velostour/new_autotrade/-/issues/15) - $105 (7h)
 🏗️ **M4** | Мульти-валютная торговля - масштабирование на множественные активы
 
 ### 💰 **Финансовая сводка**
@@ -553,7 +411,7 @@ python main.py
 ## 📖 Documentation
 
 ### 📋 **Available Documents**
-- [`RELEASE_NOTES.md`](RELEASE_NOTES.md) - Полные релизные заметки v2.1.0
+- [`RELEASE_NOTES.md`](RELEASE_NOTES.md) - Полные релизные заметки v2.2.0
 - [`RELEASE_NOTES_v2.1.0.md`](RELEASE_NOTES_v2.1.0.md) - Детальная документация релиза
 - [`ROADMAP.md`](ROADMAP.md) - Детальная техническая оценка и планы развития
 - [`ORDERBOOK_INTEGRATION.md`](ORDERBOOK_INTEGRATION.md) - Документация по интеграции анализа стакана
@@ -604,7 +462,7 @@ new_autotrade/
 
 ## 💎 Conclusion
 
-**AutoTrade v2.1.0** представляет собой профессиональную торговую систему с интеллектуальным анализом рынка. Интеграция анализа биржевого стакана в сочетании с MACD индикаторами создает мощный инструмент для автоматической торговли.
+**AutoTrade v2.2.0** представляет собой профессиональную торговую систему с интеллектуальным анализом рынка. Интеграция анализа биржевого стакана в сочетании с MACD индикаторами создает мощный инструмент для автоматической торговли.
 
 **Ключевые преимущества:**
 - ✅ **Умные решения** на основе анализа ликвидности
