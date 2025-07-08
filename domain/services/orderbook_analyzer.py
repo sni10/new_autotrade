@@ -79,9 +79,9 @@ class OrderBookAnalyzer:
         # Анализ ликвидности
         liquidity_depth = self._calculate_liquidity_depth(bids, asks, best_bid)
         
-        # Поддержка и сопротивление
-        support_level = self._find_support_level(bids)
-        resistance_level = self._find_resistance_level(asks)
+        # 🔧 FIX: Поддержка и сопротивление с проверкой дистанции
+        support_level = self._find_support_level(bids, best_bid)
+        resistance_level = self._find_resistance_level(asks, best_ask)
         
         # Слиппедж
         slippage_buy = self._calculate_slippage(asks, 'buy')
@@ -130,37 +130,33 @@ class OrderBookAnalyzer:
                 
         return total_volume / max(price_range, 0.001)
     
-    def _find_support_level(self, bids: List) -> Optional[float]:
-        """Поиск уровня поддержки"""
+    def _find_support_level(self, bids: List, mid_price: float, max_pct: float = 2.0) -> Optional[float]:
+        """🔧 FIX: Поиск уровня поддержки с фильтром расстояния"""
         if len(bids) < 5:
             return None
             
         # Ищем самый большой объем в бидах
-        max_volume = 0
-        support_price = None
+        support = max(bids[:20], key=lambda b: b[1])[0]  # самая толстая стена
         
-        for bid in bids[:20]:  # Анализируем топ-20
-            if bid[1] > max_volume:
-                max_volume = bid[1]
-                support_price = bid[0]
-                
-        return support_price if max_volume > self.big_wall_threshold else None
+        # 🔧 FIX: Проверяем что стена не слишком далеко
+        if abs(support - mid_price) / mid_price * 100 > max_pct:
+            return None  # стена слишком далеко
+
+        return support
     
-    def _find_resistance_level(self, asks: List) -> Optional[float]:
-        """Поиск уровня сопротивления"""
+    def _find_resistance_level(self, asks: List, mid_price: float, max_pct: float = 2.0) -> Optional[float]:
+        """🔧 FIX: Поиск уровня сопротивления с фильтром расстояния"""
         if len(asks) < 5:
             return None
             
         # Ищем самый большой объем в асках
-        max_volume = 0
-        resistance_price = None
+        resistance = max(asks[:20], key=lambda a: a[1])[0]  # самая толстая стена
         
-        for ask in asks[:20]:  # Анализируем топ-20
-            if ask[1] > max_volume:
-                max_volume = ask[1]
-                resistance_price = ask[0]
-                
-        return resistance_price if max_volume > self.big_wall_threshold else None
+        # 🔧 FIX: Проверяем что стена не слишком далеко
+        if abs(resistance - mid_price) / mid_price * 100 > max_pct:
+            return None  # стена слишком далеко
+
+        return resistance
     
     def _calculate_slippage(self, orders: List, side: str) -> float:
         """Расчет слиппеджа для объема сделки"""
