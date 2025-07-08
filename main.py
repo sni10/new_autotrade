@@ -67,7 +67,7 @@ async def main():
 
     time_sync()
 
-    base_currency = "VIC"
+    base_currency = "MAGIC"
     quote_currency = "USDT"
 
     # ИСПРАВЛЕНИЕ: используем формат без слэша для Binance
@@ -80,11 +80,11 @@ async def main():
         quote_currency=quote_currency,
         symbol=symbol_ccxt,  # ИСПОЛЬЗУЕМ VICUSDT для API
         order_life_time=1,
-        deal_quota=10.0,
-        min_step=1.0,
+        deal_quota=15.0,
+        min_step=0.1,
         price_step=0.0001,
         profit_markup=1.5,
-        deal_count=3
+        deal_count=3000
     )
 
     deals_repo = InMemoryDealsRepository()
