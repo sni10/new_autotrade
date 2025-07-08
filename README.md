@@ -119,6 +119,148 @@ new_autotrade/
 └── *.md                       # Documentation
 ```
 
+### 🎨 Architecture Diagram
+
+[schema-app.puml](schema-app.puml)
+
+<details>
+  <summary>📐 Plant UML Schema</summary>
+
+```
+@startuml
+namespace domain.entities {
+  class Deal {
+    - id: int
+    - currency_pair_id: int
+    - status: string
+    - buy_order: Order
+    - sell_order: Order
+    - created_at: int
+    - closed_at: int
+    + open()
+    + close()
+    + cancel()
+  }
+
+  class Order {
+    - id: int
+    - type: string
+    - side: string
+    - status: string
+    - price: float
+    - amount: float
+    - exchange_id: string
+    + place()
+    + cancel()
+    + is_open()
+    + is_closed()
+  }
+
+  class CurrencyPair {
+    - base_currency: string
+    - quote_currency: string
+    - symbol: string
+    - order_life_time: int
+    - deal_quota: float
+    - profit_markup: float
+    - deal_count: int
+  }
+
+  class Ticker {
+    - symbol: string
+    - price: float
+    - timestamp: int
+    - volume: float
+    - signals: Dict
+    + update_signals()
+  }
+}
+
+namespace domain.factories {
+  class DealFactory {
+    + create_new_deal(cp: CurrencyPair, ...): Deal
+  }
+
+  class OrderFactory {
+    + create_buy_order(cp: CurrencyPair, ...): Order
+    + create_sell_order(cp: CurrencyPair, ...): Order
+  }
+}
+
+namespace domain.services {
+  class TradingService {
+    - deal_factory: DealFactory
+    - deals_repo: DealsRepository
+    - order_service: OrderService
+    + open_deal_if_needed(signals, cp: CurrencyPair)
+    + update_deal_status(deal: Deal, orders_info): void
+  }
+
+  class OrderService {
+    - order_factory: OrderFactory
+    - orders_repo: OrdersRepository
+    - exchange_connector: ExchangeConnector
+    + place_buy_order(...)
+    + place_sell_order(...)
+    + cancel_order(...)
+  }
+
+  class OrderBookAnalyzer {
+    + analyze_spread()
+    + analyze_liquidity()
+    + find_support_resistance()
+    + calculate_slippage()
+    + generate_signal()
+  }
+
+  class TradingDecisionEngine {
+    + combine_signals()
+    + generate_modifications()
+    + calculate_confidence()
+  }
+}
+
+namespace infrastructure.connectors {
+  interface ExchangeConnector {
+    + fetch_balance()
+    + create_order(symbol, side, type, amount, price)
+    + cancel_order(order_id, symbol)
+    + fetch_ohlcv(symbol, timeframe, since, limit)
+    + fetch_orders(symbol)
+  }
+
+  class ProExchangeConnector {
+    + watch_ticker()
+    + watch_orderbook()
+    + create_order_async()
+  }
+}
+
+namespace infrastructure.repositories {
+  interface DealsRepository {
+    + save(deal: Deal)
+    + get_by_id(deal_id: int): Deal
+    + get_open_deals(): List<Deal>
+  }
+
+  interface OrdersRepository {
+    + save(order: Order)
+    + get_by_id(order_id: int): Order
+    + get_all_by_deal(deal_id: int): List<Order>
+  }
+
+  interface TickersRepository {
+    + save(ticker: Ticker)
+    + get_latest(): Ticker
+    + get_history(): List<Ticker>
+  }
+}
+
+@enduml
+```
+
+</details>
+
 ---
 
 ## 🚀 Quick Start
