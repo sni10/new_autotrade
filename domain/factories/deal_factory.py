@@ -24,13 +24,16 @@ class DealFactory:
         Создаём новую сделку и два "пустых" ордера (buy/sell).
         В момент создания у ордеров deal_id=None.
         Deal сам проставит им deal_id = deal.deal_id.
+
+        🔧 FIX: Убрал time.sleep(0.09) так как теперь ID генерируются счетчиком
         """
         deal_id = int(time.time() * 1000000)
 
         # Создаём buy_order (с начальными нулевыми price/amount).
         buy_order = self.order_factory.create_buy_order(price=0.0, amount=0.0)
 
-        time.sleep(0.09)
+        # 🔧 FIX: Убираем time.sleep(0.09) - больше не нужен
+        # time.sleep(0.09)  # REMOVED
 
         # Создаём sell_order (тоже пустой).
         sell_order = self.order_factory.create_sell_order(price=0.0, amount=0.0)
