@@ -21,6 +21,10 @@ class OrdersRepository(ABC):
     def get_all_by_deal(self, deal_id: int) -> List[Order]:
         pass
 
+    @abstractmethod
+    def get_all(self) -> List[Order]:
+        pass
+
 
 class InMemoryOrdersRepository(OrdersRepository):
     """
@@ -45,3 +49,7 @@ class InMemoryOrdersRepository(OrdersRepository):
             o for o in self._storage.values()
             if o.deal_id == deal_id
         ]
+
+    def get_all(self) -> List[Order]:
+        """Возвращает все ордера"""
+        return list(self._storage.values())

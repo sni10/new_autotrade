@@ -20,6 +20,10 @@ class DealsRepository(ABC):
     def get_open_deals(self) -> List[Deal]:
         pass
 
+    @abstractmethod
+    def get_all(self) -> List[Deal]:
+        pass
+
 
 class InMemoryDealsRepository(DealsRepository):
     """
@@ -38,3 +42,7 @@ class InMemoryDealsRepository(DealsRepository):
 
     def get_open_deals(self) -> List[Deal]:
         return [d for d in self._storage.values() if d.is_open()]
+
+    def get_all(self) -> List[Deal]:
+        """Возвращает все сделки (открытые, закрытые, отмененные)"""
+        return list(self._storage.values())
