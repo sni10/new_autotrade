@@ -85,7 +85,7 @@ class TradingDecisionEngine:
         return "\n".join(info)
     
     def apply_orderbook_modifications(self, current_price: float, budget: float, modifications: Dict) -> Dict:
-        """Применение модификаций от анализа стакана к расчету сделки"""
+        """🔧 FIX: Применение модификаций от анализа стакана с проверкой дистанции"""
         
         result = {
             'entry_price': current_price,
@@ -94,22 +94,25 @@ class TradingDecisionEngine:
             'modifications_applied': []
         }
         
-        # Применение модификаций от стакана
+        # 🔧 FIX: Применение entry_price_hint с проверкой дистанции
         if 'entry_price_hint' in modifications:
-            hint_price = modifications['entry_price_hint']
-            # Используем рекомендуемую цену, если она лучше текущей
-            if hint_price < current_price:  # Лучшая цена для покупки
-                result['entry_price'] = hint_price
-                result['modifications_applied'].append(f"💡 Используем цену поддержки: {hint_price:.4f} вместо {current_price:.4f}")
+            hint = modifications['entry_price_hint']
+            # Проверяем что хинт ниже текущей цены И не дальше 2%
+            if hint < current_price and abs(hint/current_price - 1) < 0.02:
+                result['entry_price'] = hint
+                result['modifications_applied'].append(f"💡 Используем цену поддержки: {hint:.4f} вместо {current_price:.4f}")
         
+        # 🔧 FIX: Применение exit_price_hint с проверкой дистанции
+        if 'exit_price_hint' in modifications:
+            hint = modifications['exit_price_hint']
+            # Проверяем что хинт выше текущей цены И не дальше 2%
+            if hint > current_price and abs(hint/current_price - 1) < 0.02:
+                result['exit_price_hint'] = hint
+                result['modifications_applied'].append(f"💡 Целевая цена сопротивления: {hint:.4f}")
+
         # Корректировка размера позиции
         if 'reduce_position_size' in modifications:
             result['budget_multiplier'] = modifications['reduce_position_size']
             result['modifications_applied'].append(f"⚠️ Уменьшаем размер позиции до {result['budget_multiplier']:.1%}")
-            
-        # Целевая цена выхода
-        if 'exit_price_hint' in modifications:
-            result['exit_price_hint'] = modifications['exit_price_hint']
-            result['modifications_applied'].append(f"💡 Целевая цена сопротивления: {result['exit_price_hint']:.4f}")
-            
+
         return result
