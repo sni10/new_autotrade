@@ -9,8 +9,6 @@ import time
 
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deal_service import DealService
-from domain.services.signal_service import SignalService
-from domain.services.trading_service import TradingService
 from domain.services.order_service import OrderService
 from domain.factories.deal_factory import DealFactory
 from domain.factories.order_factory import OrderFactory
@@ -19,7 +17,6 @@ from infrastructure.repositories.orders_repository import InMemoryOrdersReposito
 
 # Пример коннекторов (WebSocket + REST):
 # (Предположим, что вы реализуете их)
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.connectors.pro_exchange_connector import CcxtProMarketDataConnector
 
 # Use-case запуска торговли
@@ -70,7 +67,7 @@ async def main():
 
     time_sync()
 
-    base_currency = "FIS"
+    base_currency = "VIC"
     quote_currency = "USDT"
 
     # ИСПРАВЛЕНИЕ: используем формат без слэша для Binance
@@ -114,7 +111,6 @@ async def main():
 
     # TradingService сам решает, открывать ли сделку и т.д.
     # trading_service = TradingService(deals_repo, order_service, deal_factory)
-    # signal_service = SignalService()
 
     deal_service = DealService(deals_repo, order_service, deal_factory)
 
