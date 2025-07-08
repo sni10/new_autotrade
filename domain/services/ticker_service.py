@@ -1,6 +1,6 @@
 import math
 from decimal import Decimal, ROUND_DOWN, ROUND_UP, ROUND_HALF_UP, InvalidOperation, getcontext
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 import talib
 import numpy as np
 from talib import MA_Type
@@ -9,6 +9,9 @@ from talib import MA_Type
 from domain.services.cached_indicator_service import CachedIndicatorService
 from domain.entities.ticker import Ticker
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+
+# 🆕 НОВЫЕ ИМПОРТЫ ДЛЯ СТАКАНА
+from domain.services.orderbook_analyzer import OrderBookMetrics
 
 
 def round_to_step(value: Decimal, step: Decimal) -> Decimal:
@@ -98,6 +101,27 @@ class TickerService:
         else:
             return "HOLD"
 
+    # 🆕 НОВЫЙ МЕТОД ДЛЯ ПРОВЕРКИ MACD
+    def get_macd_signal_data(self) -> Optional[Dict]:
+        """Получение данных MACD для анализа стаканом"""
+        if len(self.repository.tickers) < 50:
+            return None
+
+        last_ticker = self.repository.tickers[-1]
+        if not last_ticker.signals:
+            return None
+
+        macd = last_ticker.signals.get('macd', 0)
+        signal = last_ticker.signals.get('signal', 0)
+        hist = last_ticker.signals.get('histogram', 0)
+
+        return {
+            'macd': macd,
+            'signal': signal,
+            'histogram': hist,
+            'is_bullish': macd > signal and hist > 0
+        }
+
     # 🆕 НОВЫЙ МЕТОД
     def analyze_market_conditions(self) -> str:
         """Анализирует текущие рыночные условия"""
@@ -158,6 +182,74 @@ class TickerService:
 
         # Торгуем только при умеренной волатильности
         return 0.03 <= avg_volatility <= 0.12
+
+    def calculate_strategy_with_orderbook(
+            self,
+            buy_price: float,  # Исходная цена монеты (без комиссии)
+            budget: float,  # Бюджет в USDT
+            min_step: float,  # Минимальный лот монеты (1 для целых, 0.00001 для BTC и т.д.)
+            price_step: float,  # Шаг цены (0.00001, 0.001, ...)
+            buy_fee_percent: float,  # Комиссия покупка (%)
+            sell_fee_percent: float,  # Комиссия продажа (%)
+            profit_percent: float,  # Желаемая прибыль (%)
+            orderbook_modifications: Optional[Dict] = None  # 🆕 Модификации от стакана
+    ):
+        """
+        🆕 УЛУЧШЕННЫЙ КАЛЬКУЛЯТОР с учетом анализа стакана
+        """
+
+        # Применяем модификации от стакана
+        entry_price = buy_price
+        budget_multiplier = 1.0
+        target_price_hint = None
+
+        if orderbook_modifications:
+            if 'entry_price' in orderbook_modifications:
+                entry_price = orderbook_modifications['entry_price']
+            if 'budget_multiplier' in orderbook_modifications:
+                budget_multiplier = orderbook_modifications['budget_multiplier']
+            if 'exit_price_hint' in orderbook_modifications:
+                target_price_hint = orderbook_modifications['exit_price_hint']
+
+        # Корректируем бюджет
+        adjusted_budget = budget * budget_multiplier
+
+        # Вызываем оригинальный калькулятор с модифицированными параметрами
+        strategy_result = self.calculate_strategy(
+            buy_price=entry_price,
+            budget=adjusted_budget,
+            min_step=min_step,
+            price_step=price_step,
+            buy_fee_percent=buy_fee_percent,
+            sell_fee_percent=sell_fee_percent,
+            profit_percent=profit_percent
+        )
+
+        # Если есть подсказка по целевой цене, корректируем результат
+        if target_price_hint and isinstance(strategy_result, tuple):
+            buy_price_calc, total_coins_needed, sell_price_calc, coins_to_sell, info_dict = strategy_result
+
+            # Проверяем, выгоднее ли целевая цена
+            if target_price_hint > float(sell_price_calc):
+                # Пересчитываем с новой целевой ценой
+                new_revenue = float(coins_to_sell) * target_price_hint
+                new_profit = new_revenue - (float(total_coins_needed) * float(buy_price_calc))
+
+                # Обновляем результат
+                strategy_result = (
+                    buy_price_calc,
+                    total_coins_needed,
+                    Decimal(str(target_price_hint)),
+                    coins_to_sell,
+                    {
+                        **info_dict,
+                        "🔹 Цена продажи (корректировка по стакану)": f"{target_price_hint} USDT",
+                        "🔹 Финальный доход (с учетом стакана)": f"{new_revenue:.4f} USDT",
+                        "🔹 Чистая прибыль (с учетом стакана)": f"{new_profit:.4f} USDT"
+                    }
+                )
+
+        return strategy_result
 
     def calculate_strategy(
             self, buy_price,  # Исходная цена монеты (без комиссии)

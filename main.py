@@ -70,21 +70,21 @@ async def main():
 
     time_sync()
 
-    base_currency = "VIC"
+    base_currency = "FIS"
     quote_currency = "USDT"
 
     # ИСПРАВЛЕНИЕ: используем формат без слэша для Binance
-    symbol_ccxt = f"{base_currency}{quote_currency}"  # "HIFIUSDT"
-    symbol_display = f"{base_currency}/{quote_currency}"  # "HIFI/USDT"
+    symbol_ccxt = f"{base_currency}{quote_currency}"  # "VICUSDT"
+    symbol_display = f"{base_currency}/{quote_currency}"  # "VIC/USDT"
 
     # 1. Репозитории
     currency_pair = CurrencyPair(
         base_currency=base_currency,
         quote_currency=quote_currency,
-        symbol=symbol_ccxt,  # ИСПОЛЬЗУЕМ HIFIUSDT для API
+        symbol=symbol_ccxt,  # ИСПОЛЬЗУЕМ VICUSDT для API
         order_life_time=1,
         deal_quota=10.0,
-        min_step=0.01,
+        min_step=1.0,
         price_step=0.0001,
         profit_markup=1.5,
         deal_count=3
@@ -97,12 +97,6 @@ async def main():
     # 2. Фабрики
     order_factory = OrderFactory()
     deal_factory = DealFactory(order_factory)
-
-    # ExchangeConnector (REST)
-    # exchange_connector = CcxtExchangeConnector(
-    #     exchange_name="binance",
-    #     use_sandbox=True
-    # )
 
     # MarketDataConnector (WebSocket)
     pro_exchange_connector_prod = CcxtProMarketDataConnector(
@@ -120,13 +114,17 @@ async def main():
 
     # TradingService сам решает, открывать ли сделку и т.д.
     # trading_service = TradingService(deals_repo, order_service, deal_factory)
-
     # signal_service = SignalService()
 
     deal_service = DealService(deals_repo, order_service, deal_factory)
 
-    # 5. Запуск use-case: "run_realtime_trading"
+    print("🚀 СИСТЕМА ГОТОВА К ЗАПУСКУ")
+    print(f"   💱 Валютная пара: {symbol_display} ({symbol_ccxt})")
+    print(f"   📊 Анализ стакана: Включен")
+    print(f"   🔗 Подключения: Prod + Sandbox")
+    print("="*60)
 
+    # 5. Запуск use-case: "run_realtime_trading"
     await run_realtime_trading(
         pro_exchange_connector_prod=pro_exchange_connector_prod,
         pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
