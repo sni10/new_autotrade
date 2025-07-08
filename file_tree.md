@@ -40,7 +40,6 @@
 │       ├── orderbook_analyzer.py
 │       ├── orderbook_service.py
 │       ├── signal_cooldown_manager.py
-│       ├── signal_service.py
 │       ├── ticker_service.py
 │       ├── trading_decision_engine.py
 │       └── trading_service.py
@@ -60,10 +59,18 @@
 │   │   ├── issue_001_trading_orchestrator.md
 │   │   ├── issue_002_order_execution_service.md
 │   │   ├── issue_003_risk_management_service.md
+│   │   ├── issue_004_market_data_analyzer.md
+│   │   ├── issue_005_signal_aggregation_service.md
 │   │   ├── issue_006_database_service.md
 │   │   ├── issue_007_state_management_service.md
 │   │   ├── issue_008_configuration_service.md
-│   │   └── issue_010_error_handling_service.md
+│   │   ├── issue_009_data_repositories.md
+│   │   ├── issue_010_error_handling_service.md
+│   │   ├── issue_011_security_service.md
+│   │   ├── issue_012_health_check_service.md
+│   │   ├── issue_013_backup_service.md
+│   │   ├── issue_014_performance_optimization_service.md
+│   │   └── issue_015_multi_pair_trading_service.md
 │   ├── issues_summary.md
 │   └── milestones.md
 ├── sandbox.py

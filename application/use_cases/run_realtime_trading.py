@@ -20,6 +20,12 @@ from domain.services.orderbook_service import OrderBookService
 # 🆕 НОВЫЙ ИМПОРТ
 from domain.services.signal_cooldown_manager import SignalCooldownManager
 
+# 🚀 НОВЫЕ ИМПОРТЫ ДЛЯ ОБНОВЛЕННОГО TRADING SERVICE
+from domain.services.trading_service import TradingService
+from domain.services.order_service import OrderService
+from domain.factories.order_factory import OrderFactory
+from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
+
 
 def now_fmt():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -49,6 +55,22 @@ async def run_realtime_trading(
     # 🆕 ЗАЩИТА ОТ ПОВТОРНЫХ СИГНАЛОВ (только лимит сделок)
     cooldown_manager = SignalCooldownManager()
 
+    # 🚀 ИНИЦИАЛИЗАЦИЯ ОБНОВЛЕННОГО TRADING SERVICE
+    orders_repo = InMemoryOrdersRepository()
+    order_factory = OrderFactory()
+    order_service = OrderService(
+        orders_repo=orders_repo,
+        order_factory=order_factory,
+        exchange_connector=pro_exchange_connector_sandbox.client  # Передаем коннектор для реальных операций
+    )
+
+    # Создаем обновленный trading service с оркестраторными возможностями
+    trading_service = TradingService(
+        deals_repo=deal_service.deals_repo,  # Используем репозиторий из DealService
+        order_service=order_service,
+        deal_factory=deal_service.deal_factory  # Используем фабрику из DealService
+    )
+
     # 🆕 ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ АНАЛИЗА СТАКАНА
     # Загружаем конфигурацию
     with open(r'F:\HOME\new_autotrade\config\config.json', 'r') as f:
@@ -77,7 +99,7 @@ async def run_realtime_trading(
     # Запускаем мониторинг стакана в фоне
     if trading_config.get('enable_orderbook_validation', True):
         await orderbook_service.start_monitoring(
-            pro_exchange_connector_sandbox.client,  # Используем sandbox для стакана
+            pro_exchange_connector_prod.client,  # Используем sandbox для стакана
             currency_pair.symbol
         )
         print(f"🔍 Запущен анализ стакана для {currency_pair.symbol}")
@@ -91,6 +113,7 @@ async def run_realtime_trading(
     print(f"   💰 Бюджет на сделку: {currency_pair.deal_quota} USDT")
     print(f"   🎯 Максимум сделок: {currency_pair.deal_count}")
     print(f"   📊 Анализ стакана: {'✅ ВКЛЮЧЕН' if trading_config.get('enable_orderbook_validation') else '❌ ОТКЛЮЧЕН'}")
+    print(f"   🎛️ TradingService: ✅ ОБНОВЛЕН")
     print("="*80)
 
     try:
@@ -176,6 +199,10 @@ async def run_realtime_trading(
                     if trading_config.get('enable_orderbook_validation'):
                         orderbook_health = "✅ Здоров" if orderbook_service.is_orderbook_healthy() else "⚠️ Проблемы"
                         print(f"   📊 Стакан: {orderbook_health}")
+
+                    # 🚀 СТАТУС TRADING SERVICE
+                    trading_stats = trading_service.get_trading_statistics()
+                    print(f"   🎛️ TradingService: {trading_stats['open_deals_count']} активных сделок")
 
                 # 🎯 ОБРАБОТКА СИГНАЛА ПОКУПКИ С АНАЛИЗОМ СТАКАНА
                 if ticker_signal == "BUY":
@@ -320,29 +347,32 @@ async def run_realtime_trading(
                                             if key != "comment":
                                                 print(f"   {key}: {value}")
 
-                                    # 🆕 СОЗДАЕМ СДЕЛКУ
-                                    new_deal = deal_service.create_new_deal(currency_pair)
+                                    # 🚀 ИСПОЛНЕНИЕ ЧЕРЕЗ ОБНОВЛЕННЫЙ TRADING SERVICE
+                                    print("\n🎛️ Исполнение через TradingService...")
+                                    try:
+                                        new_deal = await trading_service.execute_buy_strategy(
+                                            currency_pair=currency_pair,
+                                            strategy_result=strategy_result
+                                        )
+                                        print(f"✅ Сделка #{new_deal.deal_id} успешно создана через TradingService!")
 
-                                    # 🆕 СОЗДАЕМ BUY ОРДЕР
-                                    buy_order = deal_service.open_buy_order(
-                                        price=float(buy_price_calc),
-                                        amount=float(total_coins_needed),
-                                        deal_id=new_deal.deal_id
-                                    )
-
-                                    # 🆕 СОЗДАЕМ SELL ОРДЕР
-                                    sell_order = deal_service.open_sell_order(
-                                        price=float(sell_price_calc),
-                                        amount=float(coins_to_sell),
-                                        deal_id=new_deal.deal_id
-                                    )
-
-                                    # 🆕 ПРИВЯЗЫВАЕМ ОРДЕРА К СДЕЛКЕ
-                                    new_deal.attach_orders(buy_order, sell_order)
-
-                                    print(f"\n🆕 Создана сделка #{new_deal.deal_id}")
-                                    print(f"   🛒 BUY: {buy_order}")
-                                    print(f"   🏷️ SELL: {sell_order}")
+                                    except Exception as trading_error:
+                                        print(f"❌ Ошибка TradingService: {trading_error}")
+                                        # Fallback к старому методу если нужно
+                                        print("🔄 Откат к прямому созданию сделки...")
+                                        new_deal = deal_service.create_new_deal(currency_pair)
+                                        buy_order = deal_service.open_buy_order(
+                                            price=float(buy_price_calc),
+                                            amount=float(total_coins_needed),
+                                            deal_id=new_deal.deal_id
+                                        )
+                                        sell_order = deal_service.open_sell_order(
+                                            price=float(sell_price_calc),
+                                            amount=float(coins_to_sell),
+                                            deal_id=new_deal.deal_id
+                                        )
+                                        new_deal.attach_orders(buy_order, sell_order)
+                                        print(f"✅ Сделка #{new_deal.deal_id} создана через fallback")
 
                             except Exception as calc_error:
                                 print(f"❌ Ошибка в калькуляторе: {calc_error}")
@@ -368,3 +398,7 @@ async def run_realtime_trading(
         if trading_config.get('enable_orderbook_validation'):
             await orderbook_service.stop_monitoring()
             print("🔴 Мониторинг стакана остановлен")
+
+        # 🚀 GRACEFUL SHUTDOWN TRADING SERVICE
+        print("🔴 Завершение работы TradingService...")
+        trading_service.process_open_deals()  # Финальная проверка сделок
