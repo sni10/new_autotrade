@@ -1,5 +1,8 @@
 import time
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PerformanceLogger:
@@ -35,13 +38,19 @@ class PerformanceLogger:
         """Подробный вывод сигналов"""
         if ticker.signals and self.should_log():
             signals = ticker.signals
-            print(f"📈 MACD: {signals.get('macd', 0):.6f} | "
-                  f"Signal: {signals.get('signal', 0):.6f} | "
-                  f"Hist: {signals.get('histogram', 0):.6f}")
-            print(f"📊 RSI(5): {signals.get('rsi_5', 0):.2f} | "
-                  f"RSI(15): {signals.get('rsi_15', 0):.2f}")
-            print(f"📉 SMA(7): {signals.get('sma_7', 0):.8f} | "
-                  f"SMA(25): {signals.get('sma_25', 0):.8f}")
+            logger.info(
+                f"📈 MACD: {signals.get('macd', 0):.6f} | "
+                f"Signal: {signals.get('signal', 0):.6f} | "
+                f"Hist: {signals.get('histogram', 0):.6f}"
+            )
+            logger.info(
+                f"📊 RSI(5): {signals.get('rsi_5', 0):.2f} | "
+                f"RSI(15): {signals.get('rsi_15', 0):.2f}"
+            )
+            logger.info(
+                f"📉 SMA(7): {signals.get('sma_7', 0):.8f} | "
+                f"SMA(25): {signals.get('sma_25', 0):.8f}"
+            )
 
     def _print_performance_stats(self, price: float, signals_count: int):
         """Выводит статистику производительности"""
@@ -49,11 +58,13 @@ class PerformanceLogger:
         uptime = time.time() - self.start_time
         tps = self.tick_count / uptime if uptime > 0 else 0  # Ticks per second
 
-        print(f"📊 Тик {self.tick_count} | Цена: {price:.8f} | "
-              f"Сигналов: {signals_count} | TPS: {tps:.1f} | "
-              f"Среднее время: {avg_time*1000:.1f}ms | "
-              f"Мин/Макс: {self.min_tick_time*1000:.1f}/{self.max_tick_time*1000:.1f}ms")
+        logger.info(
+            f"📊 Тик {self.tick_count} | Цена: {price:.8f} | "
+            f"Сигналов: {signals_count} | TPS: {tps:.1f} | "
+            f"Среднее время: {avg_time*1000:.1f}ms | "
+            f"Мин/Макс: {self.min_tick_time*1000:.1f}/{self.max_tick_time*1000:.1f}ms"
+        )
 
     def log_cache_update(self, cache_type: str, tick_count: int):
         """Логирует обновления кеша"""
-        print(f"🔄 {cache_type} кеш обновлен на тике {tick_count}")
+        logger.info(f"🔄 {cache_type} кеш обновлен на тике {tick_count}")
