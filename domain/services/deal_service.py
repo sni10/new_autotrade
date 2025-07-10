@@ -6,6 +6,9 @@ from domain.factories.deal_factory import DealFactory
 from infrastructure.repositories.deals_repository import DealsRepository
 from domain.services.order_service import OrderService
 from typing import List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DealService:
@@ -27,7 +30,7 @@ class DealService:
         """
         deal = self.deal_factory.create_new_deal(currency_pair)
         self.deals_repo.save(deal)
-        print(f"Created new deal: {deal}")
+        logger.info(f"Created new deal: {deal}")
         return deal
 
     def open_buy_order(self, price, amount, deal_id):
@@ -38,7 +41,7 @@ class DealService:
             price, amount
         )
         buy_order.deal_id = deal_id
-        print(f"Create BUY Order: {buy_order}")
+        logger.info(f"Create BUY Order: {buy_order}")
         return buy_order
 
 
@@ -50,7 +53,7 @@ class DealService:
             price, amount
         )
         sell_order.deal_id = deal_id
-        print(f"Create SELL Order: {sell_order}")
+        logger.info(f"Create SELL Order: {sell_order}")
         return sell_order
 
     def process_open_deals(self):
@@ -73,7 +76,7 @@ class DealService:
 
         deal.close()
         self.deals_repo.save(deal)
-        print(f"Closed deal: {deal}")
+        logger.info(f"Closed deal: {deal}")
 
     def should_close_deal(self, deal: Deal) -> bool:
         """

@@ -5,6 +5,9 @@ from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
 from infrastructure.repositories.deals_repository import DealsRepository
 from domain.services.order_service import OrderService
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TradingService:
     """
@@ -64,9 +67,9 @@ class TradingService:
         new_deal.attach_orders(buy_order, sell_order)
         self.deals_repo.save(new_deal)
 
-        print(f"\n🆕 Создана сделка #{new_deal.deal_id}")
-        print(f"   🛒 BUY: {buy_order}")
-        print(f"   🏷️ SELL: {sell_order}")
+        logger.info(f"\n🆕 Создана сделка #{new_deal.deal_id}")
+        logger.info(f"   🛒 BUY: {buy_order}")
+        logger.info(f"   🏷️ SELL: {sell_order}")
 
         return new_deal
 
@@ -82,12 +85,16 @@ class TradingService:
             if deal.buy_order:
                 updated_buy_order = self.order_service.get_order_status(deal.buy_order)
                 if updated_buy_order and updated_buy_order.is_filled():
-                    print(f"✅ BUY ордер #{deal.buy_order.order_id} исполнен")
+                    logger.info(
+                        f"✅ BUY ордер #{deal.buy_order.order_id} исполнен"
+                    )
 
             if deal.sell_order:
                 updated_sell_order = self.order_service.get_order_status(deal.sell_order)
                 if updated_sell_order and updated_sell_order.is_filled():
-                    print(f"✅ SELL ордер #{deal.sell_order.order_id} исполнен")
+                    logger.info(
+                        f"✅ SELL ордер #{deal.sell_order.order_id} исполнен"
+                    )
                     self.close_deal(deal)
 
     def close_deal(self, deal: Deal):
@@ -104,7 +111,7 @@ class TradingService:
             # Закрываем саму сделку
             deal.close()
             self.deals_repo.save(deal)
-            print(f"🔒 Закрыта сделка #{deal.deal_id}")
+            logger.info(f"🔒 Закрыта сделка #{deal.deal_id}")
 
     def cancel_deal(self, deal: Deal):
         """
@@ -118,7 +125,7 @@ class TradingService:
 
             deal.cancel()
             self.deals_repo.save(deal)
-            print(f"❌ Отменена сделка #{deal.deal_id}")
+            logger.warning(f"❌ Отменена сделка #{deal.deal_id}")
 
     def force_close_all_deals(self):
         """
@@ -127,7 +134,7 @@ class TradingService:
         open_deals = self.deals_repo.get_open_deals()
         for deal in open_deals:
             self.close_deal(deal)
-        print(f"🚨 Принудительно закрыто {len(open_deals)} сделок")
+        logger.warning(f"🚨 Принудительно закрыто {len(open_deals)} сделок")
 
     def get_trading_statistics(self) -> Dict:
         """
@@ -150,7 +157,7 @@ class TradingService:
         """
         deal = self.deal_factory.create_new_deal(currency_pair)
         self.deals_repo.save(deal)
-        print(f"[TradingService] Created new deal: {deal}")
+        logger.info(f"[TradingService] Created new deal: {deal}")
         return deal
 
     def force_close_all(self):

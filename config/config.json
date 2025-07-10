@@ -23,5 +23,13 @@
     "orderbook_confidence_threshold": 0.6,
     "require_orderbook_support": false,
     "log_orderbook_analysis": true
+  },
+  "buy_order_monitor": {
+    "enabled": true,
+    "max_age_minutes": 5.0,
+    "max_price_deviation_percent": 3.0,
+    "check_interval_seconds": 10,
+    "auto_recreate_orders": true,
+    "min_time_between_recreations_minutes": 0.0
   }
 }

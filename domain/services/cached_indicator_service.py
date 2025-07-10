@@ -3,6 +3,9 @@ from typing import Dict, List
 import numpy as np
 import talib
 from talib import MA_Type
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CachedIndicatorService:
     def __init__(self):
@@ -82,10 +85,12 @@ class CachedIndicatorService:
             }
 
             self.last_medium_update = self.tick_count
-            print(f"🔄 Обновлен средний кеш на тике {self.tick_count}")
+            logger.info(
+                f"🔄 Обновлен средний кеш на тике {self.tick_count}"
+            )
 
         except Exception as e:
-            print(f"⚠️ Ошибка в medium_indicators: {e}")
+            logger.warning(f"⚠️ Ошибка в medium_indicators: {e}")
 
         return self.medium_cache
 
@@ -117,10 +122,12 @@ class CachedIndicatorService:
             }
 
             self.last_heavy_update = self.tick_count
-            print(f"🔥 Обновлен тяжелый кеш на тике {self.tick_count}")
+            logger.info(
+                f"🔥 Обновлен тяжелый кеш на тике {self.tick_count}"
+            )
 
         except Exception as e:
-            print(f"⚠️ Ошибка в heavy_indicators: {e}")
+            logger.warning(f"⚠️ Ошибка в heavy_indicators: {e}")
 
         return self.heavy_cache
 
