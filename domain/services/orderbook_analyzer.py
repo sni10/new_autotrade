@@ -159,37 +159,45 @@ class OrderBookAnalyzer:
         return resistance
     
     def _calculate_slippage(self, orders: List, side: str) -> float:
-        """Расчет слиппеджа для объема сделки"""
-        volume_to_execute = self.typical_order_size  # USDT
-        
-        cumulative_volume = 0
-        weighted_price = 0
-        
-        for order in orders:
-            price, volume = order[0], order[1]
-            
-            if side == 'buy':
-                order_value = price * volume
-            else:
-                order_value = price * volume
-                
-            if cumulative_volume + order_value >= volume_to_execute:
-                # Частичное исполнение последнего ордера
-                remaining = volume_to_execute - cumulative_volume
-                weighted_price += price * remaining
-                cumulative_volume += remaining
+        """Расчет слиппеджа для объема сделки.
+
+        В исходной версии метода средняя цена вычислялась неверно: при
+        суммировании использовалось ``price * order_value`` (где
+        ``order_value = price * volume``), что приводило к квадрированию цены и
+        некорректному результату. Теперь мы правильно учитываем объём в монете
+        и стоимость в USDT, рассчитывая средневзвешенную цену покупки/продажи.
+        """
+
+        volume_to_execute = self.typical_order_size  # Объём в USDT
+
+        cumulative_value = 0.0       # Сколько USDT уже исполнено
+        total_volume_coin = 0.0      # Сколько монет куплено/продано
+        weighted_sum_price = 0.0     # Σ(price * volume_coin)
+
+        for price, volume in orders:
+            order_value = price * volume  # Стоимость ордера в USDT
+
+            if cumulative_value + order_value >= volume_to_execute:
+                # Частичное исполнение последнего уровня стакана
+                remaining_value = volume_to_execute - cumulative_value
+                executed_volume = remaining_value / price
+                weighted_sum_price += price * executed_volume
+                total_volume_coin += executed_volume
+                cumulative_value += remaining_value
                 break
             else:
-                # Полное исполнение ордера
-                weighted_price += price * order_value
-                cumulative_volume += order_value
-                
-        if cumulative_volume > 0:
-            avg_price = weighted_price / cumulative_volume
+                # Полное исполнение уровня стакана
+                weighted_sum_price += price * volume
+                total_volume_coin += volume
+                cumulative_value += order_value
+
+        if total_volume_coin > 0:
+            avg_price = weighted_sum_price / total_volume_coin
             best_price = orders[0][0]
             return abs((avg_price - best_price) / best_price) * 100
-        
-        return 999  # Недостаточно ликвидности
+
+        # Недостаточно ликвидности для исполнения объёма
+        return 999
     
     def _find_big_walls(self, bids: List, asks: List) -> List[Dict]:
         """Поиск больших стен в стакане"""
