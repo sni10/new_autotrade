@@ -1,6 +1,5 @@
 # Issue #014: PerformanceOptimizationService
 
-**💰 Стоимость:** $180 (12 часов × $15/час)  
 **🏗️ Milestone:** M4  
 **📈 Приоритет:** MEDIUM  
 **🔗 Зависимости:** Issue #1 (TradingOrchestrator), Issue #6 (DatabaseService)
@@ -230,7 +229,6 @@ class PerformanceOptimizationService:
         # 3. Оптимизация connection pool
         await self.database_optimizer.optimize_connection_pool()
         
-        # 4. Query batching для частых операций
         await self.database_optimizer.setup_query_batching()
         
     async def optimize_memory_usage(self):
