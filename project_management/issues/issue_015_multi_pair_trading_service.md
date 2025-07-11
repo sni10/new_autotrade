@@ -9,7 +9,6 @@
 
 ## 📝 Описание проблемы
 
-Система сейчас работает только с одной торговой парой. Для масштабирования нужна поддержка одновременной торговли несколькими валютными парами.
 
 ### 🔍 Текущие ограничения:
 - Hardcoded работа с одной парой (FIS/USDT)
@@ -361,18 +360,15 @@ class MultiPairTradingService:
             except Exception as e:
                 print(f\"❌ Correlation monitoring error: {str(e)}\")
                 
-            await asyncio.sleep(3600)  # 1 час
             
     async def _rebalancing_loop(self):
         \"\"\"Цикл ребалансировки\"\"\"
         while self.is_running:
             try:
-                # Ребалансировка каждые 24 часа
                 await self.rebalance_portfolio()
             except Exception as e:
                 print(f\"❌ Rebalancing error: {str(e)}\")
                 
-            await asyncio.sleep(86400)  # 24 часа
 
 class PortfolioManager:
     def __init__(self, initial_budget: float):

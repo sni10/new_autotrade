@@ -354,7 +354,6 @@ async def recover_interrupted_operations(self):
    - Тест recovery после искусственных сбоев
 
 3. **Stress тесты:**
-   - Частое сохранение состояния (каждую секунду)
    - Большие объемы данных (сотни сделок)
    - Concurrent access к состоянию
 

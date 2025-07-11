@@ -442,7 +442,6 @@ class SQLTickersRepository(TickersRepository):
             ORDER BY interval_start ASC
         \"\"\"
         
-        # Данные за последние 24 часа
         start_time = int((datetime.now() - timedelta(hours=24)).timestamp())
         
         rows = await self.db.fetch_all(query, (

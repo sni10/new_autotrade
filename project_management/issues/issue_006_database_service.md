@@ -298,7 +298,6 @@ class SqlDealsRepository(DealsRepository):
    - Тест performance с большим объемом данных
 
 3. **Stress тесты:**
-   - Высокая частота записи (имитация активной торговли)
    - Concurrent access от множественных операций
    - Large dataset operations
 

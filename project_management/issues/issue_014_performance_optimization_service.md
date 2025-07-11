@@ -230,7 +230,6 @@ class PerformanceOptimizationService:
         # 3. Оптимизация connection pool
         await self.database_optimizer.optimize_connection_pool()
         
-        # 4. Query batching для частых операций
         await self.database_optimizer.setup_query_batching()
         
     async def optimize_memory_usage(self):

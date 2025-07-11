@@ -518,7 +518,6 @@ class BackupScheduler:
     def _should_run_backup(self, schedule: BackupSchedule, current_time: datetime) -> bool:
         \"\"\"Проверка нужно ли запускать backup\"\"\"
         # Упрощенная проверка - в реальности нужен полноценный cron parser
-        # Для демонстрации проверяем только час
         
         if schedule.cron_expression == '0 2 * * *':  # Daily at 2 AM
             return current_time.hour == 2 and current_time.minute == 0
