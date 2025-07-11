@@ -1,0 +1,53 @@
+name: 🧾 Auto Versioning
+
+on:
+  push:
+    branches:
+      - dev
+      - stage
+      - release/*
+      - main
+
+jobs:
+  versioning:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Set version variables
+        id: vars
+        run: |
+          # 👷 BUILD = коммиты в dev, которых нет в main, без merge
+          BUILD=$(git log origin/main..origin/dev --no-merges --oneline | wc -l)
+
+          # 🔁 STAGE = мержи из dev в stage
+          STAGE=$(git log origin/dev..origin/stage --merges --oneline | wc -l)
+
+          # 🧪 MINOR = мержи из release/* в main
+          MINOR=$(git log origin/release..origin/main --merges --oneline | wc -l)
+
+          # 🧠 MAJOR — ручной, фиксируем в этом action-е
+          MAJOR=3
+
+          echo "MAJOR=$MAJOR" >> $GITHUB_OUTPUT
+          echo "MINOR=$MINOR" >> $GITHUB_OUTPUT
+          echo "STAGE=$STAGE" >> $GITHUB_OUTPUT
+          echo "BUILD=$BUILD" >> $GITHUB_OUTPUT
+
+      - name: 🏷️ Generate version tag
+        run: |
+          VERSION="${{ steps.vars.outputs.MAJOR }}.${{ steps.vars.outputs.MINOR }}.${{ steps.vars.outputs.STAGE }}.${{ steps.vars.outputs.BUILD }}"
+          echo "🔖 Version = $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: 📌 Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: 📦 Release v${{ env.VERSION }}
+          generate_release_notes: true
