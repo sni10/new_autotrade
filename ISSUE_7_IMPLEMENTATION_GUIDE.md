@@ -340,6 +340,6 @@ print(json.dumps(stats, indent=2))
 
 ---
 
-*Документация создана: {datetime.now()}*  
+*Документация обновлена: 2025-07-11*
 *Issue #7: OrderExecutionService - Реальное выставление ордеров*  
 *Status: ✅ COMPLETED*

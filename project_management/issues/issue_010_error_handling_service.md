@@ -1,6 +1,6 @@
 # Issue #10: ErrorHandlingService - Обработка ошибок
+### Статус: запланировано
 
-**💰 Стоимость:** $180 (12 часов × $15/час)  
 **🔥 Приоритет:** ВЫСОКИЙ  
 **🏗️ Milestone:** M3 - Безопасность и надежность  
 **🏷️ Labels:** `high-priority`, `reliability`, `error-handling`, `monitoring`
