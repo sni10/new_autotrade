@@ -2,7 +2,11 @@
 
 > **Intelligent Trading System** with OrderBook Analysis & MACD Indicators  
 > **Architecture**: Domain-Driven Design (DDD)  
-> **Status**: Production Ready  
+> **Status**: Production Ready
+
+[![Tests](https://github.com/sni10/new_autotrade/actions/workflows/python-tests.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
+[![Versioning](https://github.com/sni10/new_autotrade/actions/workflows/versioning.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://www.python.org/)
 
 ![Trading System](schema-app.svg)
 
