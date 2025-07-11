@@ -80,7 +80,7 @@ async def main():
     time_sync()
 
     # Настройки торговой пары
-    base_currency = "MAGIC"
+    base_currency = "ETH"
     quote_currency = "USDT"
     symbol_ccxt = f"{base_currency}{quote_currency}"  # "MAGICUSDT"
     symbol_display = f"{base_currency}/{quote_currency}"  # "MAGIC/USDT"
