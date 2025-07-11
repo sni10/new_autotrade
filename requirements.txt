@@ -1,0 +1,11 @@
+ccxt>=4.4.93
+ccxtpro>=1.0.1
+ta-lib>=0.6.4
+numpy>=2.2.2
+termcolor>=3.0.1
+pytz>=2025.2
+requests>=2.32.4
+pywin32>=310; sys_platform == "win32"
+pytest>=8.4.1
+pytest-asyncio>=1.0.0
+cryptography>=45.0.5
