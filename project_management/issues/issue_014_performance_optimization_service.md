@@ -1,6 +1,6 @@
 # Issue #014: PerformanceOptimizationService
+### Статус: запланировано
 
-**💰 Стоимость:** $180 (12 часов × $15/час)  
 **🏗️ Milestone:** M4  
 **📈 Приоритет:** MEDIUM  
 **🔗 Зависимости:** Issue #1 (TradingOrchestrator), Issue #6 (DatabaseService)

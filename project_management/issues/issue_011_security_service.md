@@ -1,6 +1,6 @@
 # Issue #011: SecurityService - Безопасность
+### Статус: запланировано
 
-**💰 Стоимость:** $120 (8 часов × $15/час)  
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** HIGH  
 **🔗 Зависимости:** Issue #8 (ConfigurationService)

@@ -1,6 +1,6 @@
 # Issue #005: SignalAggregationService - Агрегация сигналов
+### Статус: запланировано
 
-**💰 Стоимость:** $120 (8 часов × $15/час)  
 **🏗️ Milestone:** M1  
 **📈 Приоритет:** MEDIUM  
 **🔗 Зависимости:** Issue #4 (MarketDataAnalyzer)

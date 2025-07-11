@@ -1,6 +1,6 @@
 # Issue #015: MultiPairTradingService
+### Статус: запланировано
 
-**💰 Стоимость:** $105 (7 часов × $15/час)  
 **🏗️ Milestone:** M4  
 **📈 Приоритет:** LOW  
 **🔗 Зависимости:** Issue #1 (TradingOrchestrator), Issue #14 (PerformanceOptimization)

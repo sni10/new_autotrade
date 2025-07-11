@@ -1,6 +1,6 @@
 # Issue #7: StateManagementService - Управление состоянием
+### Статус: запланировано
 
-**💰 Стоимость:** $240 (16 часов × $15/час)  
 **🔥 Приоритет:** ВЫСОКИЙ  
 **🏗️ Milestone:** M2 - Персистентность и управление данными  
 **🏷️ Labels:** `high-priority`, `state-management`, `recovery`

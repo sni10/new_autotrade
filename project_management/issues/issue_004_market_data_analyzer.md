@@ -1,6 +1,6 @@
 # Issue #004: MarketDataAnalyzer - Улучшенный анализ рынка
+### Статус: запланировано
 
-**💰 Стоимость:** $210 (14 часов × $15/час)  
 **🏗️ Milestone:** M1  
 **📈 Приоритет:** MEDIUM  
 **🔗 Зависимости:** Issue #1 (TradingOrchestrator)
