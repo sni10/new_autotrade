@@ -3,6 +3,8 @@ name: 🧪 Python Tests
 on:
   pull_request:
     branches: [ "dev", "stage", "release/*", "main" ]
+  push:
+    branches: [ "dev", "stage", "release/*", "main" ]
 
 jobs:
   test:
