@@ -1,6 +1,6 @@
 # Issue #8: ConfigurationService - Управление конфигурацией
+### Статус: запланировано
 
-**💰 Стоимость:** $150 (10 часов × $15/час)  
 **🔥 Приоритет:** ВЫСОКИЙ  
 **🏗️ Milestone:** M2 - Персистентность и управление данными  
 **🏷️ Labels:** `high-priority`, `security`, `configuration`, `environment`

@@ -1,6 +1,6 @@
 # Issue #3: RiskManagementService - Управление рисками
+### Статус: запланировано
 
-**💰 Стоимость:** $180 (12 часов × $15/час)  
 **🔥 Приоритет:** ВЫСОКИЙ  
 **🏗️ Milestone:** M1 - Основные сервисы  
 **🏷️ Labels:** `high-priority`, `risk-management`, `safety`
