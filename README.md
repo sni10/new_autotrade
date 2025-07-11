@@ -577,6 +577,15 @@ python main.py
 - **WebSocket**: ccxt.pro
 - **Time Sync**: Binance Time API
 
+## 🌿 Branch Strategy
+AutoTrade now follows the **GitFlow** workflow:
+- `main` – production ready code
+- `stage` – pre-production testing
+- `dev` – integration branch for features
+- `feature/*` – new functionality based on `dev`
+- `release/*` – release preparation based on `stage`
+- `hotfix/*` – urgent fixes based on `main`
+
 ---
 
 ## 🚀 Deployment
