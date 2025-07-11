@@ -1,6 +1,5 @@
 # Issue #012: HealthCheckService - Мониторинг системы
 
-**💰 Стоимость:** $150 (10 часов × $15/час)  
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** MEDIUM  
 **🔗 Зависимости:** Issue #6 (DatabaseService), Issue #10 (ErrorHandlingService)

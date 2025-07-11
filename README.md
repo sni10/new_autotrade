@@ -485,68 +485,46 @@ python main.py
 
 ## 🎯 Issues Overview
 
-**Полный план разработки** разбит на 15 детальных issues в GitLab. Общая стоимость: **$2,700** (180 часов) за ~11 недель.
 
 ### 🔥 **Critical Issues** (Must Have для v3.0.0)
 
-#### **Issue #6**: [🎯 Trading Orchestrator](https://gitlab.com/velostour/new_autotrade/-/issues/6) - $240 (16h)
 🏗️ **M1** | Главный дирижер - разделить монолитную логику run_realtime_trading.py на управляемые компоненты
 
-#### **Issue #7**: [💰 Order Execution Service](https://gitlab.com/velostour/new_autotrade/-/issues/7) - $300 (20h)  
 🏗️ **M1** | Реальное выставление ордеров - бот фактически торгует и зарабатывает деньги
 
-#### **Issue #9**: [💾 Database Service](https://gitlab.com/velostour/new_autotrade/-/issues/9) - $360 (24h)
 🏗️ **M2** | Система хранения данных - данные не теряются при перезапуске
 
 ### ⚡ **High Priority Issues** (Important для стабильности)
 
-#### **Issue #8**: [🛡️ Risk Management Service](https://gitlab.com/velostour/new_autotrade/-/issues/8) - $180 (12h)
 🏗️ **M1** | Управление рисками - защита от потери средств через stop-loss и лимиты
 
-#### **Issue #10**: [🔄 State Management Service](https://gitlab.com/velostour/new_autotrade/-/issues/10) - $240 (16h)
 🏗️ **M2** | Управление состоянием - graceful restart без потери контекста
 
-#### **Issue #11**: [⚙️ Configuration Service](https://gitlab.com/velostour/new_autotrade/-/issues/11) - $150 (10h)
 🏗️ **M2** | Управление конфигурацией - security compliance и удобство настройки
 
-#### **Issue #12**: [🚨 Error Handling Service](https://gitlab.com/velostour/new_autotrade/-/issues/12) - $180 (12h)
 🏗️ **M3** | Обработка ошибок - устойчивость к сбоям и автовосстановление
 
-#### **Issue #13**: [🔐 Security Service](https://gitlab.com/velostour/new_autotrade/-/issues/13) - $120 (8h)
 🏗️ **M3** | Безопасность - шифрование sensitive данных и защита от атак
 
 ### 📈 **Medium Priority Issues** (Nice to Have улучшения)
 
-#### **Issue #18**: [📊 Market Data Analyzer](https://gitlab.com/velostour/new_autotrade/-/issues/18) - $210 (14h)
 🏗️ **M1** | Улучшенный анализ рынка - лучшие торговые решения
 
-#### **Issue #19**: [🎯 Signal Aggregation Service](https://gitlab.com/velostour/new_autotrade/-/issues/19) - $120 (8h)
 🏗️ **M1** | Агрегация сигналов - меньше ложных сигналов
 
-#### **Issue #21**: [🏥 Health Check Service](https://gitlab.com/velostour/new_autotrade/-/issues/21) - $150 (10h)
 🏗️ **M3** | Мониторинг системы - proactive обнаружение проблем
 
-#### **Issue #14**: [⚡ Performance Optimization](https://gitlab.com/velostour/new_autotrade/-/issues/14) - $180 (12h)
 🏗️ **M4** | Оптимизация производительности - < 1ms обработка тика в 95% случаев
 
 ### 🎯 **Low Priority Issues** (Future Features)
 
-#### **Issue #20**: [🗃️ Data Repositories](https://gitlab.com/velostour/new_autotrade/-/issues/20) - $60 (4h)
 🏗️ **M2** | Улучшенные репозитории - быстрые database операции
 
-#### **Issue #22**: [💾 Backup Service](https://gitlab.com/velostour/new_autotrade/-/issues/22) - $105 (7h)
 🏗️ **M3** | Резервное копирование - защита от потери данных
 
-#### **Issue #15**: [🔀 Multi-Pair Trading](https://gitlab.com/velostour/new_autotrade/-/issues/15) - $105 (7h)
 🏗️ **M4** | Мульти-валютная торговля - масштабирование на множественные активы
 
-### 💰 **Финансовая сводка**
-- **🔥 Critical Issues**: $900 (60h) - минимум для работающего бота
-- **⚡ High Priority**: $870 (58h) - необходимо для production  
-- **📈 Medium Priority**: $660 (44h) - улучшения качества
-- **🎯 Low Priority**: $270 (18h) - future enhancements
 
-**💼 MVP стоимость**: $1,080 (72h) = ~1.8 месяца разработки
 
 ---
 

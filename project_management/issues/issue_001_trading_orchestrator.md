@@ -1,6 +1,5 @@
 # Issue #1: TradingOrchestrator - Главный дирижер
 
-**💰 Стоимость:** $240 (16 часов × $15/час)  
 **🔥 Приоритет:** КРИТИЧЕСКИЙ  
 **🏗️ Milestone:** M1 - Основные сервисы  
 **🏷️ Labels:** `critical`, `architecture`, `refactoring`
