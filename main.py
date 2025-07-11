@@ -106,7 +106,7 @@ async def main():
             min_step=0.1,
             price_step=0.0001,
             profit_markup=1.5,      # Целевая прибыль %
-            deal_count=3000         # Макс. активных сделок
+            deal_count=3         # Макс. активных сделок
         )
         logger.info(f"✅ Валютная пара создана: {currency_pair.symbol}")
 
