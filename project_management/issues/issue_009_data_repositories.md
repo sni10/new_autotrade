@@ -1,6 +1,6 @@
 # Issue #009: DataRepositories - Улучшенные репозитории
+### Статус: запланировано
 
-**💰 Стоимость:** $60 (4 часа × $15/час)  
 **🏗️ Milestone:** M2  
 **📈 Приоритет:** LOW  
 **🔗 Зависимости:** Issue #6 (DatabaseService)
@@ -442,7 +442,6 @@ class SQLTickersRepository(TickersRepository):
             ORDER BY interval_start ASC
         \"\"\"
         
-        # Данные за последние 24 часа
         start_time = int((datetime.now() - timedelta(hours=24)).timestamp())
         
         rows = await self.db.fetch_all(query, (
