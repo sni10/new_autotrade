@@ -1,4 +1,5 @@
 # Issue #011: SecurityService - Безопасность
+### Статус: запланировано
 
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** HIGH  

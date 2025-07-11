@@ -1,4 +1,5 @@
 # Issue #004: MarketDataAnalyzer - Улучшенный анализ рынка
+### Статус: запланировано
 
 **🏗️ Milestone:** M1  
 **📈 Приоритет:** MEDIUM  

@@ -1,4 +1,5 @@
 # Issue #012: HealthCheckService - Мониторинг системы
+### Статус: запланировано
 
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** MEDIUM  

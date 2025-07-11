@@ -1,4 +1,5 @@
 # Issue #005: SignalAggregationService - Агрегация сигналов
+### Статус: запланировано
 
 **🏗️ Milestone:** M1  
 **📈 Приоритет:** MEDIUM  

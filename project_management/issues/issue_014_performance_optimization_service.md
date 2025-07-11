@@ -1,4 +1,5 @@
 # Issue #014: PerformanceOptimizationService
+### Статус: запланировано
 
 **🏗️ Milestone:** M4  
 **📈 Приоритет:** MEDIUM  
