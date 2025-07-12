@@ -548,8 +548,23 @@ python main.py
 - [`project_management/issues/`](project_management/issues/) - 15 детальных технических заданий
 
 ### 🛠️ **Technical Specs**
-- **Language**: Python 3.8+
-- **Main Dependencies**: ccxt.pro, asyncio, talib, numpy
+**Language**: Python 3.10
+**Main Dependencies**: 
+*   ccxt>=4.4.93
+*   ccxtpro>=1.0.1
+*   pandas>=2.3.1  # required for tests
+*   ta-lib>=0.6.4
+*   numpy>=2.2.2
+*   termcolor>=3.0.1
+*   pytz>=2025.2
+*   requests>=2.32.4
+*   pywin32>=310; sys_platform == "win32"
+*   pytest>=8.4.1
+*   pytest-asyncio>=1.0.0
+*   cryptography>=45.0.5
+*   python-dotenv>=1.0.1
+
+
 - **Architecture**: Clean Architecture / DDD
 - **Concurrency**: asyncio-based
 

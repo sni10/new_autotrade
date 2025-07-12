@@ -36,20 +36,12 @@ AutoTrade - это профессиональная система торгов�
 ```bash
 # Основная торговая система
 python main.py
-
-# Тестирование в песочнице
-python sandbox.py
-python test_prod.py
-
-# Тестирование WebSocket
-python sandbox_websocket.py
-python sandbox_websocket_watch_order_book.py
 ```
 
 ### Зависимости
 Система требует следующие основные зависимости:
 ```bash
-pip install ccxt.pro asyncio termcolor pytz talib numpy
+pip install requirements.txt
 ```
 
 ### Конфигурация
