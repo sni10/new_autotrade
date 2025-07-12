@@ -1,9 +1,9 @@
-# Issue #011: SecurityService - Безопасность
+# Issue #13: SecurityService - Безопасность
 ### Статус: запланировано
 
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** HIGH  
-**🔗 Зависимости:** Issue #8 (ConfigurationService)
+**🔗 Зависимости:** Issue #15 (ConfigurationService)
 
 ---
 
@@ -569,6 +569,6 @@ class SecureConfigurationService:
 
 ## 📚 Связанные материалы
 
-- Issue #8: ConfigurationService  
+- Issue #15: ConfigurationService  
 - [OWASP Security Guidelines](https://owasp.org/www-project-top-ten/)
 - [Python Cryptography Documentation](https://cryptography.io/)

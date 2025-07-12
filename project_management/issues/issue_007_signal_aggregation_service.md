@@ -1,9 +1,9 @@
-# Issue #005: SignalAggregationService - Агрегация сигналов
+# Issue #7: SignalAggregationService - Агрегация сигналов
 ### Статус: запланировано
 
 **🏗️ Milestone:** M1  
 **📈 Приоритет:** MEDIUM  
-**🔗 Зависимости:** Issue #4 (MarketDataAnalyzer)
+**🔗 Зависимости:** Issue #8 (MarketDataAnalyzer)
 
 ---
 
@@ -527,6 +527,6 @@ class TradingOrchestrator:
 
 ## 📚 Связанные материалы
 
-- Issue #4: MarketDataAnalyzer
+- Issue #8: MarketDataAnalyzer
 - Existing: `domain/services/signal_service.py`
 - Existing: `domain/services/orderbook_analyzer.py`

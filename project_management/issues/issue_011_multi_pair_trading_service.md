@@ -1,9 +1,9 @@
-# Issue #015: MultiPairTradingService
+# Issue #11: MultiPairTradingService
 ### Статус: запланировано
 
 **🏗️ Milestone:** M4  
 **📈 Приоритет:** LOW  
-**🔗 Зависимости:** Issue #1 (TradingOrchestrator), Issue #14 (PerformanceOptimization)
+**🔗 Зависимости:** Issue #20 (TradingOrchestrator), Issue #12 (PerformanceOptimization)
 
 ---
 
@@ -596,7 +596,7 @@ class RebalanceAction:
 
 ## 📚 Связанные материалы
 
-- Issue #1: TradingOrchestrator
-- Issue #14: PerformanceOptimization
+- Issue #20: TradingOrchestrator
+- Issue #12: PerformanceOptimization
 - [Portfolio Theory](https://en.wikipedia.org/wiki/Modern_portfolio_theory)
 - [Risk Management in Trading](https://www.investopedia.com/articles/trading/09/risk-management.asp)

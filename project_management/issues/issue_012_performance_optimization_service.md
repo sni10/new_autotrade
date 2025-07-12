@@ -1,9 +1,9 @@
-# Issue #014: PerformanceOptimizationService
+# Issue #12: PerformanceOptimizationService
 ### Статус: запланировано
 
 **🏗️ Milestone:** M4  
 **📈 Приоритет:** MEDIUM  
-**🔗 Зависимости:** Issue #1 (TradingOrchestrator), Issue #6 (DatabaseService)
+**🔗 Зависимости:** Issue #20 (TradingOrchestrator), Issue #17 (DatabaseService)
 
 ---
 
@@ -571,7 +571,7 @@ class ProfileResult:
 
 ## 📚 Связанные материалы
 
-- Issue #1: TradingOrchestrator
-- Issue #6: DatabaseService  
+- Issue #20: TradingOrchestrator
+- Issue #17: DatabaseService  
 - [High Performance Python](https://www.oreilly.com/library/view/high-performance-python/9781449361747/)
 - [Python Performance Optimization](https://wiki.python.org/moin/PythonSpeed/PerformanceTips)

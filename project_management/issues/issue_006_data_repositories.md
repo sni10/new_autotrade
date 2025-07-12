@@ -1,9 +1,9 @@
-# Issue #009: DataRepositories - Улучшенные репозитории
+# Issue #6: DataRepositories - Улучшенные репозитории
 ### Статус: запланировано
 
 **🏗️ Milestone:** M2  
 **📈 Приоритет:** LOW  
-**🔗 Зависимости:** Issue #6 (DatabaseService)
+**🔗 Зависимости:** Issue #17 (DatabaseService)
 
 ---
 
@@ -544,6 +544,6 @@ WHERE timestamp > strftime('%s', 'now', '-7 days');
 
 ## 📚 Связанные материалы
 
-- Issue #6: DatabaseService
+- Issue #17: DatabaseService
 - [SQLite Performance Tips](https://www.sqlite.org/optoverview.html)
 - [Database Indexing Best Practices](https://use-the-index-luke.com/)
