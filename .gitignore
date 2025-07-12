@@ -22,7 +22,7 @@ __pycache__/
 /.idea/
 /.vscode/
 /.run/
-
+/.claude/
 
 # --- Тестирование --- #
 # Результаты тестов и отчеты о покрытии не хранятся в репозитории.
@@ -68,5 +68,3 @@ order_book_analysis.log
 # Системные файлы для macOS и Windows.
 .DS_Store
 Thumbs.db
-/.claude/
-/.github/
