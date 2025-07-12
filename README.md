@@ -280,12 +280,12 @@ cd new_autotrade
 pip install ccxt.pro asyncio termcolor pytz talib numpy
 
 # Configure API keys in binance_keys/
-# Edit config/config.json
+# Create `.env` from `.env.example` for runtime settings
 ```
 
 ### ⚙️ Configuration
 
-**Реальная конфигурация** (config/config.json):
+**Реальная конфигурация** (`config/config.json`, overridable via `.env`):
 
 ```json
 {
@@ -568,6 +568,19 @@ AutoTrade now follows the **GitFlow** workflow:
 - `release/*` – release preparation based on `stage`
 - `hotfix/*` – urgent fixes based on `main`
 
+```
+feature/*   -> dev
+dev         -> stage
+stage       -> release/*
+release/*   -> main + dev
+hotfix/*    -> main + dev
+```
+
+### 🔖 Versioning
+Releases are created automatically on pushes to `main`. The workflow analyzes commit messages
+and increments **major**, **minor** or **patch** version accordingly, tagging the repository with
+`vX.Y.Z` and generating release notes.
+
 ---
 
 ## 🚀 Deployment
@@ -576,7 +589,8 @@ AutoTrade now follows the **GitFlow** workflow:
 ```
 new_autotrade/
 ├── main.py              # Start here
-├── config/config.json   # Main configuration  
+├── config/config.json   # Main configuration
+├── .env.example         # Environment overrides
 ├── binance_keys/        # Your API keys here
 ├── domain/              # Core business logic
 ├── application/         # Use cases & utilities
@@ -587,7 +601,7 @@ new_autotrade/
 
 ### 🎯 **Getting Started**
 1. **Configure API Keys** in `binance_keys/`
-2. **Edit Configuration** in `config/config.json`
+2. **Create `.env`** based on `.env.example` to override settings
 3. **Run** `python main.py`
 4. **Monitor** logs for trading activity
 

@@ -1,12 +1,12 @@
 {
   "binance": {
     "sandbox": {
-      "apiKey": "al6KxOQEYnjXFFkxMdnE5SqVrdpVN1KdHiUusrJQYezVkB5utJP3sueinJTppinX",
-      "secret": "lu8rhCzwtUkNTjyuAh7jwhvvQoPf0kIOHOzfzHAoS88HhsjcvtZ31YJjWyqFs9qn"
+      "apiKey": "",
+      "secret": ""
     },
     "production": {
-      "apiKey": "KWjgspAW8DsWZCS6BmTVN5ElHNrkFNQipQrOiE9cErBQbnHoobr8zTARCMGLbZHi",
-      "privateKeyPath": "F:\\HOME\\new_autotrade\\binance_keys\\id_ed25519.pem"
+      "apiKey": "",
+      "privateKeyPath": "binance_keys/id_ed25519.pem"
     }
   },
   "orderbook_analyzer": {

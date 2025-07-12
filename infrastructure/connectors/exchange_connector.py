@@ -1,9 +1,9 @@
 # infrastructure/connectors/exchange_connector.py.new - ENHANCED для реальной торговли
-import json
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
+from config.config_loader import load_config
 import ccxt
 import ccxt.pro as ccxt_async
 from domain.entities.order import ExchangeInfo
@@ -19,7 +19,7 @@ class CcxtExchangeConnector:
     def __init__(self, exchange_name="binance", use_sandbox=False, config_path=None):
         self.exchange_name = exchange_name
         self.use_sandbox = use_sandbox
-        self.config_path = config_path or "F:\\HOME\\new_autotrade\\config\\config.json"
+        self.config_path = config_path or "config/config.json"
         self.config = None
         self.client = None
         self.async_client = None
@@ -39,13 +39,10 @@ class CcxtExchangeConnector:
     def _load_config(self):
         """Загружает конфигурацию API ключей"""
         try:
-            with open(self.config_path, 'r') as f:
-                config = json.load(f)
-
+            full_config = load_config()
             env_key = 'sandbox' if self.use_sandbox else 'production'
-            self.config = config[self.exchange_name][env_key]
+            self.config = full_config.get('binance', {}).get(env_key, {})
 
-            # Загружаем приватный ключ из файла
             private_key_path = self.config.get('privateKeyPath')
             if private_key_path and Path(private_key_path).exists():
                 with open(private_key_path, 'r') as f:
@@ -53,7 +50,6 @@ class CcxtExchangeConnector:
                 self.config['secret'] = private_key
 
             logger.info(f"✅ Config loaded for {self.exchange_name} ({env_key})")
-
         except Exception as e:
             logger.error(f"❌ Failed to load config: {e}")
             raise

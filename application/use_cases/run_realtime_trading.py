@@ -1,5 +1,4 @@
 # application/use_cases/run_realtime_trading.py
-import json
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deal_service import DealService
 
@@ -72,9 +71,9 @@ async def run_realtime_trading(
     )
 
     # 🆕 ИНИЦИАЛИЗАЦИЯ СИСТЕМЫ АНАЛИЗА СТАКАНА
-    # Загружаем конфигурацию
-    with open(r'F:\HOME\new_autotrade\config\config.json', 'r') as f:
-        config = json.load(f)
+    # Загружаем конфигурацию из .env и config.json
+    from config.config_loader import load_config
+    config = load_config()
     
     orderbook_config = config.get('orderbook_analyzer', {
         'min_volume_threshold': 1000,
