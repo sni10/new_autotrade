@@ -21,34 +21,6 @@
 
 ### 1. Создать `domain/services/trading_orchestrator.py`
 
-```python
-class TradingOrchestrator:
-    def __init__(
-        self,
-        signal_aggregator: SignalAggregationService,
-        order_executor: OrderExecutionService, 
-        risk_manager: RiskManagementService,
-        market_analyzer: MarketDataAnalyzer,
-        state_manager: StateManagementService
-    ):
-        self.signal_aggregator = signal_aggregator
-        self.order_executor = order_executor
-        self.risk_manager = risk_manager  
-        self.market_analyzer = market_analyzer
-        self.state_manager = state_manager
-        
-    async def process_market_tick(self, ticker_data: Dict) -> None:
-        \"\"\"Главный метод обработки рыночного тика\"\"\"
-        
-    async def handle_buy_signal(self, signal_data: Dict) -> None:
-        \"\"\"Обработка сигнала покупки\"\"\"
-        
-    async def handle_sell_signal(self, signal_data: Dict) -> None:
-        \"\"\"Обработка сигнала продажи\"\"\"
-        
-    async def update_open_positions(self) -> None:
-        \"\"\"Обновление статуса открытых позиций\"\"\"
-```
 
 ### 2. Вынести из `run_realtime_trading.py`:
 
@@ -59,14 +31,6 @@ class TradingOrchestrator:
 
 ### 3. Упростить `run_realtime_trading.py`:
 
-```python
-async def run_realtime_trading(...):
-    orchestrator = TradingOrchestrator(...)
-    
-    while True:
-        ticker_data = await connector.watch_ticker(symbol)
-        await orchestrator.process_market_tick(ticker_data)
-```
 
 ## Критерии готовности
 
