@@ -6,7 +6,7 @@
 
 ### Критерии готовности:
 - [x] TradingOrchestrator координирует все торговые операции
-- [ ] OrderExecutionService реально размещает ордера
+- [x] OrderExecutionService реально размещает ордера
 - [ ] RiskManagementService защищает от потерь
 - [ ] MarketDataAnalyzer вынесен в отдельный сервис
 - [ ] SignalAggregationService объединяет все сигналы
