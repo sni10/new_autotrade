@@ -14,6 +14,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+logger = logging.getLogger(__name__)
 
 # Константы
 HISTORY_SIZE = 500
@@ -29,8 +30,7 @@ fake_orders = set()
 
 def log_event(message):
     """Логирует события в файл и выводит в консоль."""
-    logging.info(message)
-    print(message)
+    logger.info(message)
 
 def track_levels(levels_dict, levels, timestamp):
     """Отслеживает уровни поддержки/сопротивления и выявляет фейковые заявки."""
@@ -123,32 +123,45 @@ async def websocket_order_book_monitor(exchange, symbol):
             timestamp = time.time()
             analysis = analyze_order_book(order_book, timestamp)
 
-            print("\033c", end="")
+            logger.info("\033c")
 
-            print(f"\n📈 {symbol} | Best Bid: {analysis['best_bid']:.4f} | Best Ask: {analysis['best_ask']:.4f}")
-            print(f"💰 Объем покупок: {analysis['total_bids']:.2f} | 📉 Объем продаж: {analysis['total_asks']:.2f}")
-            print(f"⚖️ Имбаланс: {analysis['imbalance']:.2f} | 📊 Настроение: {analysis['market_sentiment']}")
-            print(f"🔮 {analysis['break_probability']}\n")
+            logger.info(
+                "\n📈 %s | Best Bid: %.4f | Best Ask: %.4f",
+                symbol,
+                analysis["best_bid"],
+                analysis["best_ask"],
+            )
+            logger.info(
+                "💰 Объем покупок: %.2f | 📉 Объем продаж: %.2f",
+                analysis["total_bids"],
+                analysis["total_asks"],
+            )
+            logger.info(
+                "⚖️ Имбаланс: %.2f | 📊 Настроение: %s",
+                analysis["imbalance"],
+                analysis["market_sentiment"],
+            )
+            logger.info("🔮 %s\n", analysis["break_probability"])
 
-            print("📉 Уровни поддержки:")
+            logger.info("📉 Уровни поддержки:")
             for level in analysis["support_levels"]:
-                print(level)
+                logger.info(level)
 
-            print("\n📈 Уровни сопротивления:")
+            logger.info("\n📈 Уровни сопротивления:")
             for level in analysis["resistance_levels"]:
-                print(level)
+                logger.info(level)
 
-            print("\n🔥 **Крупные заявки покупателей (🔵):**")
+            logger.info("\n🔥 **Крупные заявки покупателей (🔵):**")
             for price, volume in analysis["big_bids"]:
-                print(f"   {price:.3f} USDT | Объем: {volume:.2f} 🔵")
+                logger.info("   %.3f USDT | Объем: %.2f 🔵", price, volume)
 
-            print("\n🔥 **Крупные заявки продавцов (🔴):**")
+            logger.info("\n🔥 **Крупные заявки продавцов (🔴):**")
             for price, volume in analysis["big_asks"]:
-                print(f"   {price:.3f} USDT | Объем: {volume:.2f} 🔴")
+                logger.info("   %.3f USDT | Объем: %.2f 🔴", price, volume)
 
-            print("\n⚠️ **Топ 10 фейковых заявок:**")
+            logger.info("\n⚠️ **Топ 10 фейковых заявок:**")
             for price, volume in analysis["fake_orders"]:
-                print(f"   {price:.3f} USDT | Объем: {volume:.2f} ⚠️")
+                logger.info("   %.3f USDT | Объем: %.2f ⚠️", price, volume)
 
             await asyncio.sleep(1)
 

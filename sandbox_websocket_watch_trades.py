@@ -2,7 +2,11 @@ import asyncio
 import ccxt.pro as pro
 import sys
 import time
+import logging
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -23,10 +27,10 @@ async def websocket_trade_monitor(exchange, symbol):
 
                     output = f"{symbol}{trade['id']} | Price: {trade['price']:.2f} | {trade['side']} | Amount: {trade['amount']:.6f}| Cost: {trade['cost']:.6f} | Δt: {time_diff:.3f}s"
 
-                    print(f"\r{output}", end="\n", flush=False)
+                    logger.info(output)
 
             except Exception as e:
-                print(e)
+                logger.exception(e)
 
 
 async def main():
