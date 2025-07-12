@@ -82,3 +82,4 @@ pip-selfcheck.json
 
 /.idea/
 /*.new
+/.env

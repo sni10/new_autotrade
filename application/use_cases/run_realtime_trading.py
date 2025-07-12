@@ -6,7 +6,7 @@ import time
 
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deal_service import DealService
-from infrastructure.connectors.pro_exchange_connector import CcxtProMarketDataConnector
+from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 from domain.services.ticker_service import TickerService
 from application.utils.performance_logger import PerformanceLogger
@@ -14,9 +14,8 @@ from domain.services.signal_cooldown_manager import SignalCooldownManager
 
 
 async def run_realtime_trading(
-    pro_exchange_connector_prod: CcxtProMarketDataConnector,
-    pro_exchange_connector_sandbox: CcxtProMarketDataConnector,
-    enhanced_exchange_connector,
+    pro_exchange_connector_prod: CcxtExchangeConnector,
+    pro_exchange_connector_sandbox: CcxtExchangeConnector,
     currency_pair: CurrencyPair,
     deal_service: DealService,
     order_execution_service,
@@ -36,7 +35,7 @@ async def run_realtime_trading(
     try:
         while True:
             try:
-                ticker_data = await pro_exchange_connector_prod.client.watch_ticker(currency_pair.symbol)
+                ticker_data = await pro_exchange_connector_prod.async_client.watch_ticker(currency_pair.symbol)
 
                 start_process = time.time()
                 await ticker_service.process_ticker(ticker_data)

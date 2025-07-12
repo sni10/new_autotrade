@@ -95,7 +95,6 @@ async def main():
     logger.info("="*60)
 
     # Инициализация переменных для finally блока
-    enhanced_exchange_connector = None
     buy_order_monitor = None
 
     try:
@@ -117,21 +116,15 @@ async def main():
         logger.info("🔗 Инициализация коннекторов...")
 
         # Production коннектор для live данных (тикеры, стаканы)
-        pro_exchange_connector_prod = CcxtProMarketDataConnector(
+        pro_exchange_connector_prod = CcxtExchangeConnector(
             exchange_name="binance",
             use_sandbox=False
         )
 
         # Sandbox коннектор для торговых операций (ордера, балансы)
-        pro_exchange_connector_sandbox = CcxtProMarketDataConnector(
+        pro_exchange_connector_sandbox = CcxtExchangeConnector(
             exchange_name="binance",
             use_sandbox=True
-        )
-
-        # 🆕 НОВЫЙ Enhanced Exchange Connector для реальной торговли
-        enhanced_exchange_connector = CcxtExchangeConnector(
-            exchange_name="binance",
-            use_sandbox=True  # ВАЖНО: начинаем с sandbox для безопасности
         )
 
         logger.info("✅ Коннекторы инициализированы")
@@ -159,7 +152,8 @@ async def main():
 
         # Загружаем exchange info для фабрики
         try:
-            symbol_info = await enhanced_exchange_connector.get_symbol_info(symbol_ccxt)
+
+            symbol_info = await pro_exchange_connector_prod.get_symbol_info(symbol_ccxt)
             order_factory.update_exchange_info(symbol_ccxt, symbol_info)
             logger.info(f"✅ Exchange info загружена для {symbol_ccxt}")
         except Exception as e:
@@ -180,7 +174,7 @@ async def main():
         order_service = OrderService(
             orders_repo=orders_repo,
             order_factory=order_factory,
-            exchange_connector=enhanced_exchange_connector  # Подключаем реальный API
+            exchange_connector=pro_exchange_connector_sandbox  # Подключаем реальный API
         )
 
         # Deal Service (остается старым)
@@ -190,13 +184,13 @@ async def main():
         order_execution_service = OrderExecutionService(
             order_service=order_service,
             deal_service=deal_service,
-            exchange_connector=enhanced_exchange_connector
+            exchange_connector=pro_exchange_connector_sandbox
         )
 
         # 🕒 НОВЫЙ BuyOrderMonitor (мониторинг тухляков)
         buy_order_monitor = BuyOrderMonitor(
             order_service=order_service,
-            exchange_connector=enhanced_exchange_connector,
+            exchange_connector=pro_exchange_connector_sandbox,
             max_age_minutes=15.0,           # 15 минут максимум
             max_price_deviation_percent=3.0, # 3% отклонение цены
             check_interval_seconds=60       # Проверка каждую минуту
@@ -211,13 +205,13 @@ async def main():
         # 6. 🧪 ТЕСТ ПОДКЛЮЧЕНИЯ К БИРЖЕ
         logger.info("🧪 Тестирование подключения к бирже...")
 
-        connection_test = await enhanced_exchange_connector.test_connection()
+        connection_test = await pro_exchange_connector_sandbox.test_connection()
         if connection_test:
             logger.info("✅ Подключение к бирже успешно")
 
             # Показываем баланс
             try:
-                balance = await enhanced_exchange_connector.fetch_balance()
+                balance = await pro_exchange_connector_sandbox.fetch_balance()
                 usdt_balance = balance.get('USDT', {}).get('free', 0.0)
                 logger.info(f"💰 Доступный баланс: {usdt_balance:.4f} USDT")
             except Exception as e:
@@ -279,7 +273,6 @@ async def main():
         await run_realtime_trading(
             pro_exchange_connector_prod=pro_exchange_connector_prod,
             pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
-            enhanced_exchange_connector=enhanced_exchange_connector,
             currency_pair=currency_pair,
             deal_service=deal_service,
             order_execution_service=order_execution_service,  # 🆕 Передаем новый сервис
@@ -297,9 +290,6 @@ async def main():
                 buy_order_monitor.stop_monitoring()
                 logger.info("🔴 BuyOrderMonitor остановлен")
 
-            if enhanced_exchange_connector:
-                await enhanced_exchange_connector.close()
-                logger.info("🔌 Enhanced exchange connector closed")
         except Exception as e:
             logger.error(f"❌ Error closing connections: {e}")
 

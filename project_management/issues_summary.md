@@ -128,7 +128,8 @@
 - `feature/*`, `release/*`, `hotfix/*` — рабочие ветки
 ```
 feature/*   -> dev
-dev         -> release/*
+dev         -> stage
+stage       -> release/*
 release/*   -> main + dev
 hotfix/*    -> main + dev
 ```

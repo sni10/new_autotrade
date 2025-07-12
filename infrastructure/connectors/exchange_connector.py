@@ -10,6 +10,19 @@ from domain.entities.order import ExchangeInfo
 
 logger = logging.getLogger(__name__)
 
+
+
+def _normalize_symbol(self, symbol: str) -> str:
+    """Преобразует 'ETHUSDT' -> 'ETH/USDT'"""
+    if '/' in symbol:
+        return symbol
+    if symbol.endswith('USDT'):
+        return f"{symbol[:-4]}/USDT"
+    if symbol.endswith('USDC'):
+        return f"{symbol[:-4]}/USDC"
+    return symbol
+
+
 class CcxtExchangeConnector:
     """
     🚀 РАСШИРЕННАЯ обёртка над ccxt для полноценной торговли
@@ -334,6 +347,11 @@ class CcxtExchangeConnector:
         """
         await self._rate_limit_wait()
 
+        if symbol:
+            symbol = self._normalize_symbol(symbol)
+            if symbol in self.exchange_info_cache:
+                return self.exchange_info_cache[symbol]
+
         try:
             if symbol and symbol in self.exchange_info_cache:
                 return self.exchange_info_cache[symbol]
@@ -355,10 +373,22 @@ class CcxtExchangeConnector:
             logger.error(f"❌ Error fetching exchange info: {e}")
             raise
 
+    def _normalize_symbol(self, symbol: str) -> str:
+        """Преобразует 'ETHUSDT' -> 'ETH/USDT'"""
+        if '/' in symbol:
+            return symbol
+        if symbol.endswith('USDT'):
+            return f"{symbol[:-4]}/USDT"
+        if symbol.endswith('USDC'):
+            return f"{symbol[:-4]}/USDC"
+        return symbol
+
+
     async def get_symbol_info(self, symbol: str) -> ExchangeInfo:
         """
         🔍 Получение детальной информации о торговой паре
         """
+        symbol = self._normalize_symbol(symbol)
         try:
             market_info = await self.fetch_exchange_info(symbol)
 
