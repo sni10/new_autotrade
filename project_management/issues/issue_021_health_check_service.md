@@ -1,9 +1,9 @@
-# Issue #012: HealthCheckService - Мониторинг системы
+# Issue #21: HealthCheckService - Мониторинг системы
 ### Статус: запланировано
 
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** MEDIUM  
-**🔗 Зависимости:** Issue #6 (DatabaseService), Issue #10 (ErrorHandlingService)
+**🔗 Зависимости:** Issue #17 (DatabaseService), Issue #14 (ErrorHandlingService)
 
 ---
 
@@ -575,6 +575,6 @@ class AlertManager:
 
 ## 📚 Связанные материалы
 
-- Issue #6: DatabaseService
-- Issue #10: ErrorHandlingService
+- Issue #17: DatabaseService
+- Issue #14: ErrorHandlingService
 - [System Monitoring Best Practices](https://sre.google/sre-book/monitoring-distributed-systems/)

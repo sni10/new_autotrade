@@ -1,8 +1,8 @@
-# 🚀 Issue #7 Implementation Guide - OrderExecutionService
+# 🚀 Issue #19 Implementation Guide - OrderExecutionService
 
 ## 📋 СВОДКА РЕАЛИЗАЦИИ
 
-**Issue #7: Order Execution Service - Реальное выставление ордеров**  
+**Issue #19: Order Execution Service - Реальное выставление ордеров**  
 **💰 Стоимость:** $300 (20 часов)  
 **🔥 Приоритет:** КРИТИЧЕСКИЙ  
 **✅ Статус:** РЕАЛИЗОВАНО
@@ -261,17 +261,17 @@ new_order = Order(..., exchange_id="binance_123")  # Расширенная ве
 
 ## 🔮 БУДУЩИЕ УЛУЧШЕНИЯ
 
-### Готовность к Issue #6 (DatabaseService)
+### Готовность к Issue #17 (DatabaseService)
 - ✅ **Repository interface** готов к БД интеграции
 - ✅ **Serialization/deserialization** реализованы
 - ✅ **Export/import** механизмы готовы
 
-### Готовность к Issue #8 (RiskManagement)
+### Готовность к Issue #18 (RiskManagement)
 - ✅ **Balance checks** встроены
 - ✅ **Validation framework** готов
 - ✅ **Pre-execution checks** расширяемы
 
-### Готовность к Issue #10 (StateManagement)
+### Готовность к Issue #16 (StateManagement)
 - ✅ **Full state capture** в OrderExecutionService
 - ✅ **Statistics tracking** реализован
 - ✅ **Recovery mechanisms** заложены
@@ -289,14 +289,14 @@ new_order = Order(..., exchange_id="binance_123")  # Расширенная ве
 
 ### 🔧 Известные ограничения
 1. **InMemory storage** - данные теряются при перезапуске
-2. **No database persistence** - нужен Issue #6
-3. **Basic error recovery** - нужен Issue #10
-4. **Limited risk management** - нужен Issue #8
+2. **No database persistence** - нужен Issue #17
+3. **Basic error recovery** - нужен Issue #14
+4. **Limited risk management** - нужен Issue #15
 
 ### 🎯 Следующие приоритеты
-1. **Issue #6 (DatabaseService)** - персистентность данных
-2. **Issue #8 (RiskManagement)** - защита от потерь
-3. **Issue #10 (StateManagement)** - graceful restart
+1. **Issue #17 (DatabaseService)** - персистентность данных
+2. **Issue #18 (RiskManagement)** - защита от потерь
+3. **Issue #16 (StateManagement)** - graceful restart
 
 ---
 
@@ -328,7 +328,7 @@ print(json.dumps(stats, indent=2))
 
 ## 🎉 ЗАКЛЮЧЕНИЕ
 
-**Issue #7 УСПЕШНО РЕАЛИЗОВАН!**
+**Issue #19 УСПЕШНО РЕАЛИЗОВАН!**
 
 ✅ Создана полноценная система реального размещения ордеров  
 ✅ Интегрирована в существующую архитектуру  
@@ -341,5 +341,5 @@ print(json.dumps(stats, indent=2))
 ---
 
 *Документация обновлена: 2025-07-11*
-*Issue #7: OrderExecutionService - Реальное выставление ордеров*  
+*Issue #19: OrderExecutionService - Реальное выставление ордеров*  
 *Status: ✅ COMPLETED*

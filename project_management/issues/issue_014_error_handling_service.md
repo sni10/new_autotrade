@@ -1,4 +1,4 @@
-# Issue #10: ErrorHandlingService - Обработка ошибок
+# Issue #14: ErrorHandlingService - Обработка ошибок
 ### Статус: запланировано
 
 **🔥 Приоритет:** ВЫСОКИЙ  
@@ -457,8 +457,8 @@ async def should_alert(self, error: Exception, context: ErrorContext) -> bool:
 
 ## 🔗 Связанные задачи
 
-- **Зависит от:** Issue #2 (OrderExecutionService), Issue #6 (DatabaseService)
-- **Связано с:** Issue #12 (HealthCheckService) - мониторинг
+- **Зависит от:** Issue #19 (OrderExecutionService), Issue #17 (DatabaseService)
+- **Связано с:** Issue #21 (HealthCheckService) - мониторинг
 - **Интегрируется с:** Всеми сервисами системы
 
 ## 📋 Подзадачи

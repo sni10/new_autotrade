@@ -1,9 +1,9 @@
-# Issue #013: BackupService - Резервное копирование
+# Issue #5: BackupService - Резервное копирование
 ### Статус: запланировано
 
 **🏗️ Milestone:** M3  
 **📈 Приоритет:** LOW  
-**🔗 Зависимости:** Issue #6 (DatabaseService)
+**🔗 Зависимости:** Issue #17 (DatabaseService)
 
 ---
 
@@ -587,6 +587,6 @@ class BackupException(Exception):
 
 ## 📚 Связанные материалы
 
-- Issue #6: DatabaseService
+- Issue #17: DatabaseService
 - [Database Backup Best Practices](https://www.postgresql.org/docs/current/backup.html)
 - [3-2-1 Backup Strategy](https://www.veeam.com/blog/321-backup-rule.html)
