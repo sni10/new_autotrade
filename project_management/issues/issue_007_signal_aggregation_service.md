@@ -1,4 +1,4 @@
-# Issue #7: SignalAggregationService - Агрегация сигналов
+# 🟩🟩🟩🟩🟩 Issue #7: SignalAggregationService - Агрегация сигналов
 ### Статус: выполнено
 **📈 Готовность:** 100%
 

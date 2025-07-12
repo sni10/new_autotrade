@@ -1,4 +1,4 @@
-# 🚀 Issue #18 Implementation Guide - RiskManagementService
+# 🟩🟩🟩🟩⬜ Issue #18 🚀 Implementation Guide - RiskManagementService
 
 ## 📋 Сводка
 - **Статус:** выполнено

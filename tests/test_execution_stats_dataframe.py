@@ -1,10 +1,14 @@
+import sys
+import os
 import pandas as pd
 import pytest
 from unittest.mock import MagicMock
 
-from domain.services.order_execution_service import OrderExecutionService
-from domain.services.order_service import OrderService
-from domain.services.deal_service import DealService
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
+from domain.services.orders.order_execution_service import OrderExecutionService
+from domain.services.orders.order_service import OrderService
+from domain.services.deals.deal_service import DealService
 from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
 from domain.factories.order_factory import OrderFactory
@@ -41,4 +45,3 @@ def test_update_execution_stats_dataframe():
     assert stats["total_volume"] == pytest.approx(data[data.success].volume.sum())
     assert stats["total_fees"] == pytest.approx(data[data.success].fees.sum())
     assert stats["average_execution_time_ms"] == pytest.approx(data.time.mean())
-

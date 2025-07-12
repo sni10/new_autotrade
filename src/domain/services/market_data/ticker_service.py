@@ -6,12 +6,12 @@ import numpy as np
 from talib import MA_Type
 
 # В начале файла добавить:
-from domain.services.cached_indicator_service import CachedIndicatorService
+from domain.services.indicators.cached_indicator_service import CachedIndicatorService
 from domain.entities.ticker import Ticker
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 
 # 🆕 НОВЫЕ ИМПОРТЫ ДЛЯ СТАКАНА
-from domain.services.orderbook_analyzer import OrderBookMetrics
+from domain.services.market_data.orderbook_analyzer import OrderBookMetrics
 
 
 def round_to_step(value: Decimal, step: Decimal) -> Decimal:

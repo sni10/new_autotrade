@@ -4,7 +4,7 @@ import logging
 import time
 from typing import List, Optional
 from domain.entities.order import Order
-from domain.services.order_service import OrderService
+from domain.services.orders.order_service import OrderService
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 logger = logging.getLogger(__name__)

@@ -44,7 +44,7 @@ python main.py
 pip install requirements.txt
 ```
 
-### Конфигураци
+### Конфигурация
 - Основная конфигурация: `config/config.json`
 - API ключи: каталог `binance_keys/`
 - Поддерживает как песочницу, так и производственную среду

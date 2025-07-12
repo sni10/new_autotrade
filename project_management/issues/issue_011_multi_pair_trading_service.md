@@ -1,4 +1,4 @@
-# Issue #11: MultiPairTradingService
+# ⬜⬜⬜⬜⬜ Issue #11: MultiPairTradingService
 ### Статус: запланировано
 
 **🏗️ Milestone:** M4  

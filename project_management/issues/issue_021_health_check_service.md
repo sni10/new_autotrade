@@ -1,4 +1,4 @@
-# 🚀 Issue #21 Implementation Guide - HealthCheckService
+# ⬜⬜⬜⬜⬜ Issue #21 🚀 Implementation Guide - HealthCheckService
 
 ## 📋 Сводка
 - **Статус:** запланировано

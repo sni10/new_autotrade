@@ -1,4 +1,4 @@
-# Issue #15: ConfigurationService - Управление конфигурацией
+# 🟩🟩🟩🟩⬜ Issue #15: ConfigurationService - Управление конфигурацией
 ### Статус: выполнено
 **📈 Готовность:** 67%
 

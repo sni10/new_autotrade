@@ -1,21 +1,29 @@
 # main.py.new - ИНТЕГРАЦИЯ Issue #7 OrderExecutionService + BuyOrderMonitor
 import asyncio
 import sys
+import os
 import logging
 from datetime import datetime
 import pytz
 import requests
 import win32api
 import time
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
+
+# Добавляем src в sys.path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
 
 # 🆕 НОВЫЕ ИМПОРТЫ для Issue #7
 from domain.entities.currency_pair import CurrencyPair
-from domain.services.deal_service import DealService
+from domain.services.deals.deal_service import DealService
 
 # 🚀 ОБНОВЛЕННЫЕ СЕРВИСЫ
-from domain.services.order_service import OrderService  # Используем .new версию
-from domain.services.order_execution_service import OrderExecutionService  # НОВЫЙ главный сервис
-from domain.services.buy_order_monitor import BuyOrderMonitor  # 🆕 МОНИТОРИНГ ТУХЛЯКОВ
+from domain.services.orders.order_service import OrderService  # Используем .new версию
+from domain.services.orders.order_execution_service import OrderExecutionService  # НОВЫЙ главный сервис
+from domain.services.orders.buy_order_monitor import BuyOrderMonitor  # 🆕 МОНИТОРИНГ ТУХЛЯКОВ
 from domain.factories.order_factory import OrderFactory  # Используем .new версию
 
 # 🚀 ОБНОВЛЕННЫЕ РЕПОЗИТОРИИ

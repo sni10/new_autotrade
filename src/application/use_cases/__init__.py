@@ -1,0 +1,1 @@
+"""Use cases for the trading application."""

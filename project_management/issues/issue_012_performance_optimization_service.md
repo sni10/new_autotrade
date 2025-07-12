@@ -1,4 +1,4 @@
-# Issue #12: PerformanceOptimizationService
+# ⬜⬜⬜⬜⬜ Issue #12: PerformanceOptimizationService
 ### Статус: запланировано
 
 **🏗️ Milestone:** M4  

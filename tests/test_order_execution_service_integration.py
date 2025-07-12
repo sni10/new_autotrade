@@ -1,15 +1,19 @@
+import sys
+import os
 import asyncio
 import pytest
 import time
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from domain.entities.currency_pair import CurrencyPair
 from domain.entities.order import Order, ExchangeInfo
 from domain.factories.order_factory import OrderFactory
 from domain.factories.deal_factory import DealFactory
 from domain.entities.deal import Deal
-from domain.services.deal_service import DealService
-from domain.services.order_service import OrderService
-from domain.services.order_execution_service import OrderExecutionService
+from domain.services.deals.deal_service import DealService
+from domain.services.orders.order_service import OrderService
+from domain.services.orders.order_execution_service import OrderExecutionService
 
 from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
