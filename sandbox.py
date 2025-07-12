@@ -3,6 +3,9 @@ from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
 from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
+import logging
+
+logger = logging.getLogger(__name__)
 
 def main():
     cp = CurrencyPair(base_currency="BTC", quote_currency="USDT")
@@ -16,7 +19,7 @@ def main():
 
     # 1) Создаём сделку
     deal = deal_factory.create_new_deal(cp)
-    print("New Deal:", deal)
+    logger.info("New Deal: %s", deal)
 
     # 2) Сохраняем сделку
     deals_repo.save(deal)
@@ -28,12 +31,12 @@ def main():
 
     # 3) Проверим get_all_by_deal:
     buy_and_sell = orders_repo.get_all_by_deal(deal.deal_id)
-    print("Orders for this deal:", buy_and_sell)
+    logger.info("Orders for this deal: %s", buy_and_sell)
 
     # 4) Закроем сделку
     deal.close()
     deals_repo.save(deal)  # сохраним статус
-    print("Closed deal:", deal)
+    logger.info("Closed deal: %s", deal)
 
 if __name__ == "__main__":
     main()

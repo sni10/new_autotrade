@@ -3,6 +3,7 @@
 
 import asyncio
 import time
+import logging
 
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deal_service import DealService
@@ -11,6 +12,8 @@ from infrastructure.repositories.tickers_repository import InMemoryTickerReposit
 from domain.services.ticker_service import TickerService
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.signal_cooldown_manager import SignalCooldownManager
+
+logger = logging.getLogger(__name__)
 
 
 async def run_realtime_trading(
@@ -30,7 +33,7 @@ async def run_realtime_trading(
 
     counter = 0
 
-    print("🚀 Запуск расширенного торгового цикла с OrderExecutionService + BuyOrderMonitor")
+    logger.info("🚀 Запуск расширенного торгового цикла с OrderExecutionService + BuyOrderMonitor")
 
     try:
         while True:
@@ -46,7 +49,10 @@ async def run_realtime_trading(
 
                 if len(repository.tickers) < 50:
                     if counter % 100 == 0:
-                        print(f"🟡 Накоплено {len(repository.tickers)} тиков, нужно 50")
+                        logger.info(
+                            "🟡 Накоплено %s тиков, нужно 50",
+                            len(repository.tickers),
+                        )
                     continue
 
                 ticker_signal = await ticker_service.get_signal()
@@ -74,21 +80,31 @@ async def run_realtime_trading(
 
                             if not can_buy:
                                 if counter % 20 == 0:
-                                    print(f"🚫 BUY заблокирован: {reason} | Цена: {current_price}")
+                                    logger.info(
+                                        "🚫 BUY заблокирован: %s | Цена: %s",
+                                        reason,
+                                        current_price,
+                                    )
                                 continue
 
-                            print("\n" + "="*80)
-                            print("🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService...")
-                            print("="*80)
+                            logger.info("\n" + "=" * 80)
+                            logger.info(
+                                "🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService..."
+                            )
+                            logger.info("=" * 80)
 
                             macd = last_ticker.signals.get('macd', 0.0)
                             signal = last_ticker.signals.get('signal', 0.0)
                             hist = last_ticker.signals.get('histogram', 0.0)
 
-                            print(f"   📈 MACD > Signal: {macd:.6f} > {signal:.6f}")
-                            print(f"   📊 Histogram: {hist:.6f}")
-                            print(f"   💰 Текущая цена: {current_price} USDT")
-                            print(f"   🎯 Активных сделок: {active_deals_count}/{currency_pair.deal_count}")
+                            logger.info("   📈 MACD > Signal: %.6f > %.6f", macd, signal)
+                            logger.info("   📊 Histogram: %.6f", hist)
+                            logger.info("   💰 Текущая цена: %s USDT", current_price)
+                            logger.info(
+                                "   🎯 Активных сделок: %s/%s",
+                                active_deals_count,
+                                currency_pair.deal_count,
+                            )
 
                             try:
                                 strategy_result = ticker_service.calculate_strategy(
@@ -102,10 +118,13 @@ async def run_realtime_trading(
                                 )
 
                                 if isinstance(strategy_result, dict) and "comment" in strategy_result:
-                                    print(f"❌ Ошибка в калькуляторе: {strategy_result['comment']}")
+                                    logger.error(
+                                        "❌ Ошибка в калькуляторе: %s",
+                                        strategy_result["comment"],
+                                    )
                                     continue
 
-                                print("🚀 Выполнение стратегии через OrderExecutionService...")
+                                logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
                                 execution_result = await order_execution_service.execute_trading_strategy(
                                     currency_pair=currency_pair,
                                     strategy_result=strategy_result,
@@ -122,59 +141,65 @@ async def run_realtime_trading(
                                 )
 
                                 if execution_result.success:
-                                    print("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
+                                    logger.info("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
                                 else:
-                                    print(f"❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА: {execution_result.error_message}")
+                                    logger.error(
+                                        "❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА: %s",
+                                        execution_result.error_message,
+                                    )
 
                             except Exception as calc_error:
-                                print(f"❌ Ошибка в стратегии: {calc_error}")
+                                logger.exception(
+                                    "❌ Ошибка в стратегии: %s",
+                                    calc_error,
+                                )
 
-                            print("="*80)
-                            print("🔄 Продолжаем мониторинг...\n")
+                            logger.info("=" * 80)
+                            logger.info("🔄 Продолжаем мониторинг...\n")
 
                 if counter % 100 == 0:
                     execution_stats = order_execution_service.get_execution_statistics()
-                    print(f"\n📊 СТАТИСТИКА OrderExecutionService (тик {counter}):")
-                    print(f"   🚀 Всего выполнений: {execution_stats['total_executions']}")
-                    print(f"   ✅ Успешных: {execution_stats['successful_executions']}")
-                    print(f"   ❌ Неудачных: {execution_stats['failed_executions']}")
+                    logger.info("\n📊 СТАТИСТИКА OrderExecutionService (тик %s):", counter)
+                    logger.info("   🚀 Всего выполнений: %s", execution_stats["total_executions"])
+                    logger.info("   ✅ Успешных: %s", execution_stats["successful_executions"])
+                    logger.info("   ❌ Неудачных: %s", execution_stats["failed_executions"])
 
                     order_stats = order_execution_service.order_service.get_statistics()
-                    print(f"   📦 Всего ордеров: {order_stats['total_orders']}")
-                    print(f"   🔄 Открытых ордеров: {order_stats['open_orders']}")
+                    logger.info("   📦 Всего ордеров: %s", order_stats["total_orders"])
+                    logger.info("   🔄 Открытых ордеров: %s", order_stats["open_orders"])
 
                     active_deals = len(deal_service.get_open_deals())
-                    print(f"   💼 Активных сделок: {active_deals}")
+                    logger.info("   💼 Активных сделок: %s", active_deals)
 
                     monitor_stats = buy_order_monitor.get_statistics()
-                    print(f"\n🕒 СТАТИСТИКА BuyOrderMonitor:")
-                    print(f"   🔍 Проверок выполнено: {monitor_stats['checks_performed']}")
-                    print(f"   🚨 Тухляков найдено: {monitor_stats['stale_orders_found']}")
-                    print(f"   ❌ Ордеров отменено: {monitor_stats['orders_cancelled']}")
-                    print(f"   🔄 Ордеров пересоздано: {monitor_stats['orders_recreated']}")
+                    logger.info("\n🕒 СТАТИСТИКА BuyOrderMonitor:")
+                    logger.info("   🔍 Проверок выполнено: %s", monitor_stats["checks_performed"])
+                    logger.info("   🚨 Тухляков найдено: %s", monitor_stats["stale_orders_found"])
+                    logger.info("   ❌ Ордеров отменено: %s", monitor_stats["orders_cancelled"])
+                    logger.info("   🔄 Ордеров пересоздано: %s", monitor_stats["orders_recreated"])
 
             except Exception as e:
-                print(f"❌ Ошибка в торговом цикле: {e}")
+                logger.exception("❌ Ошибка в торговом цикле: %s", e)
                 await asyncio.sleep(1)
 
     except KeyboardInterrupt:
-        print("🛑 Получен сигнал остановки...")
+        logger.info("🛑 Получен сигнал остановки...")
     finally:
-        print("🚨 Выполнение экстренной остановки...")
+        logger.info("🚨 Выполнение экстренной остановки...")
         emergency_result = await order_execution_service.emergency_stop_all_trading()
-        print(f"🚨 Экстренная остановка завершена: {emergency_result}")
+        logger.info("🚨 Экстренная остановка завершена: %s", emergency_result)
 
         final_monitor_stats = buy_order_monitor.get_statistics()
-        print("🕒 ФИНАЛЬНАЯ СТАТИСТИКА BuyOrderMonitor:")
-        print(f"   🔍 Всего проверок: {final_monitor_stats['checks_performed']}")
-        print(f"   🚨 Всего тухляков: {final_monitor_stats['stale_orders_found']}")
-        print(f"   ❌ Всего отменено: {final_monitor_stats['orders_cancelled']}")
-        print(f"   🔄 Всего пересоздано: {final_monitor_stats['orders_recreated']}")
+        logger.info("🕒 ФИНАЛЬНАЯ СТАТИСТИКА BuyOrderMonitor:")
+        logger.info("   🔍 Всего проверок: %s", final_monitor_stats["checks_performed"])
+        logger.info("   🚨 Всего тухляков: %s", final_monitor_stats["stale_orders_found"])
+        logger.info("   ❌ Всего отменено: %s", final_monitor_stats["orders_cancelled"])
+        logger.info("   🔄 Всего пересоздано: %s", final_monitor_stats["orders_recreated"])
 
         final_stats = order_execution_service.get_execution_statistics()
-        print("📊 ФИНАЛЬНАЯ СТАТИСТИКА OrderExecutionService:")
-        print(f"   🚀 Всего выполнений: {final_stats['total_executions']}")
-        print(f"   ✅ Успешных: {final_stats['successful_executions']}")
-        print(f"   📈 Процент успеха: {final_stats['success_rate']:.1f}%")
-        print(f"   💰 Общий объем: {final_stats['total_volume']:.4f} USDT")
-        print(f"   💸 Общие комиссии: {final_stats['total_fees']:.4f} USDT")
+        logger.info("📊 ФИНАЛЬНАЯ СТАТИСТИКА OrderExecutionService:")
+        logger.info("   🚀 Всего выполнений: %s", final_stats["total_executions"])
+        logger.info("   ✅ Успешных: %s", final_stats["successful_executions"])
+        logger.info("   📈 Процент успеха: %.1f%%", final_stats["success_rate"])
+        logger.info("   💰 Общий объем: %.4f USDT", final_stats["total_volume"])
+        logger.info("   💸 Общие комиссии: %.4f USDT", final_stats["total_fees"])

@@ -2,7 +2,11 @@ import asyncio
 import ccxt.pro as pro
 import sys
 import time
+import logging
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 # 🛠 Фикс для Windows: устанавливаем совместимый event loop
 if sys.platform == "win32":
@@ -29,10 +33,10 @@ async def websocket_price_monitor(exchange, symbol):
                       f" close: {ticker['close']:.2f} |"
                       f" Δt: {time_diff:.3f}s")
 
-            print(output)
+            logger.info(output)
 
         except Exception as e:
-            print(f"WebSocket Error: {e}")
+            logger.exception("WebSocket Error: %s", e)
 
 
 async def main():
