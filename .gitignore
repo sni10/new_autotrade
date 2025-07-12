@@ -24,9 +24,9 @@ __pycache__/
 
 # --- Конфигурации IDE и локальные настройки --- #
 # Исключаем папки с настройками популярных IDE.
-.idea/
-.vscode/
-.run/
+/.idea/
+/.vscode/
+/.run/
 
 
 # --- Тестирование --- #
@@ -73,3 +73,5 @@ order_book_analysis.log
 # Системные файлы для macOS и Windows.
 .DS_Store
 Thumbs.db
+/.claude/
+/.github/
