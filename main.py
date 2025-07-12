@@ -25,6 +25,7 @@ from infrastructure.repositories.orders_repository import InMemoryOrdersReposito
 # 🚀 ОБНОВЛЕННЫЕ КОННЕКТОРЫ
 from infrastructure.connectors.pro_exchange_connector import CcxtProMarketDataConnector
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector  # Используем .new версию
+from config.config_loader import load_config
 
 # Use-case запуска торговли
 from application.use_cases.run_realtime_trading import run_realtime_trading
@@ -79,11 +80,13 @@ async def main():
     # Синхронизация времени
     time_sync()
 
-    # Настройки торговой пары
-    base_currency = "ETH"
-    quote_currency = "USDT"
-    symbol_ccxt = f"{base_currency}{quote_currency}"  # "MAGICUSDT"
-    symbol_display = f"{base_currency}/{quote_currency}"  # "MAGIC/USDT"
+    # Настройки торговой пары из конфигурации
+    config = load_config()
+    pair_cfg = config.get("currency_pair", {})
+    base_currency = pair_cfg.get("base_currency", "ETH")
+    quote_currency = pair_cfg.get("quote_currency", "USDT")
+    symbol_ccxt = f"{base_currency}{quote_currency}"
+    symbol_display = f"{base_currency}/{quote_currency}"
 
     logger.info("🚀 ЗАПУСК AutoTrade v2.2.0+ с OrderExecutionService + BuyOrderMonitor")
     logger.info(f"   💱 Валютная пара: {symbol_display} ({symbol_ccxt})")
@@ -101,12 +104,12 @@ async def main():
             base_currency=base_currency,
             quote_currency=quote_currency,
             symbol=symbol_ccxt,
-            order_life_time=1,
-            deal_quota=15.0,        # Бюджет на сделку
-            min_step=0.1,
-            price_step=0.0001,
-            profit_markup=1.5,      # Целевая прибыль %
-            deal_count=3         # Макс. активных сделок
+            order_life_time=pair_cfg.get("order_life_time", 1),
+            deal_quota=pair_cfg.get("deal_quota", 15.0),
+            min_step=pair_cfg.get("min_step", 0.1),
+            price_step=pair_cfg.get("price_step", 0.0001),
+            profit_markup=pair_cfg.get("profit_markup", 1.5),
+            deal_count=pair_cfg.get("deal_count", 3),
         )
         logger.info(f"✅ Валютная пара создана: {currency_pair.symbol}")
 
@@ -273,7 +276,7 @@ async def main():
         logger.info("="*80)
 
         # Запуск торгового цикла с новыми сервисами
-        await run_realtime_trading_enhanced(
+        await run_realtime_trading(
             pro_exchange_connector_prod=pro_exchange_connector_prod,
             pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
             enhanced_exchange_connector=enhanced_exchange_connector,
@@ -301,234 +304,6 @@ async def main():
             logger.error(f"❌ Error closing connections: {e}")
 
 
-async def run_realtime_trading_enhanced(
-        pro_exchange_connector_prod,
-        pro_exchange_connector_sandbox,
-        enhanced_exchange_connector,
-        currency_pair,
-        deal_service,
-        order_execution_service,
-        buy_order_monitor
-):
-    """
-    🚀 АДАПТИРОВАННАЯ версия торгового цикла для Issue #7 + BuyOrderMonitor
-
-    Это упрощенная версия run_realtime_trading.py которая использует
-    новый OrderExecutionService вместо прямого создания ордеров
-    + мониторинг протухших BUY ордеров
-    """
-
-    # Импортируем необходимые сервисы
-    from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
-    from domain.services.ticker_service import TickerService
-    from application.utils.performance_logger import PerformanceLogger
-    from domain.services.signal_cooldown_manager import SignalCooldownManager
-
-    # Инициализация сервисов для анализа
-    repository = InMemoryTickerRepository(max_size=5000)
-    ticker_service = TickerService(repository)
-    logger_perf = PerformanceLogger(log_interval_seconds=10)
-    cooldown_manager = SignalCooldownManager()
-
-    counter = 0
-
-    logger.info("🚀 Запуск расширенного торгового цикла с OrderExecutionService + BuyOrderMonitor")
-
-    try:
-        while True:
-            try:
-                start_watch = time.time()
-
-                # Получение тикера
-                ticker_data = await pro_exchange_connector_prod.client.watch_ticker(currency_pair.symbol)
-
-                # Обработка тикера
-                start_process = time.time()
-                await ticker_service.process_ticker(ticker_data)
-                end_process = time.time()
-
-                processing_time = end_process - start_process
-                counter += 1
-
-                # Проверяем достаточно ли данных
-                if len(repository.tickers) < 50:
-                    if counter % 100 == 0:
-                        logger.info(f"🟡 Накоплено {len(repository.tickers)} тиков, нужно 50")
-                    continue
-
-                # Получаем сигнал
-                ticker_signal = await ticker_service.get_signal()
-
-                # Логирование производительности
-                if len(repository.tickers) > 0:
-                    last_ticker = repository.tickers[-1]
-                    signals_count = len(last_ticker.signals) if last_ticker.signals else 0
-                    logger_perf.log_tick(
-                        price=float(last_ticker.close),
-                        processing_time=processing_time,
-                        signals_count=signals_count
-                    )
-
-                # 🎯 ОБРАБОТКА СИГНАЛА ПОКУПКИ с OrderExecutionService
-                if ticker_signal == "BUY":
-                    if len(repository.tickers) > 0:
-                        last_ticker = repository.tickers[-1]
-                        if last_ticker.signals:
-                            # Получаем текущие данные
-                            current_price = float(last_ticker.close)
-
-                            # 🛡️ ПРОВЕРКА ЛИМИТА АКТИВНЫХ СДЕЛОК
-                            active_deals_count = len(deal_service.get_open_deals())
-                            can_buy, reason = cooldown_manager.can_buy(
-                                active_deals_count=active_deals_count,
-                                max_deals=currency_pair.deal_count
-                            )
-
-                            if not can_buy:
-                                if counter % 20 == 0:
-                                    logger.info(f"🚫 BUY заблокирован: {reason} | Цена: {current_price}")
-                                continue
-
-                            # ✅ СИГНАЛ РАЗРЕШЕН
-                            logger.info("\n" + "="*80)
-                            logger.info("🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService...")
-                            logger.info("="*80)
-
-                            macd = last_ticker.signals.get('macd', 0.0)
-                            signal = last_ticker.signals.get('signal', 0.0)
-                            hist = last_ticker.signals.get('histogram', 0.0)
-
-                            logger.info(f"   📈 MACD > Signal: {macd:.6f} > {signal:.6f}")
-                            logger.info(f"   📊 Histogram: {hist:.6f}")
-                            logger.info(f"   💰 Текущая цена: {current_price} USDT")
-                            logger.info(f"   🎯 Активных сделок: {active_deals_count}/{currency_pair.deal_count}")
-
-                            # 🧮 РАСЧЕТ СТРАТЕГИИ
-                            try:
-                                strategy_result = ticker_service.calculate_strategy(
-                                    buy_price=current_price,
-                                    budget=currency_pair.deal_quota,
-                                    min_step=currency_pair.min_step,
-                                    price_step=currency_pair.price_step,
-                                    buy_fee_percent=0.1,
-                                    sell_fee_percent=0.1,
-                                    profit_percent=currency_pair.profit_markup
-                                )
-
-                                if isinstance(strategy_result, dict) and "comment" in strategy_result:
-                                    logger.warning(f"❌ Ошибка в калькуляторе: {strategy_result['comment']}")
-                                    continue
-
-                                # 🚀 ВЫПОЛНЕНИЕ ЧЕРЕЗ OrderExecutionService (Issue #7)
-                                logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
-
-                                execution_result = await order_execution_service.execute_trading_strategy(
-                                    currency_pair=currency_pair,
-                                    strategy_result=strategy_result,
-                                    metadata={
-                                        'trigger': 'macd_signal',
-                                        'macd_data': {
-                                            'macd': macd,
-                                            'signal': signal,
-                                            'histogram': hist
-                                        },
-                                        'market_price': current_price,
-                                        'timestamp': int(time.time() * 1000)
-                                    }
-                                )
-
-                                if execution_result.success:
-                                    logger.info("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
-                                    logger.info(f"   ✅ Сделка: #{execution_result.deal_id}")
-                                    logger.info(f"   🛒 BUY ордер: {execution_result.buy_order.exchange_id}")
-                                    logger.info(f"   🏷️ SELL ордер: {execution_result.sell_order.exchange_id}")
-                                    logger.info(f"   💰 Общая стоимость: {execution_result.total_cost:.4f} USDT")
-                                    logger.info(f"   📈 Ожидаемая прибыль: {execution_result.expected_profit:.4f} USDT")
-                                    logger.info(f"   💸 Комиссии: {execution_result.fees:.4f} USDT")
-                                    logger.info(f"   ⏱️ Время выполнения: {execution_result.execution_time_ms:.1f}ms")
-
-                                    # Обновляем статистику
-                                    execution_stats = order_execution_service.get_execution_statistics()
-                                    logger.info(f"   📊 Общая статистика: {execution_stats['successful_executions']}/{execution_stats['total_executions']} успешных")
-
-                                else:
-                                    logger.error("❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА!")
-                                    logger.error(f"   💔 Ошибка: {execution_result.error_message}")
-                                    if execution_result.warnings:
-                                        for warning in execution_result.warnings:
-                                            logger.warning(f"   ⚠️ {warning}")
-
-                                    # Показываем статистику ошибок
-                                    execution_stats = order_execution_service.get_execution_statistics()
-                                    logger.error(f"   📊 Статистика ошибок: {execution_stats['failed_executions']} неудач")
-
-                            except Exception as calc_error:
-                                logger.error(f"❌ Ошибка в стратегии: {calc_error}")
-
-                            logger.info("="*80)
-                            logger.info("🔄 Продолжаем мониторинг...\n")
-
-                # 📊 ПЕРИОДИЧЕСКАЯ СТАТИСТИКА (включая BuyOrderMonitor)
-                if counter % 100 == 0:
-                    # Статистика OrderExecutionService
-                    execution_stats = order_execution_service.get_execution_statistics()
-                    logger.info(f"\n📊 СТАТИСТИКА OrderExecutionService (тик {counter}):")
-                    logger.info(f"   🚀 Всего выполнений: {execution_stats['total_executions']}")
-                    logger.info(f"   ✅ Успешных: {execution_stats['successful_executions']}")
-                    logger.info(f"   ❌ Неудачных: {execution_stats['failed_executions']}")
-                    logger.info(f"   📈 Процент успеха: {execution_stats['success_rate']:.1f}%")
-                    logger.info(f"   💰 Общий объем: {execution_stats['total_volume']:.4f} USDT")
-                    logger.info(f"   ⏱️ Среднее время: {execution_stats['average_execution_time_ms']:.1f}ms")
-
-                    # Статистика ордеров
-                    order_stats = order_execution_service.order_service.get_statistics()
-                    logger.info(f"   📦 Всего ордеров: {order_stats['total_orders']}")
-                    logger.info(f"   🔄 Открытых ордеров: {order_stats['open_orders']}")
-
-                    # Статистика активных сделок
-                    active_deals = len(deal_service.get_open_deals())
-                    logger.info(f"   💼 Активных сделок: {active_deals}")
-
-                    # 🕒 СТАТИСТИКА BuyOrderMonitor
-                    monitor_stats = buy_order_monitor.get_statistics()
-                    logger.info(f"\n🕒 СТАТИСТИКА BuyOrderMonitor:")
-                    logger.info(f"   🔍 Проверок выполнено: {monitor_stats['checks_performed']}")
-                    logger.info(f"   🚨 Тухляков найдено: {monitor_stats['stale_orders_found']}")
-                    logger.info(f"   ❌ Ордеров отменено: {monitor_stats['orders_cancelled']}")
-                    logger.info(f"   🔄 Ордеров пересоздано: {monitor_stats['orders_recreated']}")
-
-            except Exception as e:
-                logger.error(f"❌ Ошибка в торговом цикле: {e}")
-                await asyncio.sleep(1)  # Пауза при ошибке
-
-    except KeyboardInterrupt:
-        logger.info("🛑 Получен сигнал остановки...")
-    finally:
-        # Экстренная остановка всей торговли
-        logger.info("🚨 Выполнение экстренной остановки...")
-
-        emergency_result = await order_execution_service.emergency_stop_all_trading()
-        logger.info(f"🚨 Экстренная остановка завершена:")
-        logger.info(f"   ❌ Отменено ордеров: {emergency_result.get('cancelled_orders', 0)}")
-        logger.info(f"   📊 Осталось открытых: {emergency_result.get('remaining_open_orders', 0)}")
-        logger.info(f"   💼 Активных сделок: {emergency_result.get('open_deals', 0)}")
-
-        # 🕒 Финальная статистика BuyOrderMonitor
-        final_monitor_stats = buy_order_monitor.get_statistics()
-        logger.info("🕒 ФИНАЛЬНАЯ СТАТИСТИКА BuyOrderMonitor:")
-        logger.info(f"   🔍 Всего проверок: {final_monitor_stats['checks_performed']}")
-        logger.info(f"   🚨 Всего тухляков: {final_monitor_stats['stale_orders_found']}")
-        logger.info(f"   ❌ Всего отменено: {final_monitor_stats['orders_cancelled']}")
-        logger.info(f"   🔄 Всего пересоздано: {final_monitor_stats['orders_recreated']}")
-
-        # Финальная статистика OrderExecutionService
-        final_stats = order_execution_service.get_execution_statistics()
-        logger.info("📊 ФИНАЛЬНАЯ СТАТИСТИКА OrderExecutionService:")
-        logger.info(f"   🚀 Всего выполнений: {final_stats['total_executions']}")
-        logger.info(f"   ✅ Успешных: {final_stats['successful_executions']}")
-        logger.info(f"   📈 Процент успеха: {final_stats['success_rate']:.1f}%")
-        logger.info(f"   💰 Общий объем: {final_stats['total_volume']:.4f} USDT")
-        logger.info(f"   💸 Общие комиссии: {final_stats['total_fees']:.4f} USDT")
 
 
 if __name__ == "__main__":
