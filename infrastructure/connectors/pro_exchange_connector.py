@@ -1,6 +1,6 @@
-import json
-
 import ccxt.pro as ccxtpro
+from pathlib import Path
+from config.config_loader import load_config
 
 class CcxtProMarketDataConnector:
     def __init__(self, exchange_name="binance", use_sandbox=False):
@@ -12,15 +12,14 @@ class CcxtProMarketDataConnector:
 
     def _load_config(self):
 
-        with open(r'F:\HOME\new_autotrade\config\config.json', 'r') as f:
-            config = json.load(f)
+        config = load_config()
+        env_key = 'sandbox' if self.use_sandbox else 'production'
+        self.config = config.get('binance', {}).get(env_key, {})
 
-        private_key_pem = config[self.exchange_name]['sandbox']['privateKeyPath']
-        with open(private_key_pem, 'r') as f:
-            private_key_pem = f.read()
-
-        self.config = config[self.exchange_name]['sandbox' if self.use_sandbox else 'production']
-        self.config['secret'] = private_key_pem
+        private_key_pem = self.config.get('privateKeyPath')
+        if private_key_pem and Path(private_key_pem).exists():
+            with open(private_key_pem, 'r') as f:
+                self.config['secret'] = f.read()
 
     def _init_exchange_client(self):
         exchange_class = getattr(ccxtpro, self.exchange_name)
