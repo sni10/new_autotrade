@@ -12,14 +12,14 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: sni10per/new_autotrade-ci:2.2.0
+      image: sni10per/new_autotrade-ci:latest
 
     steps:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
 
       - name: 🧪 Run tests with Pytest
-        run: pytest
+        run: pytest tests/
 
       - name: 📦 Archive test results (optional)
         if: always()

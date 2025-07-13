@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
 from domain.entities.deal import Deal
 

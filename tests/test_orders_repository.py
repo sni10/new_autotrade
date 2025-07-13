@@ -1,5 +1,10 @@
+import sys
+import os
 import time
 from datetime import datetime, timedelta
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from domain.entities.order import Order
 from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
 

@@ -1,5 +1,10 @@
+import sys
+import os
 import time
 import pytest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from domain.entities.order import Order
 
 

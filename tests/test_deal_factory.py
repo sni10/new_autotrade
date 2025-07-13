@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from domain.factories.deal_factory import DealFactory
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.order_factory import OrderFactory

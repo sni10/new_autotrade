@@ -1,0 +1,45 @@
+{
+  "binance": {
+    "sandbox": {
+      "apiKey": "",
+      "secret": ""
+    },
+    "production": {
+      "apiKey": "",
+      "privateKeyPath": "binance_keys/id_ed25519.pem"
+    }
+  },
+  "orderbook_analyzer": {
+    "min_volume_threshold": 1000,
+    "big_wall_threshold": 5000,
+    "max_spread_percent": 0.3,
+    "min_liquidity_depth": 15,
+    "typical_order_size": 10,
+    "enabled": true,
+    "monitoring_interval": 0.1
+  },
+  "trading": {
+    "enable_orderbook_validation": true,
+    "orderbook_confidence_threshold": 0.6,
+    "require_orderbook_support": false,
+    "log_orderbook_analysis": true
+  },
+  "buy_order_monitor": {
+    "enabled": true,
+    "max_age_minutes": 5.0,
+    "max_price_deviation_percent": 3.0,
+    "check_interval_seconds": 10,
+    "auto_recreate_orders": true,
+    "min_time_between_recreations_minutes": 0.0
+  },
+  "currency_pair": {
+    "base_currency": "ETH",
+    "quote_currency": "USDT",
+    "order_life_time": 1,
+    "deal_quota": 15.0,
+    "min_step": 0.1,
+    "price_step": 0.0001,
+    "profit_markup": 1.5,
+    "deal_count": 3
+  }
+}
