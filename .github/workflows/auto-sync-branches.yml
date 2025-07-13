@@ -37,7 +37,7 @@ jobs:
             # Create PR
             gh pr create \
               --title "🔄 Auto-sync main → stage" \
-              --body "Automatically syncing changes from main to stage branch.
+              --body "Automatically syncing changes from maтоеin to stage branch.
 
             **Changes included:**
             $(git log stage..main --oneline --max-count=10)
