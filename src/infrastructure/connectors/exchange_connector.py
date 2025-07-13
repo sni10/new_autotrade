@@ -244,8 +244,6 @@ class CcxtExchangeConnector:
             logger.error(f"❌ Error fetching order history: {e}")
             raise
 
-    # 💰 МЕТОДЫ ДЛЯ РАБОТЫ С БАЛАНСОМ
-
     async def fetch_balance(self) -> Dict[str, Any]:
         """
         💰 Получение баланса аккаунта
@@ -269,6 +267,17 @@ class CcxtExchangeConnector:
         except Exception as e:
             logger.error(f"❌ Error fetching balance: {e}")
             raise
+
+    async def get_balance(self, currency: str) -> float:
+        """
+        💵 Получение баланса для конкретной валюты (для совместимости)
+        """
+        try:
+            balance = await self.fetch_balance()
+            return balance.get(currency, {}).get('free', 0.0)
+        except Exception as e:
+            logger.error(f"❌ Error getting balance for {currency}: {e}")
+            return 0.0
 
     async def get_available_balance(self, currency: str) -> float:
         """

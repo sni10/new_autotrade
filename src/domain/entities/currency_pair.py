@@ -36,8 +36,10 @@ class CurrencyPair:
         self.deal_count = deal_count
         self.min_step = min_step
         self.price_step = price_step
+        self.precision = {}
+        self.limits = {}
 
     def __repr__(self):
         return (f"<CurrencyPair(symbol={self.symbol}, "
                 f"order_life_time={self.order_life_time}, "
-                f"deal_quota={self.deal_quota})>")
+                )

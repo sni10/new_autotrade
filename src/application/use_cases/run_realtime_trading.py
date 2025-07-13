@@ -107,11 +107,24 @@ async def run_realtime_trading(
                             )
 
                             try:
+                                # Динамический расчет бюджета
+                                config = order_execution_service.exchange_connector.config
+                                min_order_size_usdt = config.get("currency_pair", {}).get("min_order_size_usdt", 20.0)
+                                budget = max(min_order_size_usdt, current_price * currency_pair.min_step * 1.1)
+
+                                # Проверка баланса перед выполнением
+                                balance_ok, balance_reason = await deal_service.check_balance_before_deal(
+                                    quote_currency=currency_pair.quote_currency,
+                                    required_amount=budget
+                                )
+                                if not balance_ok:
+                                    logger.error(f"❌ Недостаточно средств: {balance_reason}")
+                                    continue
+
                                 strategy_result = ticker_service.calculate_strategy(
                                     buy_price=current_price,
-                                    budget=currency_pair.deal_quota,
-                                    min_step=currency_pair.min_step,
-                                    price_step=currency_pair.price_step,
+                                    budget=budget,
+                                    currency_pair=currency_pair,
                                     buy_fee_percent=0.1,
                                     sell_fee_percent=0.1,
                                     profit_percent=currency_pair.profit_markup,

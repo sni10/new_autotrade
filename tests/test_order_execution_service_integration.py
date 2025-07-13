@@ -14,6 +14,7 @@ from domain.entities.deal import Deal
 from domain.services.deals.deal_service import DealService
 from domain.services.orders.order_service import OrderService
 from domain.services.orders.order_execution_service import OrderExecutionService
+from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
@@ -71,7 +72,7 @@ async def test_order_execution_service_places_orders():
     order_factory = OrderFactory()
     deal_factory = PatchedDealFactory(order_factory)
     order_service = OrderService(orders_repo, order_factory, exchange_connector=connector)
-    deal_service = DealService(deals_repo, order_service, deal_factory)
+    deal_service = DealService(deals_repo, order_service, deal_factory, exchange_connector=connector)
     svc = OrderExecutionService(order_service, deal_service, connector)
 
     cp = CurrencyPair('BTC', 'USDT')

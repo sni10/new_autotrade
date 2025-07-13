@@ -14,6 +14,7 @@ from domain.factories.deal_factory import DealFactory
 from domain.entities.deal import Deal
 from domain.services.deals.deal_service import DealService
 from domain.services.orders.order_execution_service import OrderExecutionService
+from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
@@ -60,7 +61,7 @@ async def test_execute_trading_strategy_success():
     order_service.sync_orders_with_exchange = AsyncMock(return_value=[])
     order_service.get_open_orders = MagicMock(return_value=[])
 
-    deal_service = DealService(deals_repo, order_service, deal_factory)
+    deal_service = DealService(deals_repo, order_service, deal_factory, exchange)
 
     svc = OrderExecutionService(order_service, deal_service, exchange)
 
@@ -87,7 +88,7 @@ async def test_execute_trading_strategy_insufficient_balance():
     ))
 
     order_service = MagicMock()
-    deal_service = DealService(InMemoryDealsRepository(), order_service, PatchedDealFactory())
+    deal_service = DealService(InMemoryDealsRepository(), order_service, PatchedDealFactory(), exchange)
 
     svc = OrderExecutionService(order_service, deal_service, exchange)
 
@@ -128,7 +129,7 @@ async def test_execute_trading_strategy_sell_failure_triggers_cancel():
     order_service.cancel_order = AsyncMock(return_value=True)
 
     deals_repo = InMemoryDealsRepository()
-    deal_service = DealService(deals_repo, order_service, deal_factory)
+    deal_service = DealService(deals_repo, order_service, deal_factory, exchange)
 
     svc = OrderExecutionService(order_service, deal_service, exchange)
     svc._emergency_cancel_buy_order = AsyncMock(return_value=True)

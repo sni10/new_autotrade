@@ -3,6 +3,7 @@
 from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
+from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.deals_repository import DealsRepository
 from domain.services.orders.order_service import OrderService
 from typing import List, Optional
@@ -19,10 +20,22 @@ class DealService:
     - Взаимодействие с OrderService для управления ордерами.
     """
 
-    def __init__(self, deals_repo: DealsRepository, order_service: OrderService, deal_factory: DealFactory):
+    def __init__(self, deals_repo: DealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
         self.deals_repo = deals_repo
         self.order_service = order_service
         self.deal_factory = deal_factory
+        self.exchange_connector = exchange_connector
+
+    async def check_balance_before_deal(self, quote_currency: str, required_amount: float) -> (bool, str):
+        """Проверяет, достаточно ли средств на балансе."""
+        try:
+            balance = await self.exchange_connector.get_balance(quote_currency)
+            if balance >= required_amount:
+                return True, f"Баланс {quote_currency} достаточен: {balance:.2f}"
+            else:
+                return False, f"Недостаточно средств. Требуется: {required_amount:.2f}, доступно: {balance:.2f}"
+        except Exception as e:
+            return False, f"Ошибка при проверке баланса: {e}"
 
     def create_new_deal(self, currency_pair: CurrencyPair) -> Deal:
         """
@@ -65,14 +78,14 @@ class DealService:
             if self.should_close_deal(deal):
                 self.close_deal(deal)
 
-    def close_deal(self, deal: Deal):
+    async def close_deal(self, deal: Deal):
         """
         Закрывает сделку и связанные с ней ордера.
         """
         if deal.buy_order and deal.buy_order.is_open():
-            self.order_service.cancel_order(deal.buy_order)
+            await self.order_service.cancel_order(deal.buy_order)
         if deal.sell_order and deal.sell_order.is_open():
-            self.order_service.cancel_order(deal.sell_order)
+            await self.order_service.cancel_order(deal.sell_order)
 
         deal.close()
         self.deals_repo.save(deal)

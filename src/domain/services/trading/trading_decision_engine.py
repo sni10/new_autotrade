@@ -1,14 +1,30 @@
 # domain/services/trading_decision_engine.py
 from typing import Dict, Optional
-from .orderbook_analyzer import OrderBookAnalyzer, OrderBookMetrics, OrderBookSignal
+
+from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer, OrderBookMetrics, OrderBookSignal
+from src.infrastructure.connectors.exchange_connector import ExchangeConnector
+
 
 class TradingDecisionEngine:
     """Движок принятия торговых решений с учетом MACD + стакана"""
-    
-    def __init__(self, orderbook_analyzer: OrderBookAnalyzer):
+
+    def __init__(self, orderbook_analyzer: OrderBookAnalyzer, exchange_connector: ExchangeConnector):
         self.orderbook_analyzer = orderbook_analyzer
-        
-    def should_execute_trade(self, macd_signal: bool, orderbook_metrics: OrderBookMetrics) -> Dict:
+        self.exchange_connector = exchange_connector
+
+    def check_balance(self, quote_currency: str, required_amount: float) -> (bool, str):
+        """Проверяет, достаточно ли средств на балансе."""
+        try:
+            balance = self.exchange_connector.get_balance(quote_currency)
+            if balance >= required_amount:
+                return True, f"Баланс {quote_currency} достаточен: {balance:.2f}"
+            else:
+                return False, f"Недостаточно средств. Требуется: {required_amount:.2f}, доступно: {balance:.2f}"
+        except Exception as e:
+            return False, f"Ошибка при проверке баланса: {e}"
+
+    def should_execute_trade(self, macd_signal: bool, orderbook_metrics: OrderBookMetrics,
+                             quote_currency: str, required_amount: float) -> Dict:
         """Принятие решения о выполнении сделки"""
         
         result = {
@@ -18,6 +34,12 @@ class TradingDecisionEngine:
             'modifications': {}
         }
         
+        # Проверка баланса
+        has_enough_balance, balance_reason = self.check_balance(quote_currency, required_amount)
+        if not has_enough_balance:
+            result['reason'] = f"❌ БАЛАНС: {balance_reason}"
+            return result
+
         # Проверка сигнала стакана
         if orderbook_metrics.signal == OrderBookSignal.REJECT:
             result['reason'] = f"❌ СТАКАН: Отклонено (спред: {orderbook_metrics.bid_ask_spread:.3f}%, слиппедж: {orderbook_metrics.slippage_buy:.2f}%)"
