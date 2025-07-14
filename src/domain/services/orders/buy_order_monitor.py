@@ -123,7 +123,7 @@ class BuyOrderMonitor:
             
             logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id}")
             
-            # 1. Отменяем старый ордер
+            # 1. Отменяем старый BUY ордер
             cancel_success = await self.order_service.cancel_order(order)
             
             if not cancel_success:
@@ -132,6 +132,9 @@ class BuyOrderMonitor:
                 
             self.stats['orders_cancelled'] += 1
             logger.info(f"✅ BUY ордер {order.order_id} отменен")
+            
+            # 1.5. ОТМЕНЯЕМ СВЯЗАННЫЙ SELL ОРДЕР ОТ ТОЙ ЖЕ СДЕЛКИ
+            await self._cancel_related_sell_order(order)
             
             # 2. Пересоздаем по новой цене
             new_order = await self._recreate_buy_order(order)
@@ -175,6 +178,29 @@ class BuyOrderMonitor:
         except Exception as e:
             logger.error(f"❌ Ошибка пересоздания BUY ордера: {e}")
             return None
+
+    async def _cancel_related_sell_order(self, buy_order: Order):
+        """Отмена связанного SELL ордера от той же сделки"""
+        try:
+            # Получаем все ордера по той же сделке
+            deal_orders = self.order_service.get_orders_by_deal(buy_order.deal_id)
+            
+            # Ищем SELL ордер от этой сделки
+            sell_orders = [order for order in deal_orders 
+                          if order.side == Order.SIDE_SELL and order.is_open()]
+            
+            for sell_order in sell_orders:
+                logger.warning(f"🚨 Отменяем связанный SELL ордер {sell_order.order_id} от сделки {buy_order.deal_id}")
+                
+                cancel_success = await self.order_service.cancel_order(sell_order)
+                
+                if cancel_success:
+                    logger.info(f"✅ Связанный SELL ордер {sell_order.order_id} отменен")
+                else:
+                    logger.error(f"❌ Не удалось отменить связанный SELL ордер {sell_order.order_id}")
+                    
+        except Exception as e:
+            logger.error(f"❌ Ошибка отмены связанного SELL ордера: {e}")
 
     def get_statistics(self) -> dict:
         """Получение статистики работы мониторинга"""

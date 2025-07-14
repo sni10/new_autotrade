@@ -466,10 +466,12 @@ class OrderService:
                 return []
 
             exchange_open_orders = await self.exchange_connector.fetch_open_orders(symbol=symbol_to_fetch)
+            logger.info(f"🔍 fetch_open_orders returned {len(exchange_open_orders)} orders: {[o['id'] for o in exchange_open_orders]}")
             exchange_open_orders_map = {order['id']: order for order in exchange_open_orders}
 
             for order in local_orders:
                 if order.exchange_id:
+                    logger.info(f"🔍 Looking for exchange_id: {order.exchange_id} (type: {type(order.exchange_id)})")
                     if order.exchange_id in exchange_open_orders_map:
                         # Ордер есть на бирже и открыт - обновляем статус
                         exchange_data = exchange_open_orders_map[order.exchange_id]

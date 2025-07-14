@@ -158,9 +158,22 @@ class OrderExecutionService:
                 )
             
             buy_order = buy_result.order
-            logger.info(f"✅ [{execution_id}] BUY order executed: {buy_order.exchange_id}")
+            logger.info(f"✅ [{execution_id}] BUY order placed: {buy_order.exchange_id}")
             
-            # 7. Выполнение SELL ордера
+            # 6.5. ЖДЕМ ИСПОЛНЕНИЯ BUY ОРДЕРА
+            filled_buy_order = await self._wait_for_buy_order_fill(buy_order, execution_id)
+            if not filled_buy_order:
+                return ExecutionReport(
+                    success=False,
+                    deal_id=deal.deal_id,
+                    buy_order=buy_order,
+                    error_message="BUY order was not filled within timeout"
+                )
+            
+            buy_order = filled_buy_order
+            logger.info(f"✅ [{execution_id}] BUY order FILLED: {buy_order.exchange_id}")
+            
+            # 7. Выполнение SELL ордера ТОЛЬКО после исполнения BUY
             sell_result = await self._execute_sell_order(context, strategy_data)
             if not sell_result.success:
                 # Пытаемся отменить BUY ордер при неудаче SELL
@@ -386,6 +399,36 @@ class OrderExecutionService:
                 success=False,
                 error_message=f"SELL execution error: {str(e)}"
             )
+
+    async def _wait_for_buy_order_fill(self, buy_order: Order, execution_id: str, timeout_sec: int = 60) -> Optional[Order]:
+        """
+        ⏳ Ожидание исполнения BUY ордера
+        """
+        logger.info(f"⏳ [{execution_id}] Waiting for BUY order {buy_order.exchange_id} to fill (timeout: {timeout_sec}s)")
+        
+        start_time = datetime.now()
+        check_interval = 2.0  # Проверяем каждые 2 секунды
+        
+        while (datetime.now() - start_time).total_seconds() < timeout_sec:
+            try:
+                # Обновляем статус ордера с биржи
+                updated_order = await self.order_service.get_order_status(buy_order)
+                if updated_order and updated_order.is_filled():
+                    logger.info(f"✅ [{execution_id}] BUY order filled after {(datetime.now() - start_time).total_seconds():.1f}s")
+                    return updated_order
+                
+                # Логируем прогресс для частично исполненных ордеров
+                if updated_order and updated_order.is_partially_filled():
+                    logger.info(f"🔄 [{execution_id}] BUY order partially filled: {updated_order.filled_amount}/{updated_order.amount}")
+                
+                await asyncio.sleep(check_interval)
+                
+            except Exception as e:
+                logger.error(f"❌ Error checking BUY order status: {e}")
+                await asyncio.sleep(check_interval)
+        
+        logger.warning(f"⏰ [{execution_id}] BUY order {buy_order.exchange_id} not filled within {timeout_sec}s timeout")
+        return None
 
     async def _emergency_cancel_buy_order(self, buy_order: Order) -> bool:
         """Экстренная отмена BUY ордера при неудаче SELL"""
