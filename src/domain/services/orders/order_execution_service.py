@@ -538,3 +538,89 @@ class OrderExecutionService:
             'enable_balance_checks': self.enable_balance_checks,
             'enable_slippage_protection': self.enable_slippage_protection
         }
+
+    # 🚨 РИСК-МЕНЕДЖМЕНТ МЕТОДЫ
+
+    async def create_market_sell_order(
+        self, 
+        currency_pair_id: str, 
+        amount: float, 
+        deal_id: int
+    ) -> Optional[Order]:
+        """🚨 Создание маркет-ордера на продажу для стоп-лосса"""
+        try:
+            logger.info(f"🚨 Создание маркет SELL ордера для ликвидации позиции:")
+            logger.info(f"   Пара: {currency_pair_id}")
+            logger.info(f"   Количество: {amount}")
+            logger.info(f"   Deal ID: {deal_id}")
+            
+            # Получаем текущую цену для логирования
+            ticker = await self.exchange_connector.fetch_ticker(currency_pair_id)
+            current_price = ticker['last']
+            logger.info(f"   Текущая цена: {current_price}")
+            
+            # Создаем маркет-ордер на продажу
+            order_result = await self.exchange_connector.create_market_sell_order(
+                currency_pair_id, 
+                amount
+            )
+            
+            if order_result and order_result.success:
+                # Создаем объект Order
+                order = Order(
+                    order_id=self.order_service.generate_order_id(),
+                    deal_id=deal_id,
+                    currency_pair_id=currency_pair_id,
+                    side="SELL",
+                    order_type="MARKET",
+                    price=current_price,  # Для маркет-ордера цена примерная
+                    amount=amount,
+                    exchange_order_id=order_result.exchange_order_id,
+                    filled_amount=order_result.filled_amount or amount,
+                    average_price=order_result.average_price or current_price,
+                    fees=order_result.fees or 0.0,
+                    status="FILLED" if order_result.filled_amount else "OPEN"
+                )
+                
+                # Сохраняем в репозиторий
+                self.order_service.save_order(order)
+                
+                logger.info(f"✅ Маркет SELL ордер #{order.order_id} создан успешно")
+                logger.info(f"   Exchange ID: {order_result.exchange_order_id}")
+                logger.info(f"   Исполнено: {order_result.filled_amount or 'N/A'}")
+                logger.info(f"   Средняя цена: {order_result.average_price or 'N/A'}")
+                
+                return order
+                
+            else:
+                logger.error(f"❌ Не удалось создать маркет SELL ордер: {order_result.error_message if order_result else 'Unknown error'}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка при создании маркет SELL ордера: {e}")
+            return None
+
+    async def cancel_order(self, order: Order) -> bool:
+        """🚫 Отмена ордера"""
+        try:
+            if order.exchange_order_id:
+                result = await self.exchange_connector.cancel_order(
+                    order.exchange_order_id, 
+                    order.currency_pair_id
+                )
+                
+                if result:
+                    order.status = "CANCELED"
+                    self.order_service.save_order(order)
+                    logger.info(f"✅ Ордер #{order.order_id} отменен")
+                    return True
+                else:
+                    logger.error(f"❌ Не удалось отменить ордер #{order.order_id}")
+                    return False
+            else:
+                logger.warning(f"⚠️ Нет exchange_order_id для отмены ордера #{order.order_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка при отмене ордера #{order.order_id}: {e}")
+            return False

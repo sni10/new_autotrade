@@ -43,6 +43,16 @@
   "risk_management": {
     "stop_loss_percent": 2.0,
     "enable_stop_loss": true,
-    "stop_loss_check_interval_seconds": 60
+    "stop_loss_check_interval_seconds": 60,
+    "smart_stop_loss": {
+      "enabled": true,
+      "warning_percent": 5.0,
+      "critical_percent": 10.0,
+      "emergency_percent": 15.0,
+      "use_orderbook_analysis": true,
+      "require_support_break": true,
+      "volume_imbalance_threshold": -20.0,
+      "slippage_threshold": 2.0
+    }
   }
 }

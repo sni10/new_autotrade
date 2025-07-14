@@ -186,6 +186,41 @@ class CcxtExchangeConnector:
         self.exchange_info_cache[normalized_symbol] = exchange_info
         return exchange_info
 
+    async def create_market_sell_order(self, symbol: str, amount: float):
+        """🚨 Создание маркет-ордера на продажу для стоп-лосса"""
+        try:
+            normalized_symbol = self._normalize_symbol(symbol)
+            logger.info(f"🚨 Creating MARKET SELL order: {amount} {normalized_symbol}")
+            
+            # Создаем маркет-ордер на продажу
+            result = await self.client.create_market_sell_order(normalized_symbol, amount)
+            
+            if result:
+                logger.info(f"✅ Market SELL order created successfully: {result.get('id', 'N/A')}")
+                # Возвращаем результат в стандартном формате
+                from domain.entities.order import OrderExecutionResult
+                return OrderExecutionResult(
+                    success=True,
+                    exchange_order_id=result.get('id'),
+                    filled_amount=result.get('filled', amount),
+                    average_price=result.get('average'),
+                    fees=result.get('fee', {}).get('cost', 0.0),
+                    timestamp=result.get('timestamp')
+                )
+            else:
+                logger.error("❌ Failed to create market sell order - no result")
+                return None
+                
+        except ccxt.InsufficientFunds as e:
+            logger.error(f"💸 Insufficient funds for market sell: {e}")
+            return None
+        except ccxt.InvalidOrder as e:
+            logger.error(f"❌ Invalid market sell order: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Unexpected error creating market sell order: {e}")
+            return None
+
     async def test_connection(self) -> bool:
         try:
             await self.fetch_balance()

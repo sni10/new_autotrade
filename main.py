@@ -153,15 +153,22 @@ async def main():
 
         risk_config = config.get("risk_management", {})
         if risk_config.get("enable_stop_loss", False):
+            # Получаем настройки умного стоп-лосса
+            smart_config = risk_config.get("smart_stop_loss", {})
+            
             stop_loss_monitor = StopLossMonitor(
                 deal_service=deal_service,
                 order_execution_service=order_execution_service,
                 exchange_connector=pro_exchange_connector_prod,
+                orderbook_analyzer=orderbook_analyzer,  # Добавляем анализатор стакана
                 stop_loss_percent=risk_config.get("stop_loss_percent", 2.0),
-                check_interval_seconds=risk_config.get("stop_loss_check_interval_seconds", 60)
+                check_interval_seconds=risk_config.get("stop_loss_check_interval_seconds", 60),
+                warning_percent=smart_config.get("warning_percent", 5.0),
+                critical_percent=smart_config.get("critical_percent", 10.0),
+                emergency_percent=smart_config.get("emergency_percent", 15.0)
             )
             asyncio.create_task(stop_loss_monitor.start_monitoring())
-            logger.info("✅ StopLossMonitor запущен")
+            logger.info("✅ StopLossMonitor запущен с умным анализом стакана")
 
         # 6. Проверка подключения и баланса
         if not await pro_exchange_connector_sandbox.test_connection():
