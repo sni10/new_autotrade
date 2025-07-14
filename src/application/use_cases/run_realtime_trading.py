@@ -26,6 +26,7 @@ async def run_realtime_trading(
     order_execution_service,
     buy_order_monitor, # Возвращено
     orderbook_analyzer,
+    deal_completion_monitor=None,  # Добавлен новый параметр
 ):
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
@@ -181,7 +182,7 @@ async def run_realtime_trading(
                             logger.info("=" * 80)
                             logger.info("🔄 Продолжаем мониторинг...\n")
 
-                if counter % 100 == 0:
+                if counter % 50 == 0:  # Изменено с 100 на 50 для более частого вывода
                     execution_stats = order_execution_service.get_execution_statistics()
                     logger.info("\n📊 СТАТИСТИКА OrderExecutionService (тик %s):", counter)
                     logger.info("   🚀 Всего выполнений: %s", execution_stats["total_executions"])
@@ -247,6 +248,17 @@ async def run_realtime_trading(
                     logger.info("   🚨 Тухляков найдено: %s", monitor_stats["stale_orders_found"])
                     logger.info("   ❌ Ордеров отменено: %s", monitor_stats["orders_cancelled"])
                     logger.info("   🔄 Ордеров пересоздано: %s", monitor_stats["orders_recreated"])
+                    
+                    # Добавляем статистику для нашего нового DealCompletionMonitor
+                    if deal_completion_monitor:
+                        try:
+                            completion_stats = deal_completion_monitor.get_statistics()
+                            logger.info("\n🎯 СТАТИСТИКА DealCompletionMonitor:")
+                            logger.info("   🔍 Проверок выполнено: %s", completion_stats["checks_performed"])
+                            logger.info("   💼 Сделок отслеживается: %s", completion_stats["deals_monitored"])
+                            logger.info("   ✅ Сделок завершено: %s", completion_stats["deals_completed"])
+                        except Exception as e:
+                            logger.debug("⚠️ DealCompletionMonitor статистика недоступна: %s", e)
 
             except Exception as e:
                 logger.exception("❌ Ошибка в торговом цикле: %s", e)

@@ -91,7 +91,8 @@ class TickerService:
         # 4. Расчеты с использованием DecimalRoundingService
         # Сколько монет мы можем купить на наш бюджет
         coins_to_buy_raw = budget_dec / buy_price_dec
-        coins_to_buy = DecimalRoundingService.floor_to_precision(coins_to_buy_raw, amount_precision)
+        # КРИТИЧЕСКИ ВАЖНО: округляем ВВЕРХ чтобы не потерять монеты из-за комиссий!
+        coins_to_buy = DecimalRoundingService.ceil_to_precision(coins_to_buy_raw, amount_precision)
 
         # Комиссия вычитается из ПОЛУЧЕННОГО количества монет
         coins_after_buy_fee = coins_to_buy * (1 - buy_fee_rate)

@@ -91,6 +91,33 @@ class DealService:
         self.deals_repo.save(deal)
         logger.info(f"Closed deal: {deal}")
 
+    async def close_deal_if_completed(self, deal: Deal) -> bool:
+        """
+        Закрывает сделку если оба ордера исполнены.
+        Возвращает True если сделка была закрыта.
+        """
+        # Проверяем статус ордеров
+        if deal.buy_order:
+            deal.buy_order = await self.order_service.get_order_status(deal.buy_order)
+        if deal.sell_order:
+            deal.sell_order = await self.order_service.get_order_status(deal.sell_order)
+        
+        # Если оба ордера исполнены - закрываем сделку естественно
+        if (deal.buy_order and deal.buy_order.is_filled() and 
+            deal.sell_order and deal.sell_order.is_filled()):
+            
+            # Рассчитываем прибыль
+            buy_cost = deal.buy_order.calculate_total_cost_with_fees()
+            sell_revenue = deal.sell_order.calculate_total_cost()
+            profit = sell_revenue - buy_cost
+            
+            deal.close()
+            self.deals_repo.save(deal)
+            logger.info(f"✅ Deal completed naturally: {deal.deal_id}, profit: {profit:.4f} USDT")
+            return True
+        
+        return False
+
     def should_close_deal(self, deal: Deal) -> bool:
         """
         Определяет, нужно ли закрывать сделку на основе бизнес-логики.

@@ -198,8 +198,9 @@ class OrderExecutionService:
             expected_profit = sell_order.calculate_total_cost() - buy_order.calculate_total_cost()
             total_fees = buy_order.fees + sell_order.fees
 
-            # 10. Закрываем сделку после успешного выполнения ордеров
-            await self.deal_service.close_deal(deal)
+            # 10. НЕ закрываем сделку сразу - пусть ордера живут и исполняются
+            # Сделка будет закрыта автоматически когда оба ордера исполнятся
+            # или через риск-менеджмент и мониторинг
             
             # 11. Обновление статистики
             execution_time = (datetime.now() - start_time).total_seconds() * 1000

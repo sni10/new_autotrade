@@ -38,6 +38,7 @@ from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from config.config_loader import load_config
 from application.use_cases.run_realtime_trading import run_realtime_trading
 from domain.services.risk.stop_loss_monitor import StopLossMonitor
+from domain.services.deals.deal_completion_monitor import DealCompletionMonitor
 from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
 
 # Загружаем переменные окружения из .env файла
@@ -142,6 +143,14 @@ async def main():
         asyncio.create_task(buy_order_monitor.start_monitoring())
         logger.info("✅ BuyOrderMonitor запущен")
 
+        # 5.2. Запуск мониторинга завершения сделок
+        deal_completion_monitor = DealCompletionMonitor(
+            deal_service=deal_service,
+            check_interval_seconds=30  # Проверка каждые 30 секунд
+        )
+        asyncio.create_task(deal_completion_monitor.start_monitoring())
+        logger.info("✅ DealCompletionMonitor запущен")
+
         risk_config = config.get("risk_management", {})
         if risk_config.get("enable_stop_loss", False):
             stop_loss_monitor = StopLossMonitor(
@@ -194,7 +203,8 @@ async def main():
             deal_service=deal_service,
             order_execution_service=order_execution_service,
             buy_order_monitor=buy_order_monitor, # Возвращено
-            orderbook_analyzer=orderbook_analyzer
+            orderbook_analyzer=orderbook_analyzer,
+            deal_completion_monitor=deal_completion_monitor  # Добавлен новый параметр
         )
 
     except Exception as e:
@@ -203,7 +213,9 @@ async def main():
         logger.info("🔴 Завершение работы, закрытие соединений...")
         if buy_order_monitor:
             buy_order_monitor.stop_monitoring()
-        if stop_loss_monitor:
+        if 'deal_completion_monitor' in locals() and deal_completion_monitor:
+            deal_completion_monitor.stop_monitoring()
+        if 'stop_loss_monitor' in locals() and stop_loss_monitor:
             stop_loss_monitor.stop_monitoring()
         if pro_exchange_connector_prod:
             await pro_exchange_connector_prod.close()
