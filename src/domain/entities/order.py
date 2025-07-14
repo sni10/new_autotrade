@@ -127,12 +127,26 @@ class Order:
 
     # 🆕 МЕТОДЫ ОБНОВЛЕНИЯ СТАТУСА
     def update_from_exchange(self, exchange_data: Dict[str, Any]) -> None:
-        """Обновляет ордер данными с биржи"""
+        """Обновляет ордер данными с биржи, безопасно обрабатывая None."""
         self.exchange_id = exchange_data.get('id', self.exchange_id)
-        self.filled_amount = float(exchange_data.get('filled', self.filled_amount))
-        self.remaining_amount = float(exchange_data.get('remaining', self.remaining_amount))
-        self.average_price = float(exchange_data.get('average', self.average_price))
-        self.fees = float(exchange_data.get('fee', {}).get('cost', self.fees))
+
+        # Безопасное обновление числовых полей
+        filled = exchange_data.get('filled')
+        if filled is not None:
+            self.filled_amount = float(filled)
+
+        remaining = exchange_data.get('remaining')
+        if remaining is not None:
+            self.remaining_amount = float(remaining)
+
+        average = exchange_data.get('average')
+        if average is not None:
+            self.average_price = float(average)
+
+        if 'fee' in exchange_data and exchange_data['fee'] is not None:
+            fee_cost = exchange_data['fee'].get('cost')
+            if fee_cost is not None:
+                self.fees = float(fee_cost)
 
         # Обновляем статус на основе данных биржи
         exchange_status = exchange_data.get('status', '').lower()

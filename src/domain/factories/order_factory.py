@@ -387,27 +387,3 @@ class OrderFactory:
         📊 Возвращает информацию о торговой паре
         """
         return self.exchange_info_cache.get(symbol)
-
-    # 🆕 СОВМЕСТИМОСТЬ СО СТАРЫМ КОДОМ
-
-    def create_buy_order_legacy(self, price: float, amount: float) -> Order:
-        """Старый метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        return self._create_base_order(
-            side=Order.SIDE_BUY,
-            order_type=Order.TYPE_LIMIT,
-            symbol="UNKNOWN",  # Будет установлен позже
-            amount=amount,
-            price=price,
-            metadata={'legacy_creation': True}
-        )
-
-    def create_sell_order_legacy(self, price: float, amount: float) -> Order:
-        """Старый метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        return self._create_base_order(
-            side=Order.SIDE_SELL,
-            order_type=Order.TYPE_LIMIT,
-            symbol="UNKNOWN",  # Будет установлен позже
-            amount=amount,
-            price=price,
-            metadata={'legacy_creation': True}
-        )

@@ -190,6 +190,8 @@ class OrderService:
                     logger.error(f"❌ SELL order failed: {execution_result.error_message}")
 
                 return execution_result
+
+                return execution_result
             else:
                 # Fallback без коннектора
                 order.status = Order.STATUS_PENDING
@@ -255,8 +257,7 @@ class OrderService:
 
                 # Exponential backoff для retry
                 if attempt < self.max_retries - 1:
-                    delay = self.retry_delay * (self.retry_backoff ** attempt)
-                    await asyncio.sleep(delay)
+                    await asyncio.sleep(self.retry_delay * (self.retry_backoff ** attempt))
 
         # Все попытки неудачны
         order.mark_as_failed(f"Failed after {self.max_retries} attempts: {last_error}")
@@ -523,18 +524,6 @@ class OrderService:
             'orders_cancelled': 0,
             'total_fees': 0.0
         }
-
-    # 🆕 СОВМЕСТИМОСТЬ СО СТАРЫМ КОДОМ
-
-    def create_buy_order(self, price: float, amount: float) -> Order:
-        """УСТАРЕВШИЙ метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        logger.warning("⚠️ Using legacy create_buy_order method")
-        return self.order_factory.create_buy_order_legacy(price, amount)
-
-    def create_sell_order(self, price: float, amount: float) -> Order:
-        """УСТАРЕВШИЙ метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        logger.warning("⚠️ Using legacy create_sell_order method")
-        return self.order_factory.create_sell_order_legacy(price, amount)
 
     def save_order(self, order: Order):
         """Сохранение ордера в репозиторий"""

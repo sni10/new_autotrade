@@ -23,6 +23,7 @@ async def run_realtime_trading(
     deal_service: DealService,
     order_execution_service,
     buy_order_monitor,
+    orderbook_analyzer,
 ):
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
@@ -67,6 +68,14 @@ async def run_realtime_trading(
                     )
 
                 if ticker_signal == "BUY":
+                    # Анализ стакана
+                    orderbook_metrics = await orderbook_analyzer.analyze_orderbook(
+                        await pro_exchange_connector_prod.watch_order_book(currency_pair.symbol)
+                    )
+
+                    if orderbook_metrics.signal in [OrderBookSignal.REJECT, OrderBookSignal.WEAK_SELL, OrderBookSignal.STRONG_SELL]:
+                        logger.info(f"🚫 Сигнал MACD отклонен анализатором стакана: {orderbook_metrics.signal.value}")
+                        continue
                     if len(repository.tickers) > 0:
                         last_ticker = repository.tickers[-1]
                         if last_ticker.signals:
@@ -107,10 +116,8 @@ async def run_realtime_trading(
                             )
 
                             try:
-                                # Динамический расчет бюджета
-                                config = order_execution_service.exchange_connector.config
-                                min_order_size_usdt = config.get("currency_pair", {}).get("min_order_size_usdt", 20.0)
-                                budget = max(min_order_size_usdt, current_price * currency_pair.min_step * 1.1)
+                                # Используем бюджет из currency_pair
+                                budget = currency_pair.deal_quota
 
                                 # Проверка баланса перед выполнением
                                 balance_ok, balance_reason = await deal_service.check_balance_before_deal(
@@ -180,6 +187,21 @@ async def run_realtime_trading(
                     order_stats = order_execution_service.order_service.get_statistics()
                     logger.info("   📦 Всего ордеров: %s", order_stats["total_orders"])
                     logger.info("   🔄 Открытых ордеров: %s", order_stats["open_orders"])
+
+                    all_orders = order_execution_service.order_service.orders_repo.get_all()
+                    if all_orders:
+                        logger.info("   🔍 ДЕТАЛИ ПО ОРДЕРАМ:")
+                        for order in all_orders:
+                            logger.info(
+                                "     - ID: %s | DealID: %s | %s | %s | %s | Цена: %.4f | Кол-во: %.6f",
+                                order.order_id,
+                                order.deal_id,
+                                order.symbol,
+                                order.side.upper(),
+                                order.status,
+                                order.price,
+                                order.amount,
+                            )
 
                     active_deals = len(deal_service.get_open_deals())
                     logger.info("   💼 Активных сделок: %s", active_deals)

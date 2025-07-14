@@ -33,12 +33,12 @@
     "min_time_between_recreations_minutes": 0.0
   },
   "currency_pair": {
-    "base_currency": "ETH",
+    "base_currency": "TURBO",
     "quote_currency": "USDT",
     "order_life_time": 1,
-    "min_order_size_usdt": 20.0,
-    "min_step": 0.0001,
-    "price_step": 0.01,
+    "deal_quota": 25.0,
+    "min_step": 1.0,
+    "price_step": 0.000001,
     "profit_markup": 1.5,
     "deal_count": 3
   },

@@ -30,13 +30,13 @@ class DealFactory:
         deal_id = int(time.time() * 1000000)
 
         # Создаём buy_order (с начальными нулевыми price/amount).
-        buy_order = self.order_factory.create_buy_order(price=0.0, amount=0.0)
+        buy_order = self.order_factory.create_buy_order(symbol=currency_pair.symbol, price=0.0, amount=0.0)
 
         # 🔧 FIX: Убираем time.sleep(0.09) - больше не нужен
         # time.sleep(0.09)  # REMOVED
 
         # Создаём sell_order (тоже пустой).
-        sell_order = self.order_factory.create_sell_order(price=0.0, amount=0.0)
+        sell_order = self.order_factory.create_sell_order(symbol=currency_pair.symbol, price=0.0, amount=0.0)
 
         deal = Deal(
             deal_id=deal_id,

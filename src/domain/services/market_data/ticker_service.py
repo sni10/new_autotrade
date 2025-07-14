@@ -23,6 +23,11 @@ class TickerService:
         if len(self.price_history_cache) > 200:
             self.price_history_cache.pop(0)
 
+        self.cached_indicators.update_fast_indicators(current_price)
+
+        if self.cached_indicators.should_update_medium():
+            self.cached_indicators.update_medium_indicators(self.price_history_cache)
+
         if self.cached_indicators.should_update_heavy():
             self.cached_indicators.update_heavy_indicators(self.price_history_cache)
         
@@ -58,7 +63,7 @@ class TickerService:
             profit_percent: float
     ):
         """
-        Рассчитывает сделку, используя `DecimalRoundingService` и данные о 
+        Рассчитывает сделку, используя `DecimalRoundingService` и данные о
         лимитах и точности из объекта `currency_pair`.
         """
         # 1. Получаем правила с биржи (из объекта currency_pair)
@@ -78,31 +83,21 @@ class TickerService:
             return {"comment": f"❌ Бюджет ({budget_dec}) меньше минимально допустимого ({min_notional})"}
 
         # 4. Расчеты с использованием DecimalRoundingService
-        buy_price_with_fee = buy_price_dec * (1 + buy_fee_dec)
-        
-        sell_price_raw = buy_price_dec * (1 + profit_dec)
-        sell_price = DecimalRoundingService.round_to_precision(sell_price_raw, price_precision)
-
         # Сколько монет мы можем купить на наш бюджет
-        # Округляем ВНИЗ, чтобы не выйти за рамки бюджета
-        purchasable_amount = DecimalRoundingService.floor_to_precision(
-            budget_dec / buy_price_with_fee, 
-            amount_precision
-        )
+        coins_to_buy_raw = budget_dec / buy_price_dec
+        coins_to_buy = DecimalRoundingService.floor_to_precision(coins_to_buy_raw, amount_precision)
 
-        # Учитываем комиссию на продажу. Нам нужно купить чуть больше, чтобы 
-        # после уплаты комиссии осталось достаточно для продажи.
-        # Но для простоты и надежности, мы просто купим то, что можем, 
-        # а продадим то, что останется после комиссии.
-        coins_to_buy = purchasable_amount
+        # Комиссия вычитается из ПОЛУЧЕННОГО количества монет
+        coins_after_buy_fee = coins_to_buy * (1 - buy_fee_dec)
+
+        # Цена продажи, которая покрывает обе комиссии и дает желаемую прибыль
+        # (Цена покупки * (1 + %профита)) / (1 - %комиссии_продажи)
+        sell_price_raw = buy_price_dec * (1 + profit_dec) / (1 - sell_fee_dec)
+        sell_price = DecimalRoundingService.round_to_precision(sell_price_raw, price_precision)
         
-        # Проверяем, что количество монет не равно нулю
-        if coins_to_buy <= 0:
-            return {"comment": "❌ Невозможно купить даже минимальный шаг актива с учетом бюджета и цены"}
-
         # Что останется для продажи после уплаты комиссии (которая берется в том же активе)
         coins_to_sell = DecimalRoundingService.floor_to_precision(
-            coins_to_buy * (1 - sell_fee_dec),
+            coins_after_buy_fee,
             amount_precision
         )
 

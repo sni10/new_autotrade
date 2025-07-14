@@ -38,14 +38,36 @@ from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from config.config_loader import load_config
 from application.use_cases.run_realtime_trading import run_realtime_trading
 from domain.services.risk.stop_loss_monitor import StopLossMonitor
+from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
 
 # Загружаем переменные окружения из .env файла
 load_dotenv()
 
 # Настройка логирования
+log_dir = "logs"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+# Имя файла лога с временной меткой
+log_filename = f"autotrade_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+log_filepath = os.path.join(log_dir, log_filename)
+
+# Создаем обработчики с явным указанием кодировки UTF-8
+file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
+stream_handler = logging.StreamHandler(sys.stdout) # Используем sys.stdout для лучшей совместимости
+
+# Устанавливаем форматтер для обоих обработчиков
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
+
+# Настраиваем корневой логгер
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    handlers=[
+        file_handler,
+        stream_handler
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -105,6 +127,7 @@ async def main():
         order_service = OrderService(orders_repo, order_factory, pro_exchange_connector_sandbox)
         deal_service = DealService(deals_repo, order_service, deal_factory, pro_exchange_connector_sandbox)
         order_execution_service = OrderExecutionService(order_service, deal_service, pro_exchange_connector_sandbox)
+        orderbook_analyzer = OrderBookAnalyzer(config.get("orderbook_analyzer", {}))
         logger.info("✅ Основные сервисы созданы")
 
         # 5. Инициализация мониторинга
@@ -145,6 +168,8 @@ async def main():
             base_currency=base_currency,
             quote_currency=quote_currency,
             symbol=symbol_ccxt,
+            deal_quota=pair_cfg.get("deal_quota", 100.0),
+            deal_count=pair_cfg.get("deal_count", 1)
         )
         markets = await pro_exchange_connector_prod.load_markets()
         market_details = markets.get(currency_pair.symbol)
@@ -166,7 +191,8 @@ async def main():
             currency_pair=currency_pair,
             deal_service=deal_service,
             order_execution_service=order_execution_service,
-            buy_order_monitor=buy_order_monitor
+            buy_order_monitor=buy_order_monitor,
+            orderbook_analyzer=orderbook_analyzer
         )
 
     except Exception as e:

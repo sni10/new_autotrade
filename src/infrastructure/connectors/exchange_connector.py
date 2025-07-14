@@ -135,6 +135,27 @@ class CcxtExchangeConnector:
         balance = await self.fetch_balance()
         return balance.get(currency, {}).get('free', 0.0)
 
+    async def get_balance(self, currency: str) -> float:
+        """Для совместимости со старым кодом"""
+        return await self.get_available_balance(currency)
+
+    async def check_sufficient_balance(self, symbol: str, side: str, amount: float, price: float = None) -> Tuple[bool, str, float]:
+        """Проверка достаточности баланса для ордера"""
+        try:
+            base_currency, quote_currency = self._normalize_symbol(symbol).split('/')
+
+            if side.lower() == 'buy':
+                required_amount = amount * (price or 0)
+                available = await self.get_available_balance(quote_currency)
+                return available >= required_amount, quote_currency, available
+            else:
+                available = await self.get_available_balance(base_currency)
+                return available >= amount, base_currency, available
+
+        except Exception as e:
+            logger.error(f"❌ Error checking balance: {e}")
+            return False, "UNKNOWN", 0.0
+
     async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
         return await self.client.fetch_ticker(self._normalize_symbol(symbol))
 
