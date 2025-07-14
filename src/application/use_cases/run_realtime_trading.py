@@ -14,6 +14,7 @@ from infrastructure.repositories.tickers_repository import InMemoryTickerReposit
 from domain.services.market_data.ticker_service import TickerService
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.trading.signal_cooldown_manager import SignalCooldownManager
+from domain.services.utils.orderbook_cache import OrderBookCache
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +36,13 @@ async def run_realtime_trading(
     ticker_service = TickerService(repository)
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
-
+    
+    # Создаем кеш для стакана заявок (TTL 30 секунд)
+    orderbook_cache = OrderBookCache(ttl_seconds=30)
+    
     counter = 0
+    last_orderbook_update = 0
+    orderbook_update_interval = 10  # Обновляем стакан каждые 10 тиков
 
     logger.info("🚀 Запуск расширенного торгового цикла с OrderExecutionService + BuyOrderMonitor")
 
@@ -59,6 +65,16 @@ async def run_realtime_trading(
                             len(repository.tickers),
                         )
                     continue
+
+                # Периодически обновляем кеш стакана для стоп-лосса
+                if counter - last_orderbook_update >= orderbook_update_interval:
+                    try:
+                        orderbook_data = await pro_exchange_connector_prod.fetch_order_book(currency_pair.symbol)
+                        orderbook_cache.set(currency_pair.symbol, orderbook_data)
+                        last_orderbook_update = counter
+                        logger.debug(f"📦 Обновлен кеш стакана на тике {counter}")
+                    except Exception as e:
+                        logger.debug(f"⚠️ Не удалось обновить кеш стакана: {e}")
 
                 ticker_signal = await ticker_service.get_signal()
 
@@ -261,6 +277,23 @@ async def run_realtime_trading(
                         except Exception as e:
                             logger.debug("⚠️ DealCompletionMonitor статистика недоступна: %s", e)
                     
+                    # Оптимизированная проверка стоп-лосса с кешированными данными
+                    if stop_loss_monitor and counter % 50 == 0:  # Проверяем каждые 50 тиков
+                        try:
+                            current_price = float(ticker_data.get('close', 0))
+                            cached_orderbook = orderbook_cache.get(currency_pair.symbol)
+                            
+                            # Передаем кешированные данные в стоп-лосс
+                            await stop_loss_monitor.check_open_deals(
+                                current_price=current_price,
+                                cached_orderbook=cached_orderbook
+                            )
+                            
+                            if counter % 500 == 0:  # Логируем раз в 500 тиков
+                                logger.debug("🛡️ Проверен стоп-лосс с кешированными данными")
+                        except Exception as e:
+                            logger.debug(f"⚠️ Ошибка в оптимизированном стоп-лоссе: {e}")
+                    
                     # Добавляем статистику для StopLossMonitor
                     if stop_loss_monitor:
                         try:
@@ -271,6 +304,10 @@ async def run_realtime_trading(
                             logger.info("   🔴 Пробитий поддержки: %s", stop_loss_stats["support_breaks"])
                             logger.info("   🚨 Экстренных ликвидаций: %s", stop_loss_stats["emergency_liquidations"])
                             logger.info("   💥 Стоп-лоссов сработало: %s", stop_loss_stats["stop_loss_triggered"])
+                            
+                            # Статистика кеша
+                            cache_stats = orderbook_cache.get_stats()
+                            logger.info("   📦 Кеш стакана: %s валидных записей (TTL: %ss)", cache_stats["valid_entries"], cache_stats["ttl_seconds"])
                         except Exception as e:
                             logger.debug("⚠️ StopLossMonitor статистика недоступна: %s", e)
 
