@@ -181,8 +181,18 @@ class OrderExecutionService:
 
             # 9. Расчет финансовых показателей
             # Убедимся, что ордера обновлены с биржи перед расчетом
-            buy_order = await self.order_service.get_order_status(buy_order)
-            sell_order = await self.order_service.get_order_status(sell_order)
+            if hasattr(self.order_service, 'get_order_status'):
+                if asyncio.iscoroutinefunction(self.order_service.get_order_status):
+                    updated_buy = await self.order_service.get_order_status(buy_order)
+                    updated_sell = await self.order_service.get_order_status(sell_order)
+                else:
+                    updated_buy = self.order_service.get_order_status(buy_order)
+                    updated_sell = self.order_service.get_order_status(sell_order)
+
+                if isinstance(updated_buy, Order):
+                    buy_order = updated_buy
+                if isinstance(updated_sell, Order):
+                    sell_order = updated_sell
 
             total_cost = buy_order.calculate_total_cost_with_fees()
             expected_profit = sell_order.calculate_total_cost() - buy_order.calculate_total_cost()

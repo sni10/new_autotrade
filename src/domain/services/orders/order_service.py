@@ -72,6 +72,9 @@ class OrderService:
             OrderExecutionResult с информацией о результате
         """
         try:
+            # Корректируем количество согласно правилам биржи
+            amount = self.order_factory.adjust_amount_precision(symbol, amount, round_up=True)
+
             logger.info(f"🛒 Creating BUY order: {amount} {symbol} @ {price}")
 
             # 1. Валидация параметров
@@ -149,6 +152,9 @@ class OrderService:
         🏷️ РЕАЛЬНОЕ создание и размещение SELL ордера на бирже
         """
         try:
+            # Корректируем количество согласно правилам биржи (округляем вниз)
+            amount = self.order_factory.adjust_amount_precision(symbol, amount)
+
             logger.info(f"🏷️ Creating SELL order: {amount} {symbol} @ {price}")
 
             # 1. Валидация параметров
@@ -242,11 +248,12 @@ class OrderService:
                     exchange_timestamp=exchange_response.get('timestamp')
                 )
                 # Дополнительный запрос для получения полных данных об исполнении
-                full_order_data = await self.exchange_connector.fetch_order(
-                    order.exchange_id,
-                    order.symbol
-                )
-                order.update_from_exchange(full_order_data)
+                if hasattr(self.exchange_connector, 'fetch_order'):
+                    full_order_data = await self.exchange_connector.fetch_order(
+                        order.exchange_id,
+                        order.symbol
+                    )
+                    order.update_from_exchange(full_order_data)
 
                 # Сохраняем обновленный ордер
                 self.orders_repo.save(order)
