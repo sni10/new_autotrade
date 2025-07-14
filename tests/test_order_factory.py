@@ -37,5 +37,6 @@ def test_precision_adjustment():
     factory.update_exchange_info("BTCUSDT", _make_info())
     # amount precision
     assert factory.adjust_amount_precision("BTCUSDT", 0.00123) == 0.001
+    assert factory.adjust_amount_precision("BTCUSDT", 0.00123, round_up=True) == 0.002
     # price precision
     assert factory.adjust_price_precision("BTCUSDT", 1234.56789) == 1234.56
