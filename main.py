@@ -124,7 +124,7 @@ async def main():
         logger.info(f"✅ Фабрики созданы, Exchange info для {symbol_ccxt} загружена")
 
         # 4. Инициализация сервисов
-        order_service = OrderService(orders_repo, order_factory, pro_exchange_connector_sandbox)
+        order_service = OrderService(orders_repo, order_factory, pro_exchange_connector_sandbox, currency_pair_symbol=symbol_ccxt)
         deal_service = DealService(deals_repo, order_service, deal_factory, pro_exchange_connector_sandbox)
         order_execution_service = OrderExecutionService(order_service, deal_service, pro_exchange_connector_sandbox)
         orderbook_analyzer = OrderBookAnalyzer(config.get("orderbook_analyzer", {}))
@@ -169,12 +169,14 @@ async def main():
             quote_currency=quote_currency,
             symbol=symbol_ccxt,
             deal_quota=pair_cfg.get("deal_quota", 100.0),
-            deal_count=pair_cfg.get("deal_count", 1)
+            deal_count=pair_cfg.get("deal_count", 1),
+            profit_markup=pair_cfg.get("profit_markup", 0.005)  # 0.5%
         )
+        # ЗАГРУЗКА АКТУАЛЬНЫХ ДАННЫХ С БИРЖИ
         markets = await pro_exchange_connector_prod.load_markets()
         market_details = markets.get(currency_pair.symbol)
         if market_details:
-            config_loader.update_from_exchange_info(market_details)
+            currency_pair.update_exchange_info(market_details)
             logger.info(f"✅ Config updated with precision and limits for {currency_pair.symbol}")
 
         # 8. Запуск основного цикла торговли
@@ -191,7 +193,7 @@ async def main():
             currency_pair=currency_pair,
             deal_service=deal_service,
             order_execution_service=order_execution_service,
-            buy_order_monitor=buy_order_monitor,
+            buy_order_monitor=buy_order_monitor, # Возвращено
             orderbook_analyzer=orderbook_analyzer
         )
 

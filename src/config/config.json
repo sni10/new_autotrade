@@ -37,9 +37,7 @@
     "quote_currency": "USDT",
     "order_life_time": 1,
     "deal_quota": 25.0,
-    "min_step": 1.0,
-    "price_step": 0.000001,
-    "profit_markup": 1.5,
+    "profit_markup": 0.015,
     "deal_count": 3
   },
   "risk_management": {

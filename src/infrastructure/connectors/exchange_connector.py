@@ -117,13 +117,14 @@ class CcxtExchangeConnector:
             return result
         except ccxt.OrderNotFound:
             logger.warning(f"⚠️ Order not found on exchange: {order_id}")
-            return {'info': {'status': 'CANCELED'}, 'id': order_id, 'status': 'canceled'}
+            raise  # Пробрасываем исключение дальше
         except Exception as e:
             logger.error(f"❌ Error cancelling order {order_id}: {e}")
             raise
 
     async def fetch_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
-        return await self.client.fetch_order(order_id, self._normalize_symbol(symbol))
+        result = await self.client.fetch_order(order_id, self._normalize_symbol(symbol))
+        return result
 
     async def fetch_open_orders(self, symbol: str = None) -> List[Dict[str, Any]]:
         return await self.client.fetch_open_orders(self._normalize_symbol(symbol))

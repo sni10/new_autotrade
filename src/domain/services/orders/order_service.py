@@ -6,6 +6,7 @@ from domain.entities.order import Order, OrderValidationResult, OrderExecutionRe
 from domain.factories.order_factory import OrderFactory
 from infrastructure.repositories.orders_repository import OrdersRepository
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+import ccxt
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +24,13 @@ class OrderService:
         self,
         orders_repo: OrdersRepository,
         order_factory: OrderFactory,
-        exchange_connector: CcxtExchangeConnector = None
+        exchange_connector: CcxtExchangeConnector = None,
+        currency_pair_symbol: str = None
     ):
         self.orders_repo = orders_repo
         self.order_factory = order_factory
         self.exchange_connector = exchange_connector
+        self.currency_pair_symbol = currency_pair_symbol
 
         # Retry parameters
         self.max_retries = 3
@@ -238,7 +241,12 @@ class OrderService:
                     exchange_id=exchange_response['id'],
                     exchange_timestamp=exchange_response.get('timestamp')
                 )
-                order.update_from_exchange(exchange_response)
+                # Дополнительный запрос для получения полных данных об исполнении
+                full_order_data = await self.exchange_connector.fetch_order(
+                    order.exchange_id,
+                    order.symbol
+                )
+                order.update_from_exchange(full_order_data)
 
                 # Сохраняем обновленный ордер
                 self.orders_repo.save(order)
@@ -414,9 +422,20 @@ class OrderService:
             logger.info(f"✅ Order {order.order_id} cancelled successfully")
             return True
 
+        except ccxt.OrderNotFound:
+            # Ордер не найден на бирже, значит, его уже нет или он исполнен
+            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange. Assuming it's already gone.")
+            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE # Новый статус
+            order.closed_at = int(time.time() * 1000)
+            self.orders_repo.save(order)
+            return True # Считаем, что цель достигнута: ордера на бирже нет
+
         except Exception as e:
             logger.error(f"❌ Error cancelling order {order.order_id}: {e}")
-            return False
+            order.status = Order.STATUS_FAILED # Или новый статус FAILED_TO_CANCEL
+            order.error_message = str(e)
+            self.orders_repo.save(order)
+            return False # Отмена не удалась
 
     async def sync_orders_with_exchange(self) -> List[Order]:
         """
@@ -433,22 +452,48 @@ class OrderService:
             local_orders = self.get_open_orders()
 
             # Получаем открытые ордера с биржи
-            exchange_orders = await self.exchange_connector.fetch_open_orders()
-            exchange_orders_map = {order['id']: order for order in exchange_orders}
+            # Используем self.currency_pair_symbol для fetchOpenOrders
+            symbol_to_fetch = self.currency_pair_symbol if self.currency_pair_symbol else (local_orders[0].symbol if local_orders else None)
+            if not symbol_to_fetch:
+                logger.warning("⚠️ No symbol available to fetch open orders. Skipping sync.")
+                return []
+
+            exchange_open_orders = await self.exchange_connector.fetch_open_orders(symbol=symbol_to_fetch)
+            exchange_open_orders_map = {order['id']: order for order in exchange_open_orders}
 
             for order in local_orders:
                 if order.exchange_id:
-                    if order.exchange_id in exchange_orders_map:
-                        # Ордер есть на бирже - обновляем статус
-                        exchange_data = exchange_orders_map[order.exchange_id]
+                    if order.exchange_id in exchange_open_orders_map:
+                        # Ордер есть на бирже и открыт - обновляем статус
+                        exchange_data = exchange_open_orders_map[order.exchange_id]
                         order.update_from_exchange(exchange_data)
                         self.orders_repo.save(order)
                         updated_orders.append(order)
                     else:
-                        # Ордера нет на бирже - возможно исполнен или отменен
-                        updated_order = await self.get_order_status(order)
-                        if updated_order:
-                            updated_orders.append(updated_order)
+                        # Ордера нет среди ОТКРЫТЫХ на бирже.
+                        # Нужно запросить его полный статус, чтобы понять, что с ним произошло.
+                        try:
+                            full_exchange_order = await self.exchange_connector.fetch_order(
+                                order.exchange_id,
+                                order.symbol
+                            )
+                            order.update_from_exchange(full_exchange_order)
+                            self.orders_repo.save(order)
+                            updated_orders.append(order)
+                            logger.info(f"🔄 Synced order {order.order_id} (exchange_id: {order.exchange_id}) status: {order.status}")
+                        except ccxt.OrderNotFound:
+                            # Ордер не найден на бирже вообще (ни открытый, ни закрытый)
+                            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange during sync. Marking as NOT_FOUND_ON_EXCHANGE.")
+                            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
+                            order.closed_at = int(time.time() * 1000)
+                            self.orders_repo.save(order)
+                            updated_orders.append(order)
+                        except Exception as e:
+                            logger.error(f"❌ Error fetching status for order {order.order_id} (exchange_id: {order.exchange_id}) during sync: {e}")
+                            # Оставляем ордер в текущем состоянии, но логируем ошибку
+                else:
+                    # Локальный ордер без exchange_id - возможно, не был размещен
+                    logger.warning(f"⚠️ Local order {order.order_id} has no exchange_id. Skipping sync for this order.")
 
             logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
             return updated_orders

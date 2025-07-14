@@ -12,12 +12,10 @@ class CurrencyPair:
         symbol: str = None,
         order_life_time: int = 1,
         deal_quota: float = 100.0,
-        min_step: float = 1.0,
-        price_step: float = 0.0001,
         # """
         # profit_markup = 0.5%.
         # """
-        profit_markup: float = 0.5,
+        profit_markup: float = 0.005,
         deal_count: int = 1
     ):
         """
@@ -34,10 +32,22 @@ class CurrencyPair:
         self.deal_quota = deal_quota
         self.profit_markup = profit_markup
         self.deal_count = deal_count
-        self.min_step = min_step
-        self.price_step = price_step
         self.precision = {}
         self.limits = {}
+        self.taker_fee = 0.001  # Default taker fee
+        self.maker_fee = 0.001  # Default maker fee
+
+    def update_exchange_info(self, market_data: dict):
+        """
+        Обновляет точность, лимиты и комиссии из данных, полученных с биржи.
+        """
+        if not market_data:
+            return
+        self.precision = market_data.get('precision', {})
+        self.limits = market_data.get('limits', {})
+        self.taker_fee = market_data.get('taker', self.taker_fee)
+        self.maker_fee = market_data.get('maker', self.maker_fee)
+        logging.info(f"Updated currency pair {self.symbol} with exchange data: Precision={self.precision}, Limits={self.limits}, Fees(T/M)={self.taker_fee}/{self.maker_fee}")
 
     def __repr__(self):
         return (f"<CurrencyPair(symbol={self.symbol}, "

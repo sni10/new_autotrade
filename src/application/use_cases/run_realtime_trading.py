@@ -4,9 +4,11 @@
 import asyncio
 import time
 import logging
+from decimal import Decimal
 
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deals.deal_service import DealService
+from domain.services.market_data.orderbook_analyzer import OrderBookSignal
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 from domain.services.market_data.ticker_service import TickerService
@@ -22,7 +24,7 @@ async def run_realtime_trading(
     currency_pair: CurrencyPair,
     deal_service: DealService,
     order_execution_service,
-    buy_order_monitor,
+    buy_order_monitor, # Возвращено
     orderbook_analyzer,
 ):
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
@@ -69,13 +71,17 @@ async def run_realtime_trading(
 
                 if ticker_signal == "BUY":
                     # Анализ стакана
-                    orderbook_metrics = await orderbook_analyzer.analyze_orderbook(
+                    orderbook_metrics = orderbook_analyzer.analyze_orderbook(
                         await pro_exchange_connector_prod.watch_order_book(currency_pair.symbol)
                     )
 
                     if orderbook_metrics.signal in [OrderBookSignal.REJECT, OrderBookSignal.WEAK_SELL, OrderBookSignal.STRONG_SELL]:
                         logger.info(f"🚫 Сигнал MACD отклонен анализатором стакана: {orderbook_metrics.signal.value}")
                         continue
+                    
+                    # Синхронизация ордеров перед принятием решения
+                    await order_execution_service.monitor_active_orders()
+
                     if len(repository.tickers) > 0:
                         last_ticker = repository.tickers[-1]
                         if last_ticker.signals:
@@ -132,8 +138,6 @@ async def run_realtime_trading(
                                     buy_price=current_price,
                                     budget=budget,
                                     currency_pair=currency_pair,
-                                    buy_fee_percent=0.1,
-                                    sell_fee_percent=0.1,
                                     profit_percent=currency_pair.profit_markup,
                                 )
 
@@ -191,20 +195,51 @@ async def run_realtime_trading(
                     all_orders = order_execution_service.order_service.orders_repo.get_all()
                     if all_orders:
                         logger.info("   🔍 ДЕТАЛИ ПО ОРДЕРАМ:")
+                        # Получаем шаг цены и количества для корректного ВЫЧИСЛЕНИЯ точности
+                        price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
+                        amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
+                        price_precision = int(price_step.normalize().as_tuple().exponent * -1)
+                        amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
+
+                        # Динамическое создание строки формата
+                        log_format = (
+                            f"     - ID: %s | DealID: %s | %s | %s | %s | "
+                            f"Цена: %s | Кол-во: %s | ExchangeID: %s | Filled: %s | AvgPrice: %s | Fees: %s"
+                        )
+
                         for order in all_orders:
+                            # Форматируем цену и количество с правильной точностью
+                            formatted_price = f"{order.price:.{price_precision}f}"
+                            formatted_amount = f"{order.amount:.{amount_precision}f}"
+                            
+                            # Форматируем исполненное количество, среднюю цену и комиссии
+                            formatted_filled_amount = f"{order.filled_amount:.{amount_precision}f}"
+                            formatted_average_price = f"{order.average_price:.{price_precision}f}"
+                            formatted_fees = f"{order.fees:.{price_precision}f}" # Комиссии тоже с точностью цены
+
                             logger.info(
-                                "     - ID: %s | DealID: %s | %s | %s | %s | Цена: %.4f | Кол-во: %.6f",
+                                log_format,
                                 order.order_id,
                                 order.deal_id,
                                 order.symbol,
                                 order.side.upper(),
                                 order.status,
-                                order.price,
-                                order.amount,
+                                formatted_price,
+                                formatted_amount,
+                                order.exchange_id,
+                                formatted_filled_amount,
+                                formatted_average_price,
+                                formatted_fees
                             )
 
                     active_deals = len(deal_service.get_open_deals())
                     logger.info("   💼 Активных сделок: %s", active_deals)
+
+                    # Получение и отображение баланса
+                    balance = await pro_exchange_connector_sandbox.fetch_balance()
+                    base_currency_balance = balance.get(currency_pair.base_currency, {}).get('free', 0.0)
+                    quote_currency_balance = balance.get(currency_pair.quote_currency, {}).get('free', 0.0)
+                    logger.info(f"   💰 Баланс: {base_currency_balance:.6f} {currency_pair.base_currency} | {quote_currency_balance:.2f} {currency_pair.quote_currency}")
 
                     monitor_stats = buy_order_monitor.get_statistics()
                     logger.info("\n🕒 СТАТИСТИКА BuyOrderMonitor:")

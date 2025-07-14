@@ -178,13 +178,20 @@ class OrderExecutionService:
             # 8. Связывание ордеров со сделкой
             deal.attach_orders(buy_order, sell_order)
             self.deal_service.deals_repo.save(deal)
-            
+
             # 9. Расчет финансовых показателей
+            # Убедимся, что ордера обновлены с биржи перед расчетом
+            buy_order = await self.order_service.get_order_status(buy_order)
+            sell_order = await self.order_service.get_order_status(sell_order)
+
             total_cost = buy_order.calculate_total_cost_with_fees()
             expected_profit = sell_order.calculate_total_cost() - buy_order.calculate_total_cost()
             total_fees = buy_order.fees + sell_order.fees
+
+            # 10. Закрываем сделку после успешного выполнения ордеров
+            await self.deal_service.close_deal(deal)
             
-            # 10. Обновление статистики
+            # 11. Обновление статистики
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
             self._update_execution_stats(True, total_cost, total_fees, execution_time)
             
@@ -339,7 +346,7 @@ class OrderExecutionService:
                 amount=strategy_data['buy_amount'],
                 price=strategy_data['buy_price'],
                 deal_id=context.deal.deal_id,
-                order_type=Order.TYPE_LIMIT
+                order_type=Order.TYPE_LIMIT # Возвращено на LIMIT
             )
         except Exception as e:
             logger.error(f"❌ Error executing BUY order: {e}")
@@ -360,7 +367,7 @@ class OrderExecutionService:
                 amount=strategy_data['sell_amount'],
                 price=strategy_data['sell_price'],
                 deal_id=context.deal.deal_id,
-                order_type=Order.TYPE_LIMIT
+                order_type=Order.TYPE_LIMIT # Возвращено на LIMIT
             )
         except Exception as e:
             logger.error(f"❌ Error executing SELL order: {e}")

@@ -58,8 +58,6 @@ class TickerService:
             buy_price: float,
             budget: float,
             currency_pair: CurrencyPair,
-            buy_fee_percent: float,
-            sell_fee_percent: float,
             profit_percent: float
     ):
         """
@@ -67,16 +65,24 @@ class TickerService:
         лимитах и точности из объекта `currency_pair`.
         """
         # 1. Получаем правила с биржи (из объекта currency_pair)
-        amount_precision = currency_pair.precision.get('amount', 4) # Знаков после запятой для кол-ва
-        price_precision = currency_pair.precision.get('price', 2)   # Знаков после запятой для цены
+        # Получаем шаг цены и количества (tick size / step size)
+        price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
+        amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
+
+        # ВЫЧИСЛЯЕМ КОЛИЧЕСТВО ЗНАКОВ ПОСЛЕ ЗАПЯТОЙ ИЗ ШАГА
+        # Это ключевое исправление: мы не используем 0.01 как количество знаков, а вычисляем его.
+        price_precision = int(price_step.normalize().as_tuple().exponent * -1)
+        amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
+
         min_notional = Decimal(str(currency_pair.limits.get('cost', {}).get('min', 10.0)))
 
         # 2. Конвертируем все в Decimal для точности
         buy_price_dec = Decimal(str(buy_price))
         budget_dec = Decimal(str(budget))
-        buy_fee_dec = Decimal(str(buy_fee_percent)) / 100
-        sell_fee_dec = Decimal(str(sell_fee_percent)) / 100
-        profit_dec = Decimal(str(profit_percent)) / 100
+        # Используем комиссии тейкера, так как мы исполняем ордера по рынку
+        buy_fee_rate = Decimal(str(currency_pair.taker_fee))
+        sell_fee_rate = Decimal(str(currency_pair.taker_fee))
+        profit_dec = Decimal(str(profit_percent))
 
         # 3. Проверка на минимальную сумму ордера
         if budget_dec < min_notional:
@@ -88,11 +94,11 @@ class TickerService:
         coins_to_buy = DecimalRoundingService.floor_to_precision(coins_to_buy_raw, amount_precision)
 
         # Комиссия вычитается из ПОЛУЧЕННОГО количества монет
-        coins_after_buy_fee = coins_to_buy * (1 - buy_fee_dec)
+        coins_after_buy_fee = coins_to_buy * (1 - buy_fee_rate)
 
         # Цена продажи, которая покрывает обе комиссии и дает желаемую прибыль
         # (Цена покупки * (1 + %профита)) / (1 - %комиссии_продажи)
-        sell_price_raw = buy_price_dec * (1 + profit_dec) / (1 - sell_fee_dec)
+        sell_price_raw = buy_price_dec * (1 + profit_dec) / (1 - sell_fee_rate)
         sell_price = DecimalRoundingService.round_to_precision(sell_price_raw, price_precision)
         
         # Что останется для продажи после уплаты комиссии (которая берется в том же активе)
