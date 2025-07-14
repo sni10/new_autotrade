@@ -38,7 +38,7 @@ async def run_realtime_trading(
     try:
         while True:
             try:
-                ticker_data = await pro_exchange_connector_prod.async_client.watch_ticker(currency_pair.symbol)
+                ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
 
                 start_process = time.time()
                 await ticker_service.process_ticker(ticker_data)
