@@ -211,7 +211,8 @@ async def main():
             order_execution_service=order_execution_service,
             buy_order_monitor=buy_order_monitor, # Возвращено
             orderbook_analyzer=orderbook_analyzer,
-            deal_completion_monitor=deal_completion_monitor  # Добавлен новый параметр
+            deal_completion_monitor=deal_completion_monitor,  # Добавлен новый параметр
+            stop_loss_monitor=stop_loss_monitor if 'stop_loss_monitor' in locals() else None  # Передаем StopLossMonitor
         )
 
     except Exception as e:

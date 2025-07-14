@@ -79,6 +79,11 @@ class CcxtExchangeConnector:
     async def watch_order_book(self, symbol: str):
         return await self.client.watch_order_book(self._normalize_symbol(symbol))
 
+    async def fetch_order_book(self, symbol: str, limit: int = 100) -> Dict[str, Any]:
+        """Получение стакана заявок (разовый запрос)"""
+        normalized_symbol = self._normalize_symbol(symbol)
+        return await self.client.fetch_order_book(normalized_symbol, limit)
+
     async def watch_ticker(self, symbol: str):
         return await self.client.watch_ticker(self._normalize_symbol(symbol))
 

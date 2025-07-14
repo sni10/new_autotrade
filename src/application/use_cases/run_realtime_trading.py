@@ -27,6 +27,7 @@ async def run_realtime_trading(
     buy_order_monitor, # Возвращено
     orderbook_analyzer,
     deal_completion_monitor=None,  # Добавлен новый параметр
+    stop_loss_monitor=None,  # Добавлен StopLossMonitor
 ):
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
@@ -259,6 +260,19 @@ async def run_realtime_trading(
                             logger.info("   ✅ Сделок завершено: %s", completion_stats["deals_completed"])
                         except Exception as e:
                             logger.debug("⚠️ DealCompletionMonitor статистика недоступна: %s", e)
+                    
+                    # Добавляем статистику для StopLossMonitor
+                    if stop_loss_monitor:
+                        try:
+                            stop_loss_stats = stop_loss_monitor.get_statistics()
+                            logger.info("\n🛡️ СТАТИСТИКА StopLossMonitor:")
+                            logger.info("   🔍 Проверок выполнено: %s", stop_loss_stats["checks_performed"])
+                            logger.info("   ⚠️ Предупреждений отправлено: %s", stop_loss_stats["warnings_sent"])
+                            logger.info("   🔴 Пробитий поддержки: %s", stop_loss_stats["support_breaks"])
+                            logger.info("   🚨 Экстренных ликвидаций: %s", stop_loss_stats["emergency_liquidations"])
+                            logger.info("   💥 Стоп-лоссов сработало: %s", stop_loss_stats["stop_loss_triggered"])
+                        except Exception as e:
+                            logger.debug("⚠️ StopLossMonitor статистика недоступна: %s", e)
 
             except Exception as e:
                 logger.exception("❌ Ошибка в торговом цикле: %s", e)

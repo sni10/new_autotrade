@@ -502,7 +502,7 @@ class OrderService:
                     # Локальный ордер без exchange_id - возможно, не был размещен
                     logger.warning(f"⚠️ Local order {order.order_id} has no exchange_id. Skipping sync for this order.")
 
-            logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
+            # logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
             return updated_orders
 
         except Exception as e:
