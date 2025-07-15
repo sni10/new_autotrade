@@ -51,3 +51,20 @@ class DecimalRoundingService:
         number = DecimalRoundingService.to_decimal(number)
         quantizer = Decimal('1e-' + str(precision))
         return number.quantize(quantizer, rounding=ROUND_UP)
+
+    @staticmethod
+    def round_by_tick_size(number, tick_size, rounding_mode=ROUND_HALF_UP) -> Decimal:
+        """
+        Округляет число в соответствии с заданным шагом (tick_size).
+
+        Args:
+            number: Число для округления.
+            tick_size: Шаг, к которому нужно округлить (например, '0.01', '0.0001').
+            rounding_mode: Режим округления из модуля Decimal (например, ROUND_DOWN, ROUND_UP).
+
+        Returns:
+            Округленное число в формате Decimal.
+        """
+        number_dec = DecimalRoundingService.to_decimal(number)
+        tick_size_dec = DecimalRoundingService.to_decimal(tick_size)
+        return number_dec.quantize(tick_size_dec, rounding=rounding_mode)

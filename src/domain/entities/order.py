@@ -300,3 +300,4 @@ class ExchangeInfo:
     tick_size: float
     min_notional: float
     fees: Dict[str, float]  # maker/taker fees
+    precision: Dict[str, float] # ❗️ ДОБАВЛЕНО: полная информация о точности

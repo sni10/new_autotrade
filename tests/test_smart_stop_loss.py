@@ -15,6 +15,7 @@ from src.domain.services.risk.stop_loss_monitor import StopLossMonitor
 from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer, OrderBookMetrics, OrderBookSignal
 from src.domain.entities.deal import Deal
 from src.domain.entities.order import Order
+from src.domain.entities.currency_pair import CurrencyPair
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -54,36 +55,33 @@ async def test_smart_stop_loss():
     )
     
     # Создаем тестовую сделку
+    pair = CurrencyPair(symbol="BTC/USDT", base_currency="BTC", quote_currency="USDT")
     buy_order = Order(
         order_id=1,
         deal_id=1,
-        symbol="TURBOUSDT",
-        side="BUY",
-        order_type="LIMIT",
-        price=0.005850,
-        amount=4274.0,
-        status="FILLED",
-        filled_amount=4274.0,
-        average_price=0.005809
+        symbol="BTC/USDT",
+        side=Order.SIDE_BUY,
+        order_type=Order.TYPE_LIMIT,
+        price=10000,
+        amount=1,
+        status=Order.STATUS_FILLED
     )
-    
     sell_order = Order(
         order_id=2,
         deal_id=1,
-        symbol="TURBOUSDT",
-        side="SELL",
-        order_type="LIMIT",
-        price=0.005944,
-        amount=4269.0,
-        status="OPEN"
+        symbol="BTC/USDT",
+        side=Order.SIDE_SELL,
+        order_type=Order.TYPE_LIMIT,
+        price=10500,
+        amount=1,
+        status=Order.STATUS_OPEN
     )
-    
     deal = Deal(
         deal_id=1,
-        currency_pair_id="TURBOUSDT",
+        currency_pair=pair,
         buy_order=buy_order,
         sell_order=sell_order,
-        status="OPEN"
+        status=Deal.STATUS_OPEN
     )
     
     # Настраиваем мок-объекты

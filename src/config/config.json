@@ -33,7 +33,7 @@
     "min_time_between_recreations_minutes": 0.0
   },
   "currency_pair": {
-    "base_currency": "TURBO",
+    "base_currency": "THE",
     "quote_currency": "USDT",
     "order_life_time": 1,
     "deal_quota": 25.0,

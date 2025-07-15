@@ -135,6 +135,7 @@ async def main():
         buy_order_monitor_cfg = config.get("buy_order_monitor", {})
         buy_order_monitor = BuyOrderMonitor(
             order_service=order_service,
+            deal_service=deal_service,
             exchange_connector=pro_exchange_connector_sandbox,
             max_age_minutes=buy_order_monitor_cfg.get("max_age_minutes", 15.0),
             max_price_deviation_percent=buy_order_monitor_cfg.get("max_price_deviation_percent", 3.0),
@@ -146,6 +147,7 @@ async def main():
         # 5.2. Запуск мониторинга завершения сделок
         deal_completion_monitor = DealCompletionMonitor(
             deal_service=deal_service,
+            order_service=order_service,
             check_interval_seconds=30  # Проверка каждые 30 секунд
         )
         asyncio.create_task(deal_completion_monitor.start_monitoring())

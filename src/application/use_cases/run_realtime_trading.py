@@ -15,6 +15,8 @@ from domain.services.market_data.ticker_service import TickerService
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.trading.signal_cooldown_manager import SignalCooldownManager
 from domain.services.utils.orderbook_cache import OrderBookCache
+from domain.services.orders.filled_buy_order_handler import FilledBuyOrderHandler
+from domain.services.deals.deal_completion_monitor import DealCompletionMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,18 @@ async def run_realtime_trading(
     
     # Создаем кеш для стакана заявок (TTL 30 секунд)
     orderbook_cache = OrderBookCache(ttl_seconds=30)
+    
+    # Создаем обработчик исполненных BUY ордеров
+    filled_buy_order_handler = FilledBuyOrderHandler(
+        order_service=order_execution_service.order_service,
+        deal_service=deal_service
+    )
+    
+    # Создаем монитор завершения сделок
+    deal_completion_monitor = DealCompletionMonitor(
+        deal_service=deal_service,
+        order_service=order_execution_service.order_service
+    )
     
     counter = 0
     last_orderbook_update = 0
@@ -200,6 +214,11 @@ async def run_realtime_trading(
                             logger.info("🔄 Продолжаем мониторинг...\n")
 
                 if counter % 50 == 0:  # Изменено с 100 на 50 для более частого вывода
+                    # Запускаем обработчик исполненных BUY ордеров
+                    await filled_buy_order_handler.check_and_place_sell_orders()
+                    # Запускаем монитор завершения сделок
+                    await deal_completion_monitor.check_deals_completion()
+
                     execution_stats = order_execution_service.get_execution_statistics()
                     logger.info("\n📊 СТАТИСТИКА OrderExecutionService (тик %s):", counter)
                     logger.info("   🚀 Всего выполнений: %s", execution_stats["total_executions"])
@@ -213,41 +232,27 @@ async def run_realtime_trading(
                     all_orders = order_execution_service.order_service.orders_repo.get_all()
                     if all_orders:
                         logger.info("   🔍 ДЕТАЛИ ПО ОРДЕРАМ:")
-                        # Получаем шаг цены и количества для корректного ВЫЧИСЛЕНИЯ точности
-                        price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
-                        amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
-                        price_precision = int(price_step.normalize().as_tuple().exponent * -1)
-                        amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
-
-                        # Динамическое создание строки формата
+                        # Динамическое создание строки формата для логов
                         log_format = (
-                            f"     - ID: %s | DealID: %s | %s | %s | %s | "
-                            f"Цена: %s | Кол-во: %s | ExchangeID: %s | Filled: %s | AvgPrice: %s | Fees: %s"
+                            "     - ID: {} | DealID: {} | {} | {} | {} | "
+                            "Цена: {:g} | Кол-во: {:g} | ExchangeID: {} | Filled: {:g} | AvgPrice: {:g} | Fees: {:g}"
                         )
 
                         for order in all_orders:
-                            # Форматируем цену и количество с правильной точностью
-                            formatted_price = f"{order.price:.{price_precision}f}"
-                            formatted_amount = f"{order.amount:.{amount_precision}f}"
-                            
-                            # Форматируем исполненное количество, среднюю цену и комиссии
-                            formatted_filled_amount = f"{order.filled_amount:.{amount_precision}f}"
-                            formatted_average_price = f"{order.average_price:.{price_precision}f}"
-                            formatted_fees = f"{order.fees:.{price_precision}f}" # Комиссии тоже с точностью цены
-
                             logger.info(
-                                log_format,
-                                order.order_id,
-                                order.deal_id,
-                                order.symbol,
-                                order.side.upper(),
-                                order.status,
-                                formatted_price,
-                                formatted_amount,
-                                order.exchange_id,
-                                formatted_filled_amount,
-                                formatted_average_price,
-                                formatted_fees
+                                log_format.format(
+                                    order.order_id,
+                                    order.deal_id,
+                                    order.symbol,
+                                    order.side.upper(),
+                                    order.status,
+                                    float(order.price),
+                                    float(order.amount),
+                                    order.exchange_id,
+                                    float(order.filled_amount),
+                                    float(order.average_price),
+                                    float(order.fees)
+                                )
                             )
 
                     active_deals = len(deal_service.get_open_deals())

@@ -186,7 +186,8 @@ class CcxtExchangeConnector:
             max_price=limits.get('price', {}).get('max'),
             tick_size=precision.get('price'),
             min_notional=limits.get('cost', {}).get('min'),
-            fees={'maker': market_info.get('maker', 0.001), 'taker': market_info.get('taker', 0.001)}
+            fees={'maker': market_info.get('maker', 0.001), 'taker': market_info.get('taker', 0.001)},
+            precision=precision # ❗️ ДОБАВЛЕНО: сохраняем весь словарь
         )
         self.exchange_info_cache[normalized_symbol] = exchange_info
         return exchange_info

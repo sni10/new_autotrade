@@ -17,7 +17,8 @@ def _make_info():
         max_price=100000,
         tick_size=0.01,
         min_notional=10,
-        fees={"maker": 0.001}
+        fees={"maker": 0.001},
+        precision={'amount': 0.001, 'price': 0.01}
     )
 
 

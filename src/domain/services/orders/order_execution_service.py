@@ -160,64 +160,32 @@ class OrderExecutionService:
             buy_order = buy_result.order
             logger.info(f"✅ [{execution_id}] BUY order placed: {buy_order.exchange_id}")
             
-            # 6.5. ЖДЕМ ИСПОЛНЕНИЯ BUY ОРДЕРА
-            filled_buy_order = await self._wait_for_buy_order_fill(buy_order, execution_id)
-            if not filled_buy_order:
-                return ExecutionReport(
-                    success=False,
-                    deal_id=deal.deal_id,
-                    buy_order=buy_order,
-                    error_message="BUY order was not filled within timeout"
-                )
-            
-            buy_order = filled_buy_order
-            logger.info(f"✅ [{execution_id}] BUY order FILLED: {buy_order.exchange_id}")
-            
-            # 7. Выполнение SELL ордера ТОЛЬКО после исполнения BUY
-            sell_result = await self._execute_sell_order(context, strategy_data)
+            # 7. Создание ЛОКАЛЬНОГО SELL ордера (без размещения на бирже)
+            sell_result = await self._create_local_sell_order(context, strategy_data)
             if not sell_result.success:
-                # Пытаемся отменить BUY ордер при неудаче SELL
+                # Если не удалось даже локально создать SELL, отменяем BUY
                 await self._emergency_cancel_buy_order(buy_order)
                 return ExecutionReport(
                     success=False,
                     deal_id=deal.deal_id,
                     buy_order=buy_order,
-                    error_message=f"SELL order failed: {sell_result.error_message}"
+                    error_message=f"Local SELL order creation failed: {sell_result.error_message}"
                 )
             
             sell_order = sell_result.order
-            logger.info(f"✅ [{execution_id}] SELL order executed: {sell_order.exchange_id}")
+            logger.info(f"✅ [{execution_id}] Local SELL order created with status PENDING.")
             
             # 8. Связывание ордеров со сделкой
             deal.attach_orders(buy_order, sell_order)
             self.deal_service.deals_repo.save(deal)
 
-            # 9. Расчет финансовых показателей
-            # Убедимся, что ордера обновлены с биржи перед расчетом
-            if hasattr(self.order_service, 'get_order_status'):
-                if asyncio.iscoroutinefunction(self.order_service.get_order_status):
-                    updated_buy = await self.order_service.get_order_status(buy_order)
-                    updated_sell = await self.order_service.get_order_status(sell_order)
-                else:
-                    updated_buy = self.order_service.get_order_status(buy_order)
-                    updated_sell = self.order_service.get_order_status(sell_order)
-
-                if isinstance(updated_buy, Order):
-                    buy_order = updated_buy
-                if isinstance(updated_sell, Order):
-                    sell_order = updated_sell
-
-            total_cost = buy_order.calculate_total_cost_with_fees()
-            expected_profit = sell_order.calculate_total_cost() - buy_order.calculate_total_cost()
-            total_fees = buy_order.fees + sell_order.fees
-
-            # 10. НЕ закрываем сделку сразу - пусть ордера живут и исполняются
-            # Сделка будет закрыта автоматически когда оба ордера исполнятся
-            # или через риск-менеджмент и мониторинг
+            # 9. Расчет финансовых пока��ателей (на основе ожидаемых данных)
+            total_cost = buy_order.amount * buy_order.price
+            expected_profit = (sell_order.amount * sell_order.price) - total_cost
             
-            # 11. Обновление статистики
+            # 10. Обновление статистики
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
-            self._update_execution_stats(True, total_cost, total_fees, execution_time)
+            self._update_execution_stats(True, total_cost, 0, execution_time)
             
             # 11. Формирование отчета
             report = ExecutionReport(
@@ -227,14 +195,13 @@ class OrderExecutionService:
                 sell_order=sell_order,
                 total_cost=total_cost,
                 expected_profit=expected_profit,
-                fees=total_fees,
+                fees=0, # Комиссии будут известны после исполнения
                 execution_time_ms=execution_time
             )
             
-            logger.info(f"🎉 [{execution_id}] Strategy executed successfully!")
+            logger.info(f"🎉 [{execution_id}] Strategy executed successfully! BUY order placed, SELL order is PENDING.")
             logger.info(f"   💰 Cost: {total_cost:.4f} USDT")
             logger.info(f"   📈 Expected profit: {expected_profit:.4f} USDT")
-            logger.info(f"   💸 Fees: {total_fees:.4f} USDT")
             logger.info(f"   ⏱️ Execution time: {execution_time:.1f}ms")
             
             return report
@@ -379,56 +346,26 @@ class OrderExecutionService:
                 error_message=f"BUY execution error: {str(e)}"
             )
 
-    async def _execute_sell_order(
-        self, 
-        context: TradingContext, 
+    async def _create_local_sell_order(
+        self,
+        context: TradingContext,
         strategy_data: Dict[str, Any]
     ) -> OrderExecutionResult:
         """Выполнение SELL ордера"""
         try:
-            return await self.order_service.create_and_place_sell_order(
+            return await self.order_service.create_local_sell_order(
                 symbol=context.currency_pair.symbol,
                 amount=strategy_data['sell_amount'],
                 price=strategy_data['sell_price'],
                 deal_id=context.deal.deal_id,
-                order_type=Order.TYPE_LIMIT # Возвращено на LIMIT
+                order_type=Order.TYPE_LIMIT
             )
         except Exception as e:
-            logger.error(f"❌ Error executing SELL order: {e}")
+            logger.error(f"❌ Error creating local SELL order: {e}")
             return OrderExecutionResult(
                 success=False,
-                error_message=f"SELL execution error: {str(e)}"
+                error_message=f"SELL local creation error: {str(e)}"
             )
-
-    async def _wait_for_buy_order_fill(self, buy_order: Order, execution_id: str, timeout_sec: int = 60) -> Optional[Order]:
-        """
-        ⏳ Ожидание исполнения BUY ордера
-        """
-        logger.info(f"⏳ [{execution_id}] Waiting for BUY order {buy_order.exchange_id} to fill (timeout: {timeout_sec}s)")
-        
-        start_time = datetime.now()
-        check_interval = 2.0  # Проверяем каждые 2 секунды
-        
-        while (datetime.now() - start_time).total_seconds() < timeout_sec:
-            try:
-                # Обновляем статус ордера с биржи
-                updated_order = await self.order_service.get_order_status(buy_order)
-                if updated_order and updated_order.is_filled():
-                    logger.info(f"✅ [{execution_id}] BUY order filled after {(datetime.now() - start_time).total_seconds():.1f}s")
-                    return updated_order
-                
-                # Логируем прогресс для частично исполненных ордеров
-                if updated_order and updated_order.is_partially_filled():
-                    logger.info(f"🔄 [{execution_id}] BUY order partially filled: {updated_order.filled_amount}/{updated_order.amount}")
-                
-                await asyncio.sleep(check_interval)
-                
-            except Exception as e:
-                logger.error(f"❌ Error checking BUY order status: {e}")
-                await asyncio.sleep(check_interval)
-        
-        logger.warning(f"⏰ [{execution_id}] BUY order {buy_order.exchange_id} not filled within {timeout_sec}s timeout")
-        return None
 
     async def _emergency_cancel_buy_order(self, buy_order: Order) -> bool:
         """Экстренная отмена BUY ордера при неудаче SELL"""

@@ -175,7 +175,7 @@ class StopLossMonitor:
                     logger.info(f"✅ Создан маркет SELL ордер #{market_sell_order.order_id} для сделки #{deal.deal_id}")
                     
                     # Закрываем сделку
-                    await self.deal_service.close_deal(deal)
+                    await self.deal_service.close_deal(deal.deal_id)
                     logger.info(f"Сделка #{deal.deal_id} закрыта {'принудительно' if force else 'по стоп-лоссу'}")
                 else:
                     logger.error(f"Не удалось создать маркет-ордер для сделки #{deal.deal_id}")
@@ -183,7 +183,7 @@ class StopLossMonitor:
         except Exception as e:
             logger.error(f"Ошибка при создании маркет-ордера для сделки #{deal.deal_id}: {e}")
             # В крайнем случае просто закрываем сделку
-            await self.deal_service.close_deal(deal)
+            await self.deal_service.close_deal(deal.deal_id)
 
     async def trigger_stop_loss(self, deal):
         """Старый метод для обратной совместимости"""

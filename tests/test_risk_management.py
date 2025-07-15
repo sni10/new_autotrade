@@ -99,7 +99,7 @@ class TestRiskManagement(unittest.TestCase):
 
         async def run_test():
             await self.stop_loss_monitor.check_open_deals()
-            self.deal_service.close_deal.assert_awaited_once_with(deal)
+            self.deal_service.close_deal.assert_called_once_with(deal.deal_id)
 
         asyncio.run(run_test())
 

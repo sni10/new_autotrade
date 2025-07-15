@@ -78,18 +78,19 @@ class DealService:
             if self.should_close_deal(deal):
                 self.close_deal(deal)
 
-    async def close_deal(self, deal: Deal):
+    def close_deal(self, deal_id: int):
         """
-        Закрывает сделку и связанные с ней ордера.
+        Закрывает сделку, меняя ее статус на CLOSED.
         """
-        if deal.buy_order and deal.buy_order.is_open():
-            await self.order_service.cancel_order(deal.buy_order)
-        if deal.sell_order and deal.sell_order.is_open():
-            await self.order_service.cancel_order(deal.sell_order)
-
-        deal.close()
-        self.deals_repo.save(deal)
-        logger.info(f"Closed deal: {deal}")
+        deal = self.get_deal_by_id(deal_id)
+        if deal and deal.is_open():
+            deal.close()
+            self.deals_repo.save(deal)
+            logger.info(f"Closed deal: {deal}")
+        elif not deal:
+            logger.warning(f"Попытка закрыть несуществующую сделку: {deal_id}")
+        else:
+            logger.info(f"Сделка {deal_id} уже закрыта, статус: {deal.status}")
 
     async def close_deal_if_completed(self, deal: Deal) -> bool:
         """

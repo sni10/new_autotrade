@@ -2,8 +2,10 @@
 import asyncio
 import logging
 from typing import Optional, Dict, List, Any, Tuple
+from decimal import ROUND_DOWN, ROUND_UP
 from domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
 from domain.factories.order_factory import OrderFactory
+from domain.services.utils.decimal_rounding_service import DecimalRoundingService
 from infrastructure.repositories.orders_repository import OrdersRepository
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 import ccxt
@@ -74,6 +76,13 @@ class OrderService:
         try:
             # Корректируем количество согласно правилам биржи
             amount = self.order_factory.adjust_amount_precision(symbol, amount, round_up=True)
+
+            # === ИСПРАВЛЕНИЕ v4: Корректируем цену согласно precision с биржи ===
+            market_info = await self.exchange_connector.get_symbol_info(symbol)
+            price_precision = market_info.precision.get('price')
+            if price_precision:
+                 price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_DOWN))
+            # =================================================================
 
             logger.info(f"🛒 Creating BUY order: {amount} {symbol} @ {price}")
 
@@ -155,6 +164,13 @@ class OrderService:
             # Корректируем количество согласно правилам биржи (округляем вниз)
             amount = self.order_factory.adjust_amount_precision(symbol, amount)
 
+            # === ИСПРАВЛЕНИЕ v4: Корректируем цену согласно precision с биржи ===
+            market_info = await self.exchange_connector.get_symbol_info(symbol)
+            price_precision = market_info.precision.get('price')
+            if price_precision:
+                 price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_UP))
+            # =================================================================
+
             logger.info(f"🏷️ Creating SELL order: {amount} {symbol} @ {price}")
 
             # 1. Валидация параметров
@@ -220,6 +236,101 @@ class OrderService:
                 success=False,
                 error_message=f"Unexpected error: {str(e)}"
             )
+
+    async def create_local_sell_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: int,
+        order_type: str = Order.TYPE_LIMIT,
+        client_order_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        📝 Создание ЛОКАЛЬНОГО SELL ордера без размещения на бирже.
+        Ордер сохраняется в репозиторий со стату��ом PENDING.
+        """
+        try:
+            # Корректируем количество и цену
+            amount = self.order_factory.adjust_amount_precision(symbol, amount)
+            market_info = await self.exchange_connector.get_symbol_info(symbol)
+            price_precision = market_info.precision.get('price')
+            if price_precision:
+                price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_UP))
+
+            logger.info(f"📝 Creating LOCAL SELL order: {amount} {symbol} @ {price}")
+
+            # Валидация параметров (локальная)
+            validation_result = await self._validate_order_params(
+                symbol, Order.SIDE_SELL, amount, price, order_type
+            )
+            if not validation_result.is_valid:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
+                )
+
+            # Создание ордера через фабрику
+            order = self.order_factory.create_sell_order(
+                symbol=symbol,
+                amount=amount,
+                price=price,
+                deal_id=deal_id,
+                order_type=order_type,
+                client_order_id=client_order_id
+            )
+            
+            # Устанавливаем статус PENDING, так как ордер не размещается
+            order.status = Order.STATUS_PENDING
+            
+            # Сохранение в репозиторий
+            self.orders_repo.save(order)
+            self.stats['orders_created'] += 1
+            
+            logger.info(f"✅ LOCAL SELL order {order.order_id} created and saved with status PENDING.")
+
+            return OrderExecutionResult(
+                success=True,
+                order=order,
+                error_message="Created locally with PENDING status"
+            )
+
+        except Exception as e:
+            logger.error(f"❌ Error creating LOCAL SELL order: {e}")
+            self.stats['orders_failed'] += 1
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Unexpected error in local creation: {str(e)}"
+            )
+
+    async def place_existing_order(self, order: Order) -> OrderExecutionResult:
+        """
+        📤 Размещает на бирже уже существующий локальный ордер (в статусе PENDING).
+        """
+        if not order.is_pending():
+            return OrderExecutionResult(success=False, error_message=f"Order {order.order_id} is not in PENDING state.")
+
+        logger.info(f"📤 Размещаем существующий ордер {order.order_id} ({order.side} {order.amount} {order.symbol}) на бирже.")
+
+        # Проверка баланса перед размещением
+        balance_check = await self._check_balance_for_order(order.symbol, order.side, order.amount, order.price)
+        if not balance_check[0]:
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Insufficient balance for pending order: need {order.amount * order.price:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
+            )
+
+        if self.exchange_connector:
+            execution_result = await self._execute_order_on_exchange(order)
+            if execution_result.success:
+                self.stats['orders_executed'] += 1
+                logger.info(f"✅ Existing order {order.order_id} placed successfully: {order.exchange_id}")
+            else:
+                self.stats['orders_failed'] += 1
+                logger.error(f"❌ Failed to place existing order {order.order_id}: {execution_result.error_message}")
+            return execution_result
+        else:
+            return OrderExecutionResult(success=False, error_message="No exchange connector available.")
 
     # 🔧 ВНУТРЕННИЕ МЕТОДЫ
 
@@ -466,12 +577,10 @@ class OrderService:
                 return []
 
             exchange_open_orders = await self.exchange_connector.fetch_open_orders(symbol=symbol_to_fetch)
-            logger.info(f"🔍 fetch_open_orders returned {len(exchange_open_orders)} orders: {[o['id'] for o in exchange_open_orders]}")
             exchange_open_orders_map = {order['id']: order for order in exchange_open_orders}
 
             for order in local_orders:
                 if order.exchange_id:
-                    logger.info(f"🔍 Looking for exchange_id: {order.exchange_id} (type: {type(order.exchange_id)})")
                     if order.exchange_id in exchange_open_orders_map:
                         # Ордер есть на бирже и открыт - обновляем статус
                         exchange_data = exchange_open_orders_map[order.exchange_id]

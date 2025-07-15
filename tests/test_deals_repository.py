@@ -5,10 +5,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
 from domain.entities.deal import Deal
-
+from domain.entities.currency_pair import CurrencyPair
 
 def make_deal(deal_id, status=Deal.STATUS_OPEN):
-    return Deal(deal_id=deal_id, currency_pair_id='BTCUSDT', status=status)
+    pair = CurrencyPair(symbol="BTC/USDT", base_currency="BTC", quote_currency="USDT")
+    return Deal(deal_id=deal_id, currency_pair=pair, status=status)
 
 
 def test_save_and_get_open():
