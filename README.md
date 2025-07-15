@@ -1,4 +1,4 @@
-# 🚀 AutoTrade v2.3.0 - "Refactoring & Docs Edition"
+# 🚀 AutoTrade v2.4.0 - "Smart Risk Management & Infrastructure"
 
 > **Intelligent Trading System** with OrderBook Analysis & MACD Indicators  
 > **Architecture**: Domain-Driven Design (DDD)  
@@ -23,7 +23,10 @@
 - [🛡️ Safety Features](#️-safety-features)
 - [📋 Development Roadmap](#-development-roadmap)
 - [🎯 Issues Overview](#-issues-overview)
-- [📖 Documentation](#-documentation)
+- [📖 Документация](#-документация)
+- [🌿 Branch Strategy](#-branch-strategy)
+- [🚀 Deployment](#-deployment)
+- [💎 Conclusion](#-conclusion)
 
 ---
 
@@ -31,11 +34,11 @@
 
 **AutoTrade** - профессиональная система автоматической торговли криптовалютами с интеллектуальным анализом биржевого стакана и техническими индикаторами. Система построена на принципах Domain-Driven Design и использует асинхронную архитектуру для максимальной производительности.
 
-### 🔥 Latest Release: v2.3.0 - "Refactoring & Docs Edition"
-- 📚 **Полная актуализация документации** и создание руководств по реализации.
-- ⚙️ **Улучшенная конфигурация** с поддержкой переменных окружения.
-- 💾 **Персистентность данных** через JSON-репозитории.
-- 🛡️ **Уточненные механизмы риска**, включая мониторинг "протухших" ордеров.
+### 🔥 Latest Release: v2.4.0 - "Smart Risk Management & Infrastructure"
+- 🔄 **Асинхронный жизненный цикл сделок** - поэтапное исполнение BUY → SELL ордеров.
+- 🛡️ **Умная система стоп-лосса** с трёхуровневой защитой и анализом стакана.
+- 🏗️ **Новая архитектура сервисов** - FilledBuyOrderHandler, DealCompletionMonitor, StopLossMonitor.
+- ⚙️ **Улучшенное управление рисками** с DecimalRoundingService и OrderbookCache.
 
 ---
 
@@ -54,9 +57,9 @@
 - **JSON-based Persistence** для сохранения состояния.
 
 ### 🛡️ Safety Systems  
-- **StopLossMonitor** - для ограничения убытков.
+- **Smart StopLossMonitor** - трёхуровневая защита от убытков с анализом стакана.
 - **Signal Cooldown Manager** - защита от переторговки.
-- **Stale Order Monitoring** (`BuyOrderMonitor`) - отмена и пересоздание "застрявших" ордеров.
+- **Enhanced BuyOrderMonitor** - синхронизация виртуальных SELL ордеров при пересоздании.
 - **OrderBook Validation** - отклонение сделок при плохой ликвидности.
 - **Environment-based Configuration** через `.env` файлы.
 
@@ -74,54 +77,66 @@
 
 ```
 new_autotrade/
-│
-├── domain/                    # 🧠 Business Logic
-│   ├── entities/              # Core business objects
-│   │   ├── deal.py           # Trading deals
-│   │   ├── order.py          # Exchange orders  
-│   │   ├── currency_pair.py  # Trading pairs
-│   │   └── ticker.py         # Market tickers
-│   ├── factories/             # Object creation
-│   │   ├── deal_factory.py
-│   │   └── order_factory.py
-│   └── services/              # Business services
-│       ├── trading_service.py        # Core trading logic
-│       ├── deal_service.py           # Deal management
-│       ├── order_service.py          # Order management
-│       ├── signal_service.py         # Signal processing
-│       ├── ticker_service.py         # Market data
-│       ├── orderbook_analyzer.py     # 🆕 OrderBook analysis
-│       ├── orderbook_service.py      # 🆕 OrderBook monitoring
-│       ├── trading_decision_engine.py # 🆕 Decision engine
-│       ├── market_analysis_service.py # Market analysis
-│       ├── cached_indicator_service.py # Performance optimization
-│       └── signal_cooldown_manager.py # Protection system
-│
-├── application/               # 🚀 Use Cases  
-│   ├── use_cases/
-│   │   └── run_realtime_trading.py   # 🆕 Real-time with OrderBook
-│   └── utils/
-│       └── performance_logger.py     # Performance monitoring
-│
-├── infrastructure/            # 🔌 External Integrations
-│   ├── repositories/          # Data storage (JSON-based)
-│   │   ├── deals_repository.py
-│   │   ├── orders_repository.py
-│   │   └── tickers_repository.py
-│   └── connectors/            # External services
-│       ├── exchange_connector.py     # Exchange API
-│       └── pro_exchange_connector.py # 🆕 WebSocket ccxt.pro
-│
-├── config/
-│   └── config_loader.py       # Configuration loader
+├── src/                       # 🎯 Main Source Code
+│   ├── domain/                # 🧠 Business Logic
+│   │   ├── entities/          # Core business objects
+│   │   │   ├── deal.py       # Trading deals
+│   │   │   ├── order.py      # Exchange orders  
+│   │   │   ├── currency_pair.py # Trading pairs
+│   │   │   └── ticker.py     # Market tickers
+│   │   ├── factories/         # Object creation
+│   │   │   ├── deal_factory.py
+│   │   │   └── order_factory.py
+│   │   └── services/          # Business services
+│   │       ├── deals/
+│   │       │   ├── deal_service.py           # Deal management
+│   │       │   └── deal_completion_monitor.py # 🆕 Deal completion
+│   │       ├── orders/
+│   │       │   ├── order_service.py          # Order management
+│   │       │   ├── order_execution_service.py # Order execution
+│   │       │   ├── buy_order_monitor.py      # 🔄 Enhanced monitoring
+│   │       │   └── filled_buy_order_handler.py # 🆕 BUY order handler
+│   │       ├── market_data/
+│   │       │   ├── ticker_service.py         # Market data
+│   │       │   ├── orderbook_analyzer.py     # OrderBook analysis
+│   │       │   ├── orderbook_service.py      # OrderBook monitoring
+│   │       │   └── market_analysis_service.py # Market analysis
+│   │       ├── trading/
+│   │       │   ├── trading_service.py        # Core trading logic
+│   │       │   ├── trading_decision_engine.py # Decision engine
+│   │       │   └── signal_cooldown_manager.py # Protection system
+│   │       ├── risk/
+│   │       │   └── stop_loss_monitor.py      # 🆕 Smart stop-loss
+│   │       ├── indicators/
+│   │       │   └── cached_indicator_service.py # Performance optimization
+│   │       └── utils/
+│   │           ├── decimal_rounding_service.py # 🆕 Precise rounding
+│   │           └── orderbook_cache.py         # 🆕 OrderBook caching
+│   │
+│   ├── application/           # 🚀 Use Cases  
+│   │   ├── use_cases/
+│   │   │   └── run_realtime_trading.py # Real-time trading
+│   │   └── utils/
+│   │       └── performance_logger.py   # Performance monitoring
+│   │
+│   ├── infrastructure/        # 🔌 External Integrations
+│   │   ├── repositories/      # Data storage (JSON-based)
+│   │   │   ├── deals_repository.py
+│   │   │   ├── orders_repository.py
+│   │   │   └── tickers_repository.py
+│   │   └── connectors/        # External services
+│   │       └── exchange_connector.py   # Exchange API
+│   │
+│   └── config/
+│       ├── config.json        # Main configuration
+│       └── config_loader.py   # Configuration loader
 │
 ├── binance_keys/              # 🔐 API Keys storage
-│
 ├── project_management/        # Project docs & issues
-│
-├── sandbox*.py                # Testing scripts
-├── main.py                    # 🎯 Application entry point
-└── *.md                       # Documentation
+├── tests/                     # 🧪 Test suites
+├── .env.example              # Environment variables template
+├── main.py                   # 🎯 Application entry point
+└── *.md                      # Documentation
 ```
 
 ### 🎨 Architecture Diagram
@@ -346,7 +361,9 @@ python main.py
 
 Система работает по асинхронной, событийно-ориентированной модели, что делает ее надежной и быстрой. Жизненный цикл сделки разделен на несколько независимых этапов, управляемых разными сервисами.
 
-### 🔄 **Новый жизненный цикл сделки**
+### 🔄 **Асинхронный жизненный цикл сделки (v2.4.0)**
+
+**Революционное изменение**: Отказ от одновременного размещения `BUY` и `SELL` ордеров в пользу поэтапного исполнения.
 
 1.  **Сигнал и Валидация**:
     -   `TickerService` анализирует график и генерирует первичный сигнал `BUY` по индикатору MACD.
@@ -358,13 +375,16 @@ python main.py
     -   `SELL` ордер создается "виртуально" (в памяти, со статусом `PENDING`) и ждет своего часа.
 
 3.  **Мониторинг и Адаптация (параллельные процессы)**:
-    -   **`BuyOrderMonitor`**: Если `BUY` ордер "застрял" (цена ушла), этот сервис отменит его, создаст новый по актуальной цене и, что важно, **обновит** параметры "виртуального" `SELL` ордера.
-    -   **`FilledBuyOrderHandler`**: Как только `BUY` ордер исполняется, этот сервис "замечает" это и **отправляет на биржу** связанный с ним `SELL` ордер.
+    -   **`BuyOrderMonitor`**: Если `BUY` ордер "застрял" (цена ушла), этот сервис отменит его, создаст новый по актуальной цене и, что важно, **обновит** параметры "виртуального" `SELL` ордера в локальной памяти.
+    -   **`FilledBuyOrderHandler`** (🆕): Как только `BUY` ордер исполняется, этот сервис "замечает" это и **отправляет на биржу** связанный с ним `SELL` ордер.
 
 4.  **Завершение Сделки**:
-    -   **`DealCompletionMonitor`**: Этот сервис отслеживает общее состояние сделок. Когда и `BUY`, и `SELL` ордера исполнены (`FILLED`), он закрывает сделку, меняя ее статус на `CLOSED`.
+    -   **`DealCompletionMonitor`** (🆕): Этот сервис отслеживает общее состояние сделок. Когда и `BUY`, и `SELL` ордера исполнены (`FILLED`), он закрывает сделку, меняя ее статус на `CLOSED`.
 
-Эта архитектура гарантирует, что система не "забывает" про сделки и гибко адаптируется к рыночным изменениям, например, при пересоздании "тухлых" ордеров.
+5.  **Защита от потерь**:
+    -   **`StopLossMonitor`** (🆕): Трёхуровневая система защиты с анализом стакана перед принятием решений о закрытии убыточных позиций.
+
+Эта архитектура гарантирует, что система не "забывает" про сделки и гибко адаптируется к рыночным изменениям, при этом обеспечивая максимальную безопасность.
 
 ### ✅ **Пример успешного сигнала**
 ```
@@ -470,27 +490,41 @@ python main.py
 
 ---
 
-## 📖 Documentation
+## 📖 Документация
 
-### 📋 **Available Documents**
-- [`RELEASE_NOTES.md`](RELEASE_NOTES.md) - Полные релизные заметки v2.2.0
-- [`RELEASE_NOTES_v2.1.0.md`](RELEASE_NOTES_v2.1.0.md) - Детальная документация релиза
-- [`ROADMAP.md`](ROADMAP.md) - Детальная техническая оценка и планы развития
-- [`ORDERBOOK_INTEGRATION.md`](ORDERBOOK_INTEGRATION.md) - Документация по интеграции анализа стакана
-- [`CHANGELOG.md`](CHANGELOG.md) - История изменений
+### 📚 **Полное руководство**
+- [📖 Центр документации](docs/README.md) - Главная страница документации
 
-### 🗂️ **Project Management**
-- [`project_management/issues_summary.md`](project_management/issues_summary.md) - Полный список всех issues
-- [`project_management/milestones.md`](project_management/milestones.md) - 4 milestone с временными рамками
-- [`project_management/implementation_plan.md`](project_management/implementation_plan.md) - Готовый план реализации
-- [`project_management/issues/`](project_management/issues/) - 15 детальных технических заданий
-- [`ISSUE_06_IMPLEMENTATION_GUIDE.md`](ISSUE_06_IMPLEMENTATION_GUIDE.md) - отчет по реализации #6
-- [`ISSUE_07_IMPLEMENTATION_GUIDE.md`](ISSUE_07_IMPLEMENTATION_GUIDE.md) - отчет по реализации #7
-- [`ISSUE_08_IMPLEMENTATION_GUIDE.md`](ISSUE_08_IMPLEMENTATION_GUIDE.md) - отчет по реализации #8
-- [`ISSUE_15_IMPLEMENTATION_GUIDE.md`](ISSUE_15_IMPLEMENTATION_GUIDE.md) - отчет по реализации #15
-- [`ISSUE_18_IMPLEMENTATION_GUIDE.md`](ISSUE_18_IMPLEMENTATION_GUIDE.md) - отчет по реализации #18
-- [`ISSUE_19_IMPLEMENTATION_GUIDE.md`](ISSUE_19_IMPLEMENTATION_GUIDE.md) - пример полного отчета по реализации
-- [`ISSUE_20_IMPLEMENTATION_GUIDE.md`](ISSUE_20_IMPLEMENTATION_GUIDE.md) - отчет по реализации #20
+### 🚀 **Быстрый старт**
+- [📦 Установка и настройка](docs/getting-started/INSTALLATION.md)
+- [⚙️ Конфигурация системы](docs/getting-started/CONFIGURATION.md)
+- [🏃 Быстрый запуск](docs/getting-started/QUICK_START.md)
+
+### 🛠️ **Практические руководства**
+- [📊 Интеграция анализа стакана](docs/guides/ORDERBOOK_INTEGRATION.md)
+- [🔍 Мониторинг BUY ордеров](docs/guides/BUY_ORDER_MONITOR.md)
+
+### 🏗️ **Архитектура и разработка**
+- [🏗️ Архитектура проекта](docs/architecture/PROJECT_OVERVIEW.md)
+- [📋 Обзор модулей](docs/architecture/MODULE_OVERVIEW.md)
+- [📂 Структура файлов](docs/architecture/FILE_STRUCTURE.md)
+
+### 🔧 **API и интеграция**
+- [🔧 Справочник API](docs/api/API_REFERENCE.md)
+- [🏪 Интеграция с биржами](docs/api/EXCHANGE_INTEGRATION.md)
+
+### 📋 **Разработка**
+- [📋 Руководства по реализации](docs/development/IMPLEMENTATION_GUIDES.md)
+- [📊 Управление проектом](docs/development/project_management/)
+
+### 📦 **Релизы**
+- [📝 История изменений](docs/releases/CHANGELOG.md)
+- [🗺️ Дорожная карта](docs/releases/ROADMAP.md)
+- [📦 Заметки о релизах](docs/releases/release-notes/)
+
+### 🛠️ **Помощь**
+- [🔧 Устранение неполадок](docs/troubleshooting/TROUBLESHOOTING.md)
+- [❓ Часто задаваемые вопросы](docs/troubleshooting/FAQ.md)
 
 ### 🛠️ **Technical Specs**
 **Language**: Python 3.10

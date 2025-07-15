@@ -1,6 +1,7 @@
-```
-📂 Запуск из директории: F:/HOME/new_autotrade
+# 📂 AutoTrade v2.4.0 - Структура проекта
 
+```
+📂
 ├── .dockerignore
 ├── .env
 ├── .github
@@ -30,9 +31,14 @@
 ├── RELEASE_NOTES_v2.2.0.md
 ├── RELEASE_NOTES_v2.3.0.md
 ├── ROADMAP.md
-├── binance_keys
+├── binance_keys                           # 🔐 API ключи
 │   ├── id_ed25519.pem
 │   └── id_ed25519pub.pem
+├── docs                                   # 📚 Документация (v2.4.0)
+│   ├── installation                       # Руководство по установке
+│   │   └── INSTALLATION.md
+│   └── configuration                      # Руководство по конфигурации
+│       └── CONFIGURATION.md
 ├── file_tree.md
 ├── main.py
 ├── project_management
@@ -62,9 +68,9 @@
 ├── sandbox_websocket_watch_trades.py
 ├── schema-app.puml
 ├── schema-app.svg
-├── src
+├── src                                    # 🎯 Основной исходный код
 │   ├── __init__.py
-│   ├── application
+│   ├── application                        # 🚀 Сценарии использования
 │   │   ├── __init__.py
 │   │   ├── use_cases
 │   │   │   ├── __init__.py
@@ -72,54 +78,60 @@
 │   │   └── utils
 │   │       ├── __init__.py
 │   │       └── performance_logger.py
-│   ├── config
+│   ├── config                             # ⚙️ Конфигурация системы
 │   │   ├── __init__.py
 │   │   ├── config.json
 │   │   └── config_loader.py
-│   ├── domain
+│   ├── domain                             # 🧠 Бизнес-логика
 │   │   ├── __init__.py
-│   │   ├── entities
+│   │   ├── entities                       # Основные сущности
 │   │   │   ├── __init__.py
 │   │   │   ├── currency_pair.py
 │   │   │   ├── deal.py
 │   │   │   ├── order.py
 │   │   │   └── ticker.py
-│   │   ├── factories
+│   │   ├── factories                      # Фабрики создания объектов
 │   │   │   ├── __init__.py
 │   │   │   ├── deal_factory.py
 │   │   │   └── order_factory.py
-│   │   └── services
+│   │   └── services                       # Бизнес-сервисы
 │   │       ├── __init__.py
-│   │       ├── deals
+│   │       ├── deals                      # Управление сделками
 │   │       │   ├── __init__.py
+│   │       │   ├── deal_completion_monitor.py  # 🆕 Мониторинг завершения сделок
 │   │       │   └── deal_service.py
-│   │       ├── indicators
+│   │       ├── indicators                 # Технические индикаторы
 │   │       │   ├── __init__.py
 │   │       │   └── cached_indicator_service.py
-│   │       ├── market_data
+│   │       ├── market_data                # Рыночные данные
 │   │       │   ├── __init__.py
 │   │       │   ├── market_analysis_service.py
 │   │       │   ├── orderbook_analyzer.py
 │   │       │   ├── orderbook_service.py
 │   │       │   └── ticker_service.py
-│   │       ├── orders
+│   │       ├── orders                     # Управление ордерами
 │   │       │   ├── __init__.py
-│   │       │   ├── buy_order_monitor.py
+│   │       │   ├── buy_order_monitor.py   # 🔄 Расширенный мониторинг
+│   │       │   ├── filled_buy_order_handler.py  # 🆕 Обработчик исполненных BUY
 │   │       │   ├── order_execution_service.py
 │   │       │   ├── order_service.py
 │   │       │   └── order_timeout_service.py
-│   │       └── trading
-│   │           ├── __init__.py
-│   │           ├── signal_cooldown_manager.py
-│   │           ├── trading_decision_engine.py
-│   │           └── trading_service.py
-│   └── infrastrucсупер.ture
+│   │       ├── risk                       # Управление рисками
+│   │       │   └── stop_loss_monitor.py   # 🆕 Умный стоп-лосс
+│   │       ├── trading                    # Торговая логика
+│   │       │   ├── __init__.py
+│   │       │   ├── signal_cooldown_manager.py
+│   │       │   ├── trading_decision_engine.py
+│   │       │   └── trading_service.py
+│   │       └── utils                      # Утилиты
+│   │           ├── decimal_rounding_service.py  # 🆕 Точное округление
+│   │           └── orderbook_cache.py     # 🆕 Кэширование стакана
+│   └── infrastructure                     # 🔌 Внешние интеграции
 │       ├── __init__.py
-│       ├── connectors
+│       ├── connectors                     # Подключения к API
 │       │   ├── __init__.py
-│       │   ├── exchange_connector.py
-│       │   └── pro_exchange_connector.py
-│       └── repositories
+│       │   └── exchange_connector.py
+│       └── repositories                   # Хранение данных
 │           ├── __init__.py
 │           ├── deals_repository.py
 │           ├── orders_repository.py
