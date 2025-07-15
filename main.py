@@ -146,7 +146,7 @@ async def main():
             repositories=[deals_repo, orders_repo, tickers_repo, order_books_repo, indicators_repo],
             sync_interval_seconds=config.get("database", {}).get("sync_interval", 60)
         )
-        sync_service.start()
+        asyncio.create_task(sync_service.start())
 
         # 5. --- Запуск основного торгового цикла ---
         logger.info("--- 5. Starting Main Trading Loop ---")

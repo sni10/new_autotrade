@@ -68,21 +68,11 @@ async def run_realtime_trading(
         
         while True:
             try:
-                logger.info("📡 Ожидание данных тикера...")
-                ticker_data = await asyncio.wait_for(
-                    pro_exchange_connector_prod.watch_ticker(currency_pair.symbol),
-                    timeout=30.0
-                )
-                logger.info(f"📊 Получен тикер: {ticker_data.symbol} = {ticker_data.last}")
+                ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
 
                 start_process = time.time()
                 await ticker_service.process_ticker(ticker_data)
                 end_process = time.time()
-            
-            except asyncio.TimeoutError:
-                logger.error("⏰ Timeout при получении тикера (30 сек). Проверьте WebSocket соединение.")
-                await asyncio.sleep(5)
-                continue
 
                 processing_time = end_process - start_process
                 counter += 1

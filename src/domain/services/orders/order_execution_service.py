@@ -89,11 +89,12 @@ class OrderExecutionService:
         - error_counts, etc.
         """
         return {
-            "orders_created": 0,
-            "orders_filled": 0,
-            "orders_cancelled": 0,
+            "total_executions": 0,
+            "successful_executions": 0,
+            "failed_executions": 0,
             "success_rate": 0.0,
             "total_volume": 0.0,
-            "average_execution_time": 0.0,
+            "total_fees": 0.0,
+            "average_execution_time_ms": 0.0,
             "warnings": ["Метод пока не реализован - это заглушка"]
         }
