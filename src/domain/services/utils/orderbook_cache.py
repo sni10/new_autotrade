@@ -2,6 +2,7 @@
 import time
 from typing import Dict, Optional
 import logging
+from src.domain.entities.order_book import OrderBook
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +13,10 @@ class OrderBookCache:
     
     def __init__(self, ttl_seconds: int = 30):
         self.ttl_seconds = ttl_seconds
-        self._cache: Dict[str, Dict] = {}
+        self._cache: Dict[str, OrderBook] = {}
         self._timestamps: Dict[str, float] = {}
     
-    def get(self, symbol: str) -> Optional[Dict]:
+    def get(self, symbol: str) -> Optional[OrderBook]:
         """Получить кешированный стакан"""
         current_time = time.time()
         
@@ -29,7 +30,7 @@ class OrderBookCache:
             
         return self._cache[symbol]
     
-    def set(self, symbol: str, orderbook: Dict):
+    def set(self, symbol: str, orderbook: OrderBook):
         """Сохранить стакан в кеш"""
         self._cache[symbol] = orderbook
         self._timestamps[symbol] = time.time()

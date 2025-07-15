@@ -1,19 +1,18 @@
-
-import sys
-import os
 from decimal import Decimal
 import pytest
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../src')))
 
 from domain.services.market_data.ticker_service import TickerService
 from domain.entities.currency_pair import CurrencyPair
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+from infrastructure.repositories.indicators_repository import InMemoryIndicatorsRepository
+
 
 @pytest.fixture
 def ticker_service():
     """Фикстура для создания экземпляра TickerService."""
-    return TickerService(InMemoryTickerRepository())
+    tickers_repo = InMemoryTickerRepository()
+    indicators_repo = InMemoryIndicatorsRepository()
+    return TickerService(tickers_repo, indicators_repo)
 
 @pytest.fixture
 def eth_usdt_pair():
@@ -32,7 +31,7 @@ def test_calculate_strategy_success(ticker_service, eth_usdt_pair):
         currency_pair=eth_usdt_pair,
         profit_percent=1.0
     )
-    assert isinstance(result, tuple), f"Ожидался tuple, получили: {result.get('comment', '')}"
+    assert isinstance(result, tuple), f"Ожидался tuple, получили: {getattr(result, 'comment', result)}"
     assert result[0] == Decimal('3000.0')
     assert result[1] > 0  # Должны купить какое-то количество монет
 
@@ -56,7 +55,7 @@ def test_calculate_strategy_very_low_price(ticker_service, eth_usdt_pair):
         currency_pair=eth_usdt_pair,
         profit_percent=5.0
     )
-    assert isinstance(result, tuple), f"Ожидался tuple, получили: {result.get('comment', '')}"
+    assert isinstance(result, tuple), f"Ожидался tuple, получили: {getattr(result, 'comment', result)}"
     assert result[1] > 0
 
 def test_calculate_strategy_budget_just_above_minimum(ticker_service, eth_usdt_pair):
@@ -67,4 +66,4 @@ def test_calculate_strategy_budget_just_above_minimum(ticker_service, eth_usdt_p
         currency_pair=eth_usdt_pair,
         profit_percent=1.0
     )
-    assert isinstance(result, tuple), f"Ожидался tuple, получили: {result.get('comment', '')}"
+    assert isinstance(result, tuple), f"Ожидался tuple, получили: {getattr(result, 'comment', result)}"

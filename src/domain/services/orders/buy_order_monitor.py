@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from domain.entities.order import Order
 from domain.services.orders.order_service import OrderService
 from domain.services.deals.deal_service import DealService
@@ -60,7 +60,7 @@ class BuyOrderMonitor:
                 await asyncio.sleep(self.check_interval_seconds)
             except Exception as e:
                 logger.error(f"❌ Ошибка в мониторинге BUY ордеров: {e}")
-                await asyncio.sleep(30)  # Пауза при ошибке
+                await asyncio.sleep(30)  # Пауза пр�� ошибке
 
     def stop_monitoring(self):
         """Остановка мониторинга"""
@@ -84,14 +84,14 @@ class BuyOrderMonitor:
             logger.debug(f"🔍 Проверяем {len(buy_orders)} открытых BUY ордеров")
             
             for order in buy_orders:
-                is_stale = await self._is_order_stale(order)
+                is_stale, reason = await self._is_order_stale(order)
                 if is_stale:
                     await self._handle_stale_buy_order(order)
                     
         except Exception as e:
             logger.error(f"❌ Ошибка проверки BUY ордеров: {e}")
 
-    async def _is_order_stale(self, order: Order) -> bool:
+    async def _is_order_stale(self, order: Order) -> Tuple[bool, str]:
         """Проверяет протух ли BUY ордер"""
         try:
             # 1. Проверка возраста
@@ -99,25 +99,34 @@ class BuyOrderMonitor:
             age_minutes = (current_time - order.created_at) / 1000 / 60
             
             if age_minutes > self.max_age_minutes:
-                logger.info(f"🕒 BUY ордер {order.order_id} протух по времени: {age_minutes:.1f} мин")
-                return True
+                reason = f"🕒 BUY ордер {order.order_id} протух по времени: {age_minutes:.1f} мин"
+                logger.info(reason)
+                return True, reason
             
             # 2. Проверка отклонения цены
-            ticker = await self.exchange.fetch_ticker(order.symbol)
-            current_price = float(ticker['last'])
+            deal = self.deal_service.get_deal_by_id(order.deal_id)
+            if not deal:
+                reason = f"Критическая ошибка: не найдена сделка {order.deal_id} для ордера {order.order_id}!"
+                logger.error(reason)
+                return False, reason
+
+            ticker = await self.exchange.fetch_ticker(deal.symbol)
+            current_price = ticker.last
             
             # Для BUY: если рынок ушел выше нашей цены
             price_deviation = ((current_price - order.price) / order.price) * 100
             
             if price_deviation > self.max_price_deviation_percent:
-                logger.info(f"📈 BUY ордер {order.order_id} протух по цене: рынок {current_price}, ордер {order.price} (+{price_deviation:.1f}%)")
-                return True
+                reason = f"📈 BUY ордер {order.order_id} протух по цене: рынок {current_price}, ордер {order.price} (+{price_deviation:.1f}%)"
+                logger.info(reason)
+                return True, reason
                 
-            return False
+            return False, ""
             
         except Exception as e:
-            logger.error(f"❌ Ошибка проверки ордера {order.order_id}: {e}")
-            return False
+            reason = f"❌ Ошибка проверки ордера {order.order_id}: {e}"
+            logger.error(reason)
+            return False, reason
 
     async def _handle_stale_buy_order(self, order: Order):
         """Обработка протухшего BUY ордера: отмена + пересоздание + обновление связанного SELL."""
@@ -128,7 +137,7 @@ class BuyOrderMonitor:
             # 1. Отменяем старый BUY ордер
             cancel_success = await self.order_service.cancel_order(order)
             if not cancel_success:
-                logger.error(f"❌ Не удалось отменить BUY ордер {order.order_id}")
+                logger.error(f"❌ Не удалось отменить BUY о��дер {order.order_id}")
                 return
             self.stats['orders_cancelled'] += 1
             logger.info(f"✅ BUY ордер {order.order_id} отменен")
@@ -147,7 +156,7 @@ class BuyOrderMonitor:
                 logger.error(f"Критическая ошибка: не найдена сделка {order.deal_id} для обновления!")
                 return
             
-            deal.update_buy_order(new_buy_order)
+            deal.buy_order = new_buy_order
             self.deal_service.deals_repo.save(deal)
             logger.info(f"✅ Сделка {deal.deal_id} обновлена новым BUY ордером {new_buy_order.order_id}")
 
@@ -160,23 +169,22 @@ class BuyOrderMonitor:
     async def _recreate_buy_order(self, old_order: Order) -> Optional[Order]:
         """Пересоздание BUY ордера по текущей рыночной цене"""
         try:
-            ticker = await self.exchange.fetch_ticker(old_order.symbol)
-            current_price = float(ticker['last'])
-            new_price = current_price * 0.999
+            deal = self.deal_service.get_deal_by_id(old_order.deal_id)
+            ticker = await self.exchange.fetch_ticker(deal.symbol)
+            new_price = ticker.last * 0.999
 
             logger.info(f"🔄 Пересоздаем BUY ордер: старая цена {old_order.price}, новая цена {new_price}")
 
             execution_result = await self.order_service.create_and_place_buy_order(
-                symbol=old_order.symbol,
+                symbol=deal.symbol,
                 amount=old_order.amount,
                 price=new_price,
-                deal_id=old_order.deal_id,
-                order_type=old_order.order_type
+                deal_id=old_order.deal_id
             )
             
             return execution_result.order if execution_result.success else None
         except Exception as e:
-            logger.error(f"❌ Ошибка пересоздания BUY ордера: {e}", exc_info=True)
+            logger.error(f"❌ Ошибка ��ересоздания BUY ордера: {e}", exc_info=True)
             return None
 
     async def _update_related_sell_order(self, deal, new_buy_order: Order):

@@ -1,6 +1,6 @@
 # domain/entities/order.py.new - ENHANCED для реальной торговли
 import time
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
 
 class Order:
@@ -56,7 +56,13 @@ class Order:
         error_message: Optional[str] = None,    # Сообщение об ошибке
         retries: int = 0,                       # Количество попыток
         # 🆕 МЕТАДАННЫЕ:
-        metadata: Optional[Dict[str, Any]] = None,  # Дополнительная информация
+        metadata: Optional[Dict[str, Any]] = None,
+        # --- Поля из ccxt unified API для полноты ---
+        last_trade_timestamp: Optional[int] = None,
+        cost: float = 0.0,
+        trades: Optional[List[Dict[str, Any]]] = None,
+        stop_price: Optional[float] = None,
+        post_only: bool = False,
         exchange_raw_data: Optional[Dict[str, Any]] = None # Полный ответ от биржи
     ):
         self.order_id = order_id
@@ -73,7 +79,7 @@ class Order:
         self.exchange_id = exchange_id
         self.symbol = symbol
         self.filled_amount = filled_amount
-        self.remaining_amount = remaining_amount or amount  # По умолчанию = amount
+        self.remaining_amount = remaining_amount or amount
         self.average_price = average_price
         self.fees = fees
         self.fee_currency = fee_currency
@@ -85,8 +91,16 @@ class Order:
         self.last_update = last_update or self.created_at
         self.error_message = error_message
         self.retries = retries
+        
+        # --- Новые поля из ccxt ---
+        self.last_trade_timestamp = last_trade_timestamp
+        self.cost = cost
+        self.trades = trades or []
+        self.stop_price = stop_price
+        self.post_only = post_only
+        
         self.metadata = metadata or {}
-        self.exchange_raw_data = exchange_raw_data # Сохраняем полный ответ
+        self.exchange_raw_data = exchange_raw_data
 
     # 🆕 РАСШИРЕННЫЕ МЕТОДЫ ПРОВЕРКИ СТАТУСА
     def is_open(self) -> bool:
@@ -129,6 +143,23 @@ class Order:
         return self.filled_amount >= self.amount
 
     # 🆕 МЕТОДЫ ОБНОВЛЕНИЯ СТАТУСА
+    def update_from_order(self, other_order: 'Order') -> None:
+        """Обновляет ордер данными из другого Order объекта"""
+        self.exchange_id = other_order.exchange_id
+        self.status = other_order.status
+        self.filled_amount = other_order.filled_amount
+        self.remaining_amount = other_order.remaining_amount
+        self.average_price = other_order.average_price
+        self.fees = other_order.fees
+        self.fee_currency = other_order.fee_currency
+        self.cost = other_order.cost
+        self.last_trade_timestamp = other_order.last_trade_timestamp
+        self.trades = other_order.trades
+        self.closed_at = other_order.closed_at
+        self.last_update = other_order.last_update
+        self.exchange_timestamp = other_order.exchange_timestamp
+        self.exchange_raw_data = other_order.exchange_raw_data
+
     def update_from_exchange(self, exchange_data: Dict[str, Any]) -> None:
         """Обновляет ордер данными с биржи, безопасно обрабатывая None."""
         self.exchange_id = exchange_data.get('id', self.exchange_id)
@@ -151,6 +182,12 @@ class Order:
             fee_cost = exchange_data['fee'].get('cost')
             if fee_cost is not None:
                 self.fees = float(fee_cost)
+        
+        # Обновляем новые поля
+        self.cost = exchange_data.get('cost', self.cost)
+        self.last_trade_timestamp = exchange_data.get('lastTradeTimestamp', self.last_trade_timestamp)
+        self.trades = exchange_data.get('trades', self.trades)
+
         # Обновляем статус на основе данных биржи
         exchange_status = exchange_data.get('status', '').lower()
         if exchange_status == 'closed':
@@ -250,13 +287,63 @@ class Order:
             'error_message': self.error_message,
             'retries': self.retries,
             'metadata': self.metadata,
-            'exchange_raw_data': self.exchange_raw_data # Добавлено в to_dict
+            'cost': self.cost,
+            'last_trade_timestamp': self.last_trade_timestamp,
+            'trades': self.trades,
+            'stop_price': self.stop_price,
+            'post_only': self.post_only,
+            'exchange_raw_data': self.exchange_raw_data
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Order':
-        """Создает ордер из словаря"""
-        return cls(**data)
+        """
+        Создает ордер из словаря, адаптируя ключи от ccxt.
+        """
+        # Явная адаптация ключевых полей ccxt к полям нашего конструктора
+        adapted_data = {
+            'order_id': data.get('order_id') or data.get('id'),
+            'exchange_id': data.get('exchange_id') or data.get('id'),
+            'order_type': data.get('order_type') or data.get('type'),
+            'side': data.get('side'),
+            'symbol': data.get('symbol'),
+            'status': data.get('status'),
+            'price': data.get('price'),
+            'amount': data.get('amount'),
+            'cost': data.get('cost'),
+            'average_price': data.get('average_price') or data.get('average'),
+            'filled_amount': data.get('filled_amount') or data.get('filled'),
+            'remaining_amount': data.get('remaining_amount') or data.get('remaining'),
+            'created_at': data.get('created_at'),
+            'closed_at': data.get('closed_at'),
+            'exchange_timestamp': data.get('exchange_timestamp') or data.get('timestamp'),
+            'last_trade_timestamp': data.get('last_trade_timestamp') or data.get('lastTradeTimestamp'),
+            'deal_id': data.get('deal_id'),
+            'fees': data.get('fees') if data.get('fees') is not None else data.get('fee', {}).get('cost'),
+            'fee_currency': data.get('fee_currency') if data.get('fee_currency') is not None else data.get('fee', {}).get('currency'),
+            'trades': data.get('trades'),
+            'exchange_raw_data': data.get('exchange_raw_data') or data.get('info'),
+            'client_order_id': data.get('client_order_id') or data.get('clientOrderId'),
+            'time_in_force': data.get('time_in_force') or data.get('timeInForce'),
+            'stop_price': data.get('stop_price') or data.get('stopPrice'),
+            'post_only': data.get('post_only') or data.get('postOnly', False),
+            'retries': data.get('retries', 0),
+            'metadata': data.get('metadata'),
+            'error_message': data.get('error_message'),
+        }
+
+        # Убираем None значения, чтобы не перезаписывать значения по умолчанию в __init__
+        final_data = {k: v for k, v in adapted_data.items() if v is not None}
+
+        # Убедимся, что обязательные поля присутствуют
+        if 'order_id' not in final_data:
+            raise ValueError("'order_id' or 'id' is required to create an Order from dict")
+        if 'side' not in final_data:
+            raise ValueError("'side' is required to create an Order from dict")
+        if 'order_type' not in final_data:
+            raise ValueError("'order_type' or 'type' is required to create an Order from dict")
+
+        return cls(**final_data)
 
     def __repr__(self):
         fill_pct = self.get_fill_percentage() * 100

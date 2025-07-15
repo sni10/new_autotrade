@@ -1,0 +1,27 @@
+
+services:
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    networks:
+      - trade_network
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - ./docker/db/data:/var/lib/postgresql/data
+      - ./docker/db/log:/var/log/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 60s
+      timeout: 10s
+      retries: 10
+    restart: on-failure
+
+networks:
+  trade_network:
+    external: true
+    name: trade_network

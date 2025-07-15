@@ -8,8 +8,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from domain.entities.currency_pair import CurrencyPair
+from domain.entities.ticker import Ticker
 from domain.services.deals.deal_service import DealService
 from domain.services.risk.stop_loss_monitor import StopLossMonitor
+from domain.entities.order_book import OrderBook
 from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
 
 
@@ -82,16 +84,18 @@ class TestRiskManagement(unittest.TestCase):
         deal.deal_id = 1
         deal.currency_pair = CurrencyPair("ETH", "USDT", "ETH/USDT")
         deal.buy_order.is_filled.return_value = True
-        deal.buy_order.price = 100.0
-        deal.currency_pair_id = "ETH/USDT"
+        deal.buy_order.average_price = 100.0
+        deal.symbol = "ETH/USDT"
 
         self.deal_service.get_open_deals = MagicMock(return_value=[deal])
         # Цена упала на 15% (100 -> 85) - должен сработать экстренный стоп-лосс
-        self.exchange_connector.fetch_ticker = AsyncMock(return_value={"last": 85.0})
-        self.exchange_connector.fetch_order_book = AsyncMock(return_value={
-            'bids': [[84.0, 1000], [83.0, 2000]],
-            'asks': [[86.0, 1000], [87.0, 2000]]
-        })
+        self.exchange_connector.fetch_ticker = AsyncMock(return_value=Ticker(data={"last": 85.0, "symbol": "ETH/USDT"}))
+        self.exchange_connector.fetch_order_book = AsyncMock(return_value=OrderBook(
+            symbol="ETH/USDT",
+            timestamp=1,
+            bids=[[84.0, 1000], [83.0, 2000]],
+            asks=[[86.0, 1000], [87.0, 2000]]
+        ))
         
         # Мокаем создание маркет-ордера для стоп-лосса
         self.order_execution_service.create_market_sell_order = AsyncMock(return_value=MagicMock())
@@ -99,7 +103,7 @@ class TestRiskManagement(unittest.TestCase):
 
         async def run_test():
             await self.stop_loss_monitor.check_open_deals()
-            self.deal_service.close_deal.assert_called_once_with(deal.deal_id)
+            self.order_execution_service.create_market_sell_order.assert_called_once()
 
         asyncio.run(run_test())
 

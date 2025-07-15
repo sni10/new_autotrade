@@ -7,6 +7,7 @@ from src.domain.services.deals.deal_service import DealService
 from src.domain.services.orders.order_execution_service import OrderExecutionService
 from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer, OrderBookSignal
+from src.domain.entities.order_book import OrderBook
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class StopLossMonitor:
         self._is_running = False
         logger.info("🔴 StopLossMonitor остановлен.")
 
-    async def check_open_deals(self, current_price: float = None, cached_orderbook: dict = None):
+    async def check_open_deals(self, current_price: float = None, cached_orderbook: OrderBook = None):
         """Проверяет все открытые сделки на предмет срабатывания stop-loss с анализом стакана."""
         self._stats["checks_performed"] += 1
         open_deals = self.deal_service.get_open_deals()
@@ -76,18 +77,18 @@ class StopLossMonitor:
             try:
                 # Используем переданную цену или получаем с биржи
                 if current_price is None:
-                    ticker = await self.exchange_connector.fetch_ticker(deal.currency_pair_id)
-                    price = ticker['last']
+                    ticker = await self.exchange_connector.fetch_ticker(deal.symbol)
+                    price = ticker.last
                 else:
                     price = current_price
                     
-                entry_price = deal.buy_order.price
+                entry_price = deal.buy_order.average_price
                 
                 # Используем кешированный стакан или получаем новый
                 if cached_orderbook is not None:
                     orderbook_metrics = self.orderbook_analyzer.analyze_orderbook(cached_orderbook)
                 else:
-                    orderbook = await self.exchange_connector.fetch_order_book(deal.currency_pair_id)
+                    orderbook = await self.exchange_connector.fetch_order_book(deal.symbol)
                     orderbook_metrics = self.orderbook_analyzer.analyze_orderbook(orderbook)
 
                 price_drop_percent = ((entry_price - price) / entry_price) * 100
@@ -165,7 +166,7 @@ class StopLossMonitor:
                 filled_amount = deal.buy_order.filled_amount
                 
                 market_sell_order = await self.order_execution_service.create_market_sell_order(
-                    deal.currency_pair_id,
+                    deal.symbol,
                     filled_amount,
                     deal.deal_id
                 )

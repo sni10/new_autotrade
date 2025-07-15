@@ -11,6 +11,7 @@ from domain.services.deals.deal_service import DealService
 from domain.services.market_data.orderbook_analyzer import OrderBookSignal
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+from infrastructure.repositories.indicators_repository import InMemoryIndicatorsRepository
 from domain.services.market_data.ticker_service import TickerService
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.trading.signal_cooldown_manager import SignalCooldownManager
@@ -35,7 +36,8 @@ async def run_realtime_trading(
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
     repository = InMemoryTickerRepository(max_size=5000)
-    ticker_service = TickerService(repository)
+    indicators_repo = InMemoryIndicatorsRepository()
+    ticker_service = TickerService(repository, indicators_repo)
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
     
@@ -61,13 +63,26 @@ async def run_realtime_trading(
     logger.info("🚀 Запуск расширенного торгового цикла с OrderExecutionService + BuyOrderMonitor")
 
     try:
+        logger.info("🔄 Начинаем основной торговый цикл...")
+        logger.info(f"🎯 Подключаемся к тикеру для символа: {currency_pair.symbol}")
+        
         while True:
             try:
-                ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
+                logger.info("📡 Ожидание данных тикера...")
+                ticker_data = await asyncio.wait_for(
+                    pro_exchange_connector_prod.watch_ticker(currency_pair.symbol),
+                    timeout=30.0
+                )
+                logger.info(f"📊 Получен тикер: {ticker_data.symbol} = {ticker_data.last}")
 
                 start_process = time.time()
                 await ticker_service.process_ticker(ticker_data)
                 end_process = time.time()
+            
+            except asyncio.TimeoutError:
+                logger.error("⏰ Timeout при получении тикера (30 сек). Проверьте WebSocket соединение.")
+                await asyncio.sleep(5)
+                continue
 
                 processing_time = end_process - start_process
                 counter += 1
@@ -285,7 +300,7 @@ async def run_realtime_trading(
                     # Оптимизированная проверка стоп-лосса с кешированными данными
                     if stop_loss_monitor and counter % 50 == 0:  # Проверяем каждые 50 тиков
                         try:
-                            current_price = float(ticker_data.get('close', 0))
+                            current_price = ticker_data.close or 0.0
                             cached_orderbook = orderbook_cache.get(currency_pair.symbol)
                             
                             # Передаем кешированные данные в стоп-лосс

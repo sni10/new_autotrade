@@ -1,4 +1,5 @@
 # my_trading_app/domain/entities/currency_pair.py
+import logging
 
 class CurrencyPair:
     """
@@ -37,16 +38,30 @@ class CurrencyPair:
         self.taker_fee = 0.001  # Default taker fee
         self.maker_fee = 0.001  # Default maker fee
 
-    def update_exchange_info(self, market_data: dict):
+    def update_exchange_info(self, market_data):
         """
         Обновляет точность, лимиты и комиссии из данных, полученных с биржи.
         """
         if not market_data:
             return
-        self.precision = market_data.get('precision', {})
-        self.limits = market_data.get('limits', {})
-        self.taker_fee = market_data.get('taker', self.taker_fee)
-        self.maker_fee = market_data.get('maker', self.maker_fee)
+        
+        # Если это ExchangeInfo объект
+        if hasattr(market_data, 'precision'):
+            self.precision = market_data.precision
+            self.limits = {
+                'amount': {'min': market_data.min_qty, 'max': market_data.max_qty},
+                'price': {'min': market_data.min_price, 'max': market_data.max_price},
+                'cost': {'min': market_data.min_notional}
+            }
+            self.taker_fee = market_data.fees.get('taker', self.taker_fee)
+            self.maker_fee = market_data.fees.get('maker', self.maker_fee)
+        # Если это словарь (legacy)
+        else:
+            self.precision = market_data.get('precision', {})
+            self.limits = market_data.get('limits', {})
+            self.taker_fee = market_data.get('taker', self.taker_fee)
+            self.maker_fee = market_data.get('maker', self.maker_fee)
+            
         logging.info(f"Updated currency pair {self.symbol} with exchange data: Precision={self.precision}, Limits={self.limits}, Fees(T/M)={self.taker_fee}/{self.maker_fee}")
 
     def __repr__(self):

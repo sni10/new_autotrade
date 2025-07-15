@@ -62,6 +62,10 @@ class DealCompletionMonitor:
 
     async def _check_single_deal(self, deal: Deal):
         """Проверяет и обрабатывает одну сделку."""
+        if not deal.buy_order or not deal.sell_order:
+            logger.warning(f"Сделка {deal.deal_id} не имеет связанных ордеров. Пропускаем.")
+            return
+            
         buy_order = self.order_service.get_order_by_id(deal.buy_order.order_id)
         sell_order = self.order_service.get_order_by_id(deal.sell_order.order_id)
 
