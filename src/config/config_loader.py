@@ -31,6 +31,38 @@ def _override_with_env(config: Dict[str, Any], prefix: str = "") -> Dict[str, An
     return config
 
 
+class ConfigLoader:
+    def __init__(self, config_path=None):
+        self.config_path = config_path or Path(__file__).resolve().parent / "config.json"
+        self.config = self._load()
+
+    def _load(self):
+        load_dotenv(override=True)
+        with open(self.config_path, "r") as f:
+            data = json.load(f)
+        return _override_with_env(data)
+
+    def get_config(self):
+        return self.config
+
+    def update_from_exchange_info(self, market_details: Dict[str, Any]):
+        if not market_details or not isinstance(market_details, dict):
+            return
+
+        pair_config = self.config.setdefault('currency_pair', {})
+
+        # Update precision
+        precision = market_details.get('precision', {})
+        if precision.get('price') is not None:
+            pair_config['price_step'] = float(precision['price'])
+        if precision.get('amount') is not None:
+            pair_config['min_step'] = float(precision['amount'])
+
+        # Update limits
+        limits = market_details.get('limits', {})
+        if limits.get('cost', {}).get('min') is not None:
+            pair_config['min_notional'] = float(limits['cost']['min'])
+
 def load_config() -> Dict[str, Any]:
     """Load configuration from JSON and override with environment variables."""
     # Load .env from the current directory, overriding existing env vars.

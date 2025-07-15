@@ -1,6 +1,7 @@
 # my_trading_app/domain/entities/deal.py
 import time
 from .order import Order
+from .currency_pair import CurrencyPair
 
 class Deal:
     """
@@ -15,7 +16,7 @@ class Deal:
     def __init__(
         self,
         deal_id: int,
-        currency_pair_id: str,
+        currency_pair: CurrencyPair, # Изменено с ID на объект
         status: str = STATUS_OPEN,
         buy_order: Order = None,
         sell_order: Order = None,
@@ -23,7 +24,8 @@ class Deal:
         closed_at: int = None,
     ):
         self.deal_id = deal_id
-        self.currency_pair_id = currency_pair_id
+        self.currency_pair = currency_pair # Изменено
+        self.currency_pair_id = currency_pair.symbol # Оставляем для обратной совместимости
         self.status = status
         self.buy_order = buy_order
         self.sell_order = sell_order
@@ -46,6 +48,11 @@ class Deal:
         """
         self.buy_order = buy_order
         self.sell_order = sell_order
+        self._sync_order_deal_id()
+
+    def update_buy_order(self, new_buy_order: Order):
+        """Заменяет старый ордер на покупку новым."""
+        self.buy_order = new_buy_order
         self._sync_order_deal_id()
 
     def open(self):

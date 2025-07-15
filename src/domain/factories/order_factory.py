@@ -1,6 +1,7 @@
 # domain/factories/order_factory.py.new - ENHANCED для реальной торговли
 import time
 import uuid
+import math
 from itertools import count
 from typing import Optional, Dict, Any
 from domain.entities.order import Order, ExchangeInfo
@@ -340,9 +341,13 @@ class OrderFactory:
 
         return len(errors) == 0, errors
 
-    def adjust_amount_precision(self, symbol: str, amount: float) -> float:
-        """
-        🔧 Корректирует количество согласно step_size биржи
+    def adjust_amount_precision(self, symbol: str, amount: float, round_up: bool = False) -> float:
+        """🔧 Корректирует количество согласно ``step_size`` биржи.
+
+        Если ``round_up`` установлено в ``True``, то количество округляется
+        вверх до ближайшего допустимого шага. Это полезно при создании BUY
+        ордеров, чтобы избежать ситуации, когда биржа округляет значение в
+        меньшую сторону и фактически покупается меньшее количество.
         """
         if symbol not in self.exchange_info_cache:
             return amount
@@ -351,10 +356,12 @@ class OrderFactory:
         step_size = exchange_info.step_size
 
         if step_size > 0:
-            # Округляем до ближайшего step_size
             precision = len(str(step_size).split('.')[-1]) if '.' in str(step_size) else 0
-            adjusted = round(amount // step_size * step_size, precision)
-            return max(adjusted, exchange_info.min_qty)
+            steps = amount / step_size
+            steps = math.ceil(steps) if round_up else math.floor(steps)
+            adjusted = round(steps * step_size, precision)
+            adjusted = min(max(adjusted, exchange_info.min_qty), exchange_info.max_qty)
+            return adjusted
 
         return amount
 
@@ -387,27 +394,3 @@ class OrderFactory:
         📊 Возвращает информацию о торговой паре
         """
         return self.exchange_info_cache.get(symbol)
-
-    # 🆕 СОВМЕСТИМОСТЬ СО СТАРЫМ КОДОМ
-
-    def create_buy_order_legacy(self, price: float, amount: float) -> Order:
-        """Старый метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        return self._create_base_order(
-            side=Order.SIDE_BUY,
-            order_type=Order.TYPE_LIMIT,
-            symbol="UNKNOWN",  # Будет установлен позже
-            amount=amount,
-            price=price,
-            metadata={'legacy_creation': True}
-        )
-
-    def create_sell_order_legacy(self, price: float, amount: float) -> Order:
-        """Старый метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        return self._create_base_order(
-            side=Order.SIDE_SELL,
-            order_type=Order.TYPE_LIMIT,
-            symbol="UNKNOWN",  # Будет установлен позже
-            amount=amount,
-            price=price,
-            metadata={'legacy_creation': True}
-        )
