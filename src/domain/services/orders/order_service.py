@@ -2,10 +2,13 @@
 import asyncio
 import logging
 from typing import Optional, Dict, List, Any, Tuple
+from decimal import ROUND_DOWN, ROUND_UP
 from domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
 from domain.factories.order_factory import OrderFactory
+from domain.services.utils.decimal_rounding_service import DecimalRoundingService
 from infrastructure.repositories.orders_repository import OrdersRepository
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+import ccxt
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +26,13 @@ class OrderService:
         self,
         orders_repo: OrdersRepository,
         order_factory: OrderFactory,
-        exchange_connector: CcxtExchangeConnector = None
+        exchange_connector: CcxtExchangeConnector = None,
+        currency_pair_symbol: str = None
     ):
         self.orders_repo = orders_repo
         self.order_factory = order_factory
         self.exchange_connector = exchange_connector
+        self.currency_pair_symbol = currency_pair_symbol
 
         # Retry parameters
         self.max_retries = 3
@@ -69,6 +74,16 @@ class OrderService:
             OrderExecutionResult с информацией о результате
         """
         try:
+            # Корректируем количество согласно правилам биржи
+            amount = self.order_factory.adjust_amount_precision(symbol, amount, round_up=True)
+
+            # === ИСПРАВЛЕНИЕ v4: Корректируем цену согласно precision с биржи ===
+            market_info = await self.exchange_connector.get_symbol_info(symbol)
+            price_precision = market_info.precision.get('price')
+            if price_precision:
+                 price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_DOWN))
+            # =================================================================
+
             logger.info(f"🛒 Creating BUY order: {amount} {symbol} @ {price}")
 
             # 1. Валидация параметров
@@ -146,6 +161,16 @@ class OrderService:
         🏷️ РЕАЛЬНОЕ создание и размещение SELL ордера на бирже
         """
         try:
+            # Корректируем количество согласно правилам биржи (округляем вниз)
+            amount = self.order_factory.adjust_amount_precision(symbol, amount)
+
+            # === ИСПРАВЛЕНИЕ v4: Корректируем цену согласно precision с биржи ===
+            market_info = await self.exchange_connector.get_symbol_info(symbol)
+            price_precision = market_info.precision.get('price')
+            if price_precision:
+                 price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_UP))
+            # =================================================================
+
             logger.info(f"🏷️ Creating SELL order: {amount} {symbol} @ {price}")
 
             # 1. Валидация параметров
@@ -190,6 +215,8 @@ class OrderService:
                     logger.error(f"❌ SELL order failed: {execution_result.error_message}")
 
                 return execution_result
+
+                return execution_result
             else:
                 # Fallback без коннектора
                 order.status = Order.STATUS_PENDING
@@ -209,6 +236,101 @@ class OrderService:
                 success=False,
                 error_message=f"Unexpected error: {str(e)}"
             )
+
+    async def create_local_sell_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: int,
+        order_type: str = Order.TYPE_LIMIT,
+        client_order_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        📝 Создание ЛОКАЛЬНОГО SELL ордера без размещения на бирже.
+        Ордер сохраняется в репозиторий со стату��ом PENDING.
+        """
+        try:
+            # Корректируем количество и цену
+            amount = self.order_factory.adjust_amount_precision(symbol, amount)
+            market_info = await self.exchange_connector.get_symbol_info(symbol)
+            price_precision = market_info.precision.get('price')
+            if price_precision:
+                price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_UP))
+
+            logger.info(f"📝 Creating LOCAL SELL order: {amount} {symbol} @ {price}")
+
+            # Валидация параметров (локальная)
+            validation_result = await self._validate_order_params(
+                symbol, Order.SIDE_SELL, amount, price, order_type
+            )
+            if not validation_result.is_valid:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
+                )
+
+            # Создание ордера через фабрику
+            order = self.order_factory.create_sell_order(
+                symbol=symbol,
+                amount=amount,
+                price=price,
+                deal_id=deal_id,
+                order_type=order_type,
+                client_order_id=client_order_id
+            )
+            
+            # Устанавливаем статус PENDING, так как ордер не размещается
+            order.status = Order.STATUS_PENDING
+            
+            # Сохранение в репозиторий
+            self.orders_repo.save(order)
+            self.stats['orders_created'] += 1
+            
+            logger.info(f"✅ LOCAL SELL order {order.order_id} created and saved with status PENDING.")
+
+            return OrderExecutionResult(
+                success=True,
+                order=order,
+                error_message="Created locally with PENDING status"
+            )
+
+        except Exception as e:
+            logger.error(f"❌ Error creating LOCAL SELL order: {e}")
+            self.stats['orders_failed'] += 1
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Unexpected error in local creation: {str(e)}"
+            )
+
+    async def place_existing_order(self, order: Order) -> OrderExecutionResult:
+        """
+        📤 Размещает на бирже уже существующий локальный ордер (в статусе PENDING).
+        """
+        if not order.is_pending():
+            return OrderExecutionResult(success=False, error_message=f"Order {order.order_id} is not in PENDING state.")
+
+        logger.info(f"📤 Размещаем существующий ордер {order.order_id} ({order.side} {order.amount} {order.symbol}) на бирже.")
+
+        # Проверка баланса перед размещением
+        balance_check = await self._check_balance_for_order(order.symbol, order.side, order.amount, order.price)
+        if not balance_check[0]:
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Insufficient balance for pending order: need {order.amount * order.price:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
+            )
+
+        if self.exchange_connector:
+            execution_result = await self._execute_order_on_exchange(order)
+            if execution_result.success:
+                self.stats['orders_executed'] += 1
+                logger.info(f"✅ Existing order {order.order_id} placed successfully: {order.exchange_id}")
+            else:
+                self.stats['orders_failed'] += 1
+                logger.error(f"❌ Failed to place existing order {order.order_id}: {execution_result.error_message}")
+            return execution_result
+        else:
+            return OrderExecutionResult(success=False, error_message="No exchange connector available.")
 
     # 🔧 ВНУТРЕННИЕ МЕТОДЫ
 
@@ -236,7 +358,13 @@ class OrderService:
                     exchange_id=exchange_response['id'],
                     exchange_timestamp=exchange_response.get('timestamp')
                 )
-                order.update_from_exchange(exchange_response)
+                # Дополнительный запрос для получения полных данных об исполнении
+                if hasattr(self.exchange_connector, 'fetch_order'):
+                    full_order_data = await self.exchange_connector.fetch_order(
+                        order.exchange_id,
+                        order.symbol
+                    )
+                    order.update_from_exchange(full_order_data)
 
                 # Сохраняем обновленный ордер
                 self.orders_repo.save(order)
@@ -255,8 +383,7 @@ class OrderService:
 
                 # Exponential backoff для retry
                 if attempt < self.max_retries - 1:
-                    delay = self.retry_delay * (self.retry_backoff ** attempt)
-                    await asyncio.sleep(delay)
+                    await asyncio.sleep(self.retry_delay * (self.retry_backoff ** attempt))
 
         # Все попытки неудачны
         order.mark_as_failed(f"Failed after {self.max_retries} attempts: {last_error}")
@@ -413,9 +540,20 @@ class OrderService:
             logger.info(f"✅ Order {order.order_id} cancelled successfully")
             return True
 
+        except ccxt.OrderNotFound:
+            # Ордер не найден на бирже, значит, его уже нет или он исполнен
+            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange. Assuming it's already gone.")
+            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE # Новый статус
+            order.closed_at = int(time.time() * 1000)
+            self.orders_repo.save(order)
+            return True # Считаем, что цель достигнута: ордера на бирже нет
+
         except Exception as e:
             logger.error(f"❌ Error cancelling order {order.order_id}: {e}")
-            return False
+            order.status = Order.STATUS_FAILED # Или новый статус FAILED_TO_CANCEL
+            order.error_message = str(e)
+            self.orders_repo.save(order)
+            return False # Отмена не удалась
 
     async def sync_orders_with_exchange(self) -> List[Order]:
         """
@@ -432,24 +570,50 @@ class OrderService:
             local_orders = self.get_open_orders()
 
             # Получаем открытые ордера с биржи
-            exchange_orders = await self.exchange_connector.fetch_open_orders()
-            exchange_orders_map = {order['id']: order for order in exchange_orders}
+            # Используем self.currency_pair_symbol для fetchOpenOrders
+            symbol_to_fetch = self.currency_pair_symbol if self.currency_pair_symbol else (local_orders[0].symbol if local_orders else None)
+            if not symbol_to_fetch:
+                logger.warning("⚠️ No symbol available to fetch open orders. Skipping sync.")
+                return []
+
+            exchange_open_orders = await self.exchange_connector.fetch_open_orders(symbol=symbol_to_fetch)
+            exchange_open_orders_map = {order['id']: order for order in exchange_open_orders}
 
             for order in local_orders:
                 if order.exchange_id:
-                    if order.exchange_id in exchange_orders_map:
-                        # Ордер есть на бирже - обновляем статус
-                        exchange_data = exchange_orders_map[order.exchange_id]
+                    if order.exchange_id in exchange_open_orders_map:
+                        # Ордер есть на бирже и открыт - обновляем статус
+                        exchange_data = exchange_open_orders_map[order.exchange_id]
                         order.update_from_exchange(exchange_data)
                         self.orders_repo.save(order)
                         updated_orders.append(order)
                     else:
-                        # Ордера нет на бирже - возможно исполнен или отменен
-                        updated_order = await self.get_order_status(order)
-                        if updated_order:
-                            updated_orders.append(updated_order)
+                        # Ордера нет среди ОТКРЫТЫХ на бирже.
+                        # Нужно запросить его полный статус, чтобы понять, что с ним произошло.
+                        try:
+                            full_exchange_order = await self.exchange_connector.fetch_order(
+                                order.exchange_id,
+                                order.symbol
+                            )
+                            order.update_from_exchange(full_exchange_order)
+                            self.orders_repo.save(order)
+                            updated_orders.append(order)
+                            logger.info(f"🔄 Synced order {order.order_id} (exchange_id: {order.exchange_id}) status: {order.status}")
+                        except ccxt.OrderNotFound:
+                            # Ордер не найден на бирже вообще (ни открытый, ни закрытый)
+                            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange during sync. Marking as NOT_FOUND_ON_EXCHANGE.")
+                            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
+                            order.closed_at = int(time.time() * 1000)
+                            self.orders_repo.save(order)
+                            updated_orders.append(order)
+                        except Exception as e:
+                            logger.error(f"❌ Error fetching status for order {order.order_id} (exchange_id: {order.exchange_id}) during sync: {e}")
+                            # Оставляем ордер в текущем состоянии, но логируем ошибку
+                else:
+                    # Локальный ордер без exchange_id - возможно, не был размещен
+                    logger.warning(f"⚠️ Local order {order.order_id} has no exchange_id. Skipping sync for this order.")
 
-            logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
+            # logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
             return updated_orders
 
         except Exception as e:
@@ -523,18 +687,6 @@ class OrderService:
             'orders_cancelled': 0,
             'total_fees': 0.0
         }
-
-    # 🆕 СОВМЕСТИМОСТЬ СО СТАРЫМ КОДОМ
-
-    def create_buy_order(self, price: float, amount: float) -> Order:
-        """УСТАРЕВШИЙ метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        logger.warning("⚠️ Using legacy create_buy_order method")
-        return self.order_factory.create_buy_order_legacy(price, amount)
-
-    def create_sell_order(self, price: float, amount: float) -> Order:
-        """УСТАРЕВШИЙ метод для совместимости - НЕ РЕКОМЕНДУЕТСЯ"""
-        logger.warning("⚠️ Using legacy create_sell_order method")
-        return self.order_factory.create_sell_order_legacy(price, amount)
 
     def save_order(self, order: Order):
         """Сохранение ордера в репозиторий"""

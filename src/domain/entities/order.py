@@ -17,6 +17,7 @@ class Order:
     STATUS_PENDING = "PENDING"
     STATUS_FILLED = "FILLED"          # 🆕 Полностью исполнен
     STATUS_PARTIALLY_FILLED = "PARTIALLY_FILLED"  # 🆕 Частично исполнен
+    STATUS_NOT_FOUND_ON_EXCHANGE = "NOT_FOUND_ON_EXCHANGE" # 🆕 Ордер не найден на бирже
 
     # Стороны ордера
     SIDE_BUY = "BUY"
@@ -55,7 +56,8 @@ class Order:
         error_message: Optional[str] = None,    # Сообщение об ошибке
         retries: int = 0,                       # Количество попыток
         # 🆕 МЕТАДАННЫЕ:
-        metadata: Optional[Dict[str, Any]] = None  # Дополнительная информация
+        metadata: Optional[Dict[str, Any]] = None,  # Дополнительная информация
+        exchange_raw_data: Optional[Dict[str, Any]] = None # Полный ответ от биржи
     ):
         self.order_id = order_id
         self.side = side
@@ -84,6 +86,7 @@ class Order:
         self.error_message = error_message
         self.retries = retries
         self.metadata = metadata or {}
+        self.exchange_raw_data = exchange_raw_data # Сохраняем полный ответ
 
     # 🆕 РАСШИРЕННЫЕ МЕТОДЫ ПРОВЕРКИ СТАТУСА
     def is_open(self) -> bool:
@@ -92,7 +95,7 @@ class Order:
 
     def is_closed(self) -> bool:
         """Ордер закрыт (исполнен или отменен)"""
-        return self.status in [self.STATUS_CLOSED, self.STATUS_FILLED, self.STATUS_CANCELED]
+        return self.status in [self.STATUS_CLOSED, self.STATUS_FILLED, self.STATUS_CANCELED, self.STATUS_NOT_FOUND_ON_EXCHANGE]
 
     def is_filled(self) -> bool:
         """Ордер полностью исполнен"""
@@ -127,13 +130,27 @@ class Order:
 
     # 🆕 МЕТОДЫ ОБНОВЛЕНИЯ СТАТУСА
     def update_from_exchange(self, exchange_data: Dict[str, Any]) -> None:
-        """Обновляет ордер данными с биржи"""
+        """Обновляет ордер данными с биржи, безопасно обрабатывая None."""
         self.exchange_id = exchange_data.get('id', self.exchange_id)
-        self.filled_amount = float(exchange_data.get('filled', self.filled_amount))
-        self.remaining_amount = float(exchange_data.get('remaining', self.remaining_amount))
-        self.average_price = float(exchange_data.get('average', self.average_price))
-        self.fees = float(exchange_data.get('fee', {}).get('cost', self.fees))
+        self.exchange_raw_data = exchange_data # Сохраняем полный ответ от биржи
 
+        # Безопасное обновление числовых полей
+        filled = exchange_data.get('filled')
+        if filled is not None:
+            self.filled_amount = float(filled)
+
+        remaining = exchange_data.get('remaining')
+        if remaining is not None:
+            self.remaining_amount = float(remaining)
+
+        average = exchange_data.get('average')
+        if average is not None:
+            self.average_price = float(average)
+
+        if 'fee' in exchange_data and exchange_data['fee'] is not None:
+            fee_cost = exchange_data['fee'].get('cost')
+            if fee_cost is not None:
+                self.fees = float(fee_cost)
         # Обновляем статус на основе данных биржи
         exchange_status = exchange_data.get('status', '').lower()
         if exchange_status == 'closed':
@@ -232,7 +249,8 @@ class Order:
             'last_update': self.last_update,
             'error_message': self.error_message,
             'retries': self.retries,
-            'metadata': self.metadata
+            'metadata': self.metadata,
+            'exchange_raw_data': self.exchange_raw_data # Добавлено в to_dict
         }
 
     @classmethod
@@ -282,3 +300,4 @@ class ExchangeInfo:
     tick_size: float
     min_notional: float
     fees: Dict[str, float]  # maker/taker fees
+    precision: Dict[str, float] # ❗️ ДОБАВЛЕНО: полная информация о точности

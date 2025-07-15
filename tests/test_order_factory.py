@@ -17,7 +17,8 @@ def _make_info():
         max_price=100000,
         tick_size=0.01,
         min_notional=10,
-        fees={"maker": 0.001}
+        fees={"maker": 0.001},
+        precision={'amount': 0.001, 'price': 0.01}
     )
 
 
@@ -37,5 +38,6 @@ def test_precision_adjustment():
     factory.update_exchange_info("BTCUSDT", _make_info())
     # amount precision
     assert factory.adjust_amount_precision("BTCUSDT", 0.00123) == 0.001
+    assert factory.adjust_amount_precision("BTCUSDT", 0.00123, round_up=True) == 0.002
     # price precision
     assert factory.adjust_price_precision("BTCUSDT", 1234.56789) == 1234.56

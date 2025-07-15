@@ -158,35 +158,34 @@ class OrderExecutionService:
                 )
             
             buy_order = buy_result.order
-            logger.info(f"✅ [{execution_id}] BUY order executed: {buy_order.exchange_id}")
+            logger.info(f"✅ [{execution_id}] BUY order placed: {buy_order.exchange_id}")
             
-            # 7. Выполнение SELL ордера
-            sell_result = await self._execute_sell_order(context, strategy_data)
+            # 7. Создание ЛОКАЛЬНОГО SELL ордера (без размещения на бирже)
+            sell_result = await self._create_local_sell_order(context, strategy_data)
             if not sell_result.success:
-                # Пытаемся отменить BUY ордер при неудаче SELL
+                # Если не удалось даже локально создать SELL, отменяем BUY
                 await self._emergency_cancel_buy_order(buy_order)
                 return ExecutionReport(
                     success=False,
                     deal_id=deal.deal_id,
                     buy_order=buy_order,
-                    error_message=f"SELL order failed: {sell_result.error_message}"
+                    error_message=f"Local SELL order creation failed: {sell_result.error_message}"
                 )
             
             sell_order = sell_result.order
-            logger.info(f"✅ [{execution_id}] SELL order executed: {sell_order.exchange_id}")
+            logger.info(f"✅ [{execution_id}] Local SELL order created with status PENDING.")
             
             # 8. Связывание ордеров со сделкой
             deal.attach_orders(buy_order, sell_order)
             self.deal_service.deals_repo.save(deal)
-            
-            # 9. Расчет финансовых показателей
-            total_cost = buy_order.calculate_total_cost_with_fees()
-            expected_profit = sell_order.calculate_total_cost() - buy_order.calculate_total_cost()
-            total_fees = buy_order.fees + sell_order.fees
+
+            # 9. Расчет финансовых пока��ателей (на основе ожидаемых данных)
+            total_cost = buy_order.amount * buy_order.price
+            expected_profit = (sell_order.amount * sell_order.price) - total_cost
             
             # 10. Обновление статистики
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
-            self._update_execution_stats(True, total_cost, total_fees, execution_time)
+            self._update_execution_stats(True, total_cost, 0, execution_time)
             
             # 11. Формирование отчета
             report = ExecutionReport(
@@ -196,14 +195,13 @@ class OrderExecutionService:
                 sell_order=sell_order,
                 total_cost=total_cost,
                 expected_profit=expected_profit,
-                fees=total_fees,
+                fees=0, # Комиссии будут известны после исполнения
                 execution_time_ms=execution_time
             )
             
-            logger.info(f"🎉 [{execution_id}] Strategy executed successfully!")
+            logger.info(f"🎉 [{execution_id}] Strategy executed successfully! BUY order placed, SELL order is PENDING.")
             logger.info(f"   💰 Cost: {total_cost:.4f} USDT")
             logger.info(f"   📈 Expected profit: {expected_profit:.4f} USDT")
-            logger.info(f"   💸 Fees: {total_fees:.4f} USDT")
             logger.info(f"   ⏱️ Execution time: {execution_time:.1f}ms")
             
             return report
@@ -339,7 +337,7 @@ class OrderExecutionService:
                 amount=strategy_data['buy_amount'],
                 price=strategy_data['buy_price'],
                 deal_id=context.deal.deal_id,
-                order_type=Order.TYPE_LIMIT
+                order_type=Order.TYPE_LIMIT # Возвращено на LIMIT
             )
         except Exception as e:
             logger.error(f"❌ Error executing BUY order: {e}")
@@ -348,14 +346,14 @@ class OrderExecutionService:
                 error_message=f"BUY execution error: {str(e)}"
             )
 
-    async def _execute_sell_order(
-        self, 
-        context: TradingContext, 
+    async def _create_local_sell_order(
+        self,
+        context: TradingContext,
         strategy_data: Dict[str, Any]
     ) -> OrderExecutionResult:
         """Выполнение SELL ордера"""
         try:
-            return await self.order_service.create_and_place_sell_order(
+            return await self.order_service.create_local_sell_order(
                 symbol=context.currency_pair.symbol,
                 amount=strategy_data['sell_amount'],
                 price=strategy_data['sell_price'],
@@ -363,10 +361,10 @@ class OrderExecutionService:
                 order_type=Order.TYPE_LIMIT
             )
         except Exception as e:
-            logger.error(f"❌ Error executing SELL order: {e}")
+            logger.error(f"❌ Error creating local SELL order: {e}")
             return OrderExecutionResult(
                 success=False,
-                error_message=f"SELL execution error: {str(e)}"
+                error_message=f"SELL local creation error: {str(e)}"
             )
 
     async def _emergency_cancel_buy_order(self, buy_order: Order) -> bool:
@@ -520,3 +518,89 @@ class OrderExecutionService:
             'enable_balance_checks': self.enable_balance_checks,
             'enable_slippage_protection': self.enable_slippage_protection
         }
+
+    # 🚨 РИСК-МЕНЕДЖМЕНТ МЕТОДЫ
+
+    async def create_market_sell_order(
+        self, 
+        currency_pair_id: str, 
+        amount: float, 
+        deal_id: int
+    ) -> Optional[Order]:
+        """🚨 Создание маркет-ордера на продажу для стоп-лосса"""
+        try:
+            logger.info(f"🚨 Создание маркет SELL ордера для ликвидации позиции:")
+            logger.info(f"   Пара: {currency_pair_id}")
+            logger.info(f"   Количество: {amount}")
+            logger.info(f"   Deal ID: {deal_id}")
+            
+            # Получаем текущую цену для логирования
+            ticker = await self.exchange_connector.fetch_ticker(currency_pair_id)
+            current_price = ticker['last']
+            logger.info(f"   Текущая цена: {current_price}")
+            
+            # Создаем маркет-ордер на продажу
+            order_result = await self.exchange_connector.create_market_sell_order(
+                currency_pair_id, 
+                amount
+            )
+            
+            if order_result and order_result.success:
+                # Создаем объект Order
+                order = Order(
+                    order_id=self.order_service.generate_order_id(),
+                    deal_id=deal_id,
+                    currency_pair_id=currency_pair_id,
+                    side="SELL",
+                    order_type="MARKET",
+                    price=current_price,  # Для маркет-ордера цена примерная
+                    amount=amount,
+                    exchange_order_id=order_result.exchange_order_id,
+                    filled_amount=order_result.filled_amount or amount,
+                    average_price=order_result.average_price or current_price,
+                    fees=order_result.fees or 0.0,
+                    status="FILLED" if order_result.filled_amount else "OPEN"
+                )
+                
+                # Сохраняем в репозиторий
+                self.order_service.save_order(order)
+                
+                logger.info(f"✅ Маркет SELL ордер #{order.order_id} создан успешно")
+                logger.info(f"   Exchange ID: {order_result.exchange_order_id}")
+                logger.info(f"   Исполнено: {order_result.filled_amount or 'N/A'}")
+                logger.info(f"   Средняя цена: {order_result.average_price or 'N/A'}")
+                
+                return order
+                
+            else:
+                logger.error(f"❌ Не удалось создать маркет SELL ордер: {order_result.error_message if order_result else 'Unknown error'}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка при создании маркет SELL ордера: {e}")
+            return None
+
+    async def cancel_order(self, order: Order) -> bool:
+        """🚫 Отмена ордера"""
+        try:
+            if order.exchange_order_id:
+                result = await self.exchange_connector.cancel_order(
+                    order.exchange_order_id, 
+                    order.currency_pair_id
+                )
+                
+                if result:
+                    order.status = "CANCELED"
+                    self.order_service.save_order(order)
+                    logger.info(f"✅ Ордер #{order.order_id} отменен")
+                    return True
+                else:
+                    logger.error(f"❌ Не удалось отменить ордер #{order.order_id}")
+                    return False
+            else:
+                logger.warning(f"⚠️ Нет exchange_order_id для отмены ордера #{order.order_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка при отмене ордера #{order.order_id}: {e}")
+            return False
