@@ -161,7 +161,7 @@ async def main():
             stop_loss_monitor = StopLossMonitor(
                 deal_service=deal_service,
                 order_execution_service=order_execution_service,
-                exchange_connector=pro_exchange_connector_prod,
+                exchange_connector=pro_exchange_connector_sandbox,
                 orderbook_analyzer=orderbook_analyzer,  # Добавляем анализатор стакана
                 stop_loss_percent=risk_config.get("stop_loss_percent", 2.0),
                 check_interval_seconds=risk_config.get("stop_loss_check_interval_seconds", 60),
