@@ -507,5 +507,25 @@ def validate_ccxt_order_structure(data: Dict[str, Any]) -> tuple[bool, List[str]
     
     if 'timestamp' in data and not isinstance(data['timestamp'], int):
         errors.append("timestamp must be an integer")
-    
+
     return len(errors) == 0, errors
+
+
+from dataclasses import dataclass
+from typing import Dict
+
+
+@dataclass
+class ExchangeInfo:
+    """Info about a trading pair from the exchange."""
+
+    symbol: str
+    min_qty: float
+    max_qty: float
+    step_size: float
+    min_price: float
+    max_price: float
+    tick_size: float
+    min_notional: float
+    fees: Dict[str, float]
+    precision: Dict[str, float]
