@@ -158,7 +158,7 @@ class ExchangeAdapter:
 
     # ===== LEGACY SPECIFIC METHODS =====
 
-    async def create_market_sell_order(self, symbol: str, amount: float) -> Optional[OrderExecutionResult]:
+    async def create_market_sell_order(self, symbol: str, amount: float) -> Optional[Dict[str, Any]]:
         """
         LEGACY: Создание маркет ордера на продажу для стоп-лосса
         """
@@ -171,57 +171,24 @@ class ExchangeAdapter:
                 side='sell',
                 amount=amount
             )
-            
+
             if result:
                 logger.info(f"✅ Market SELL order created: {result.get('id', 'N/A')}")
-                
-                # Возвращаем в старом формате для совместимости
-                return OrderExecutionResult(
-                    success=True,
-                    order=Order.from_ccxt_response(result),
-                    exchange_response=result
-                )
+                return result
             else:
                 logger.error("❌ Failed to create market sell order - no result")
-                return OrderExecutionResult(
-                    success=False,
-                    error_message="No result from exchange"
-                )
+                return None
                 
         except Exception as e:
             logger.error(f"❌ Error creating market sell order: {e}")
-            return OrderExecutionResult(
-                success=False,
-                error_message=str(e)
-            )
+            return None
 
     async def get_symbol_info(self, symbol: str) -> Dict[str, Any]:
-        """
-        LEGACY: Получение информации о торговой паре в старом формате
-        """
+        """LEGACY: получение информации о торговой паре"""
         try:
             normalized_symbol = self._normalize_symbol(symbol)
             market = await self.ccxt_connector.get_market_info(normalized_symbol)
-            
-            # Конвертируем в старый формат ExchangeInfo
-            limits = market.get('limits', {})
-            precision = market.get('precision', {})
-            
-            return {
-                'symbol': normalized_symbol,
-                'min_qty': limits.get('amount', {}).get('min'),
-                'max_qty': limits.get('amount', {}).get('max'),
-                'step_size': precision.get('amount'),
-                'min_price': limits.get('price', {}).get('min'),
-                'max_price': limits.get('price', {}).get('max'),
-                'tick_size': precision.get('price'),
-                'min_notional': limits.get('cost', {}).get('min'),
-                'fees': {
-                    'maker': market.get('maker', 0.001),
-                    'taker': market.get('taker', 0.001)
-                },
-                'precision': precision
-            }
+            return market
             
         except Exception as e:
             logger.error(f"Failed to get symbol info for {symbol}: {e}")

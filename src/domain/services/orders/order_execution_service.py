@@ -314,11 +314,12 @@ class OrderExecutionService:
             
             # 3. Проверка объемов
             symbol_info = await self.exchange_connector.get_symbol_info(context.currency_pair.symbol)
-            if strategy_data['buy_amount'] < symbol_info.min_qty:
-                return False, f"BUY amount {strategy_data['buy_amount']} below minimum {symbol_info.min_qty}", warnings
-            
-            if strategy_data['sell_amount'] < symbol_info.min_qty:
-                return False, f"SELL amount {strategy_data['sell_amount']} below minimum {symbol_info.min_qty}", warnings
+            min_qty = symbol_info.get('limits', {}).get('amount', {}).get('min')
+            if min_qty is not None and strategy_data['buy_amount'] < min_qty:
+                return False, f"BUY amount {strategy_data['buy_amount']} below minimum {min_qty}", warnings
+
+            if min_qty is not None and strategy_data['sell_amount'] < min_qty:
+                return False, f"SELL amount {strategy_data['sell_amount']} below minimum {min_qty}", warnings
             
             return True, "Checks passed", warnings
             

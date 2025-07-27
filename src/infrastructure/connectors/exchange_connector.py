@@ -6,7 +6,6 @@ from pathlib import Path
 import ccxt.pro as ccxtpro
 import ccxt
 from config.config_loader import load_config
-from domain.entities.order import ExchangeInfo
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +164,8 @@ class CcxtExchangeConnector:
     async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
         return await self.client.fetch_ticker(self._normalize_symbol(symbol))
 
-    async def get_symbol_info(self, symbol: str) -> ExchangeInfo:
+    async def get_symbol_info(self, symbol: str) -> Dict[str, Any]:
+        """Возвращает CCXT market info for the symbol"""
         normalized_symbol = self._normalize_symbol(symbol)
         if normalized_symbol in self.exchange_info_cache:
             return self.exchange_info_cache[normalized_symbol]
@@ -175,57 +175,31 @@ class CcxtExchangeConnector:
         if not market_info:
             raise ValueError(f"Symbol {normalized_symbol} not found in markets")
 
-        limits = market_info.get('limits', {})
-        precision = market_info.get('precision', {})
-        exchange_info = ExchangeInfo(
-            symbol=normalized_symbol,
-            min_qty=limits.get('amount', {}).get('min'),
-            max_qty=limits.get('amount', {}).get('max'),
-            step_size=precision.get('amount'),
-            min_price=limits.get('price', {}).get('min'),
-            max_price=limits.get('price', {}).get('max'),
-            tick_size=precision.get('price'),
-            min_notional=limits.get('cost', {}).get('min'),
-            fees={'maker': market_info.get('maker', 0.001), 'taker': market_info.get('taker', 0.001)},
-            precision=precision # ❗️ ДОБАВЛЕНО: сохраняем весь словарь
-        )
-        self.exchange_info_cache[normalized_symbol] = exchange_info
-        return exchange_info
+        self.exchange_info_cache[normalized_symbol] = market_info
+        return market_info
 
-    async def create_market_sell_order(self, symbol: str, amount: float):
+    async def create_market_sell_order(self, symbol: str, amount: float) -> Dict[str, Any]:
         """🚨 Создание маркет-ордера на продажу для стоп-лосса"""
         try:
             normalized_symbol = self._normalize_symbol(symbol)
             logger.info(f"🚨 Creating MARKET SELL order: {amount} {normalized_symbol}")
-            
-            # Создаем маркет-ордер на продажу
+
             result = await self.client.create_market_sell_order(normalized_symbol, amount)
-            
-            if result:
-                logger.info(f"✅ Market SELL order created successfully: {result.get('id', 'N/A')}")
-                # Возвращаем результат в стандартном формате
-                from domain.entities.order import OrderExecutionResult
-                return OrderExecutionResult(
-                    success=True,
-                    exchange_order_id=result.get('id'),
-                    filled_amount=result.get('filled', amount),
-                    average_price=result.get('average'),
-                    fees=result.get('fee', {}).get('cost', 0.0),
-                    timestamp=result.get('timestamp')
-                )
-            else:
-                logger.error("❌ Failed to create market sell order - no result")
-                return None
-                
+            logger.info(f"✅ Market SELL order created successfully: {result.get('id', 'N/A')}")
+            return result
+
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds for market sell: {e}")
-            return None
+            raise
         except ccxt.InvalidOrder as e:
             logger.error(f"❌ Invalid market sell order: {e}")
-            return None
+            raise
+        except ccxt.NetworkError as e:
+            logger.error(f"🌐 Network error creating market sell: {e}")
+            raise
         except Exception as e:
             logger.error(f"❌ Unexpected error creating market sell order: {e}")
-            return None
+            raise
 
     async def test_connection(self) -> bool:
         try:

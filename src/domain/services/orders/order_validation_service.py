@@ -159,30 +159,30 @@ class OrderValidationService:
         
         try:
             symbol_info = await self.exchange_connector.get_symbol_info(symbol)
-            
-            # Валидация количества
-            if hasattr(symbol_info, 'min_qty') and amount < symbol_info.min_qty:
-                errors.append(f"Amount {amount} below minimum {symbol_info.min_qty}")
-                
-            if hasattr(symbol_info, 'max_qty') and amount > symbol_info.max_qty:
-                errors.append(f"Amount {amount} above maximum {symbol_info.max_qty}")
-            
-            # Валидация цены для лимитных ордеров
+
+            limits = symbol_info.get('limits', {})
+            min_qty = limits.get('amount', {}).get('min')
+            max_qty = limits.get('amount', {}).get('max')
+            min_price = limits.get('price', {}).get('min')
+            max_price = limits.get('price', {}).get('max')
+            min_notional = limits.get('cost', {}).get('min')
+
+            if min_qty is not None and amount < min_qty:
+                errors.append(f"Amount {amount} below minimum {min_qty}")
+            if max_qty is not None and amount > max_qty:
+                errors.append(f"Amount {amount} above maximum {max_qty}")
+
             if order_type == Order.TYPE_LIMIT:
-                if hasattr(symbol_info, 'min_price') and price < symbol_info.min_price:
-                    errors.append(f"Price {price} below minimum {symbol_info.min_price}")
-                    
-                if hasattr(symbol_info, 'max_price') and price > symbol_info.max_price:
-                    errors.append(f"Price {price} above maximum {symbol_info.max_price}")
-                
-                # Проверка минимальной стоимости ордера
+                if min_price is not None and price < min_price:
+                    errors.append(f"Price {price} below minimum {min_price}")
+                if max_price is not None and price > max_price:
+                    errors.append(f"Price {price} above maximum {max_price}")
+
                 notional_value = amount * price
-                if hasattr(symbol_info, 'min_notional') and notional_value < symbol_info.min_notional:
-                    errors.append(f"Order value {notional_value} below minimum {symbol_info.min_notional}")
-                
-                # Предупреждения
-                if (hasattr(symbol_info, 'min_notional') and 
-                    notional_value < symbol_info.min_notional * 1.1):
+                if min_notional is not None and notional_value < min_notional:
+                    errors.append(f"Order value {notional_value} below minimum {min_notional}")
+
+                if min_notional is not None and notional_value < min_notional * 1.1:
                     warnings.append("Order value close to minimum notional")
                     
             # Валидация шагов цены и количества
@@ -204,21 +204,19 @@ class OrderValidationService:
     ) -> None:
         """Валидация шагов точности"""
         try:
-            # Проверка шага количества
-            if hasattr(symbol_info, 'amount_precision'):
-                amount_precision = symbol_info.amount_precision
-                if amount_precision and amount_precision > 0:
-                    step = 1 / (10 ** amount_precision)
-                    if abs(amount % step) > 1e-10:  # Учитываем погрешность float
-                        warnings.append(f"Amount precision may not match exchange requirements (step: {step})")
-            
-            # Проверка шага цены для лимитных ордеров
-            if order_type == Order.TYPE_LIMIT and hasattr(symbol_info, 'price_precision'):
-                price_precision = symbol_info.price_precision
-                if price_precision and price_precision > 0:
-                    step = 1 / (10 ** price_precision)
-                    if abs(price % step) > 1e-10:  # Учитываем погрешность float
-                        warnings.append(f"Price precision may not match exchange requirements (step: {step})")
+            precision = symbol_info.get('precision', {})
+            amount_precision = precision.get('amount')
+            price_precision = precision.get('price')
+
+            if amount_precision is not None and amount_precision > 0:
+                step = 1 / (10 ** amount_precision)
+                if abs(amount % step) > 1e-10:
+                    warnings.append(f"Amount precision may not match exchange requirements (step: {step})")
+
+            if order_type == Order.TYPE_LIMIT and price_precision is not None and price_precision > 0:
+                step = 1 / (10 ** price_precision)
+                if abs(price % step) > 1e-10:
+                    warnings.append(f"Price precision may not match exchange requirements (step: {step})")
                         
         except Exception as e:
             warnings.append(f"Could not validate precision steps: {e}")

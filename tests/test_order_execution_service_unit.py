@@ -4,7 +4,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock
 
 from src.domain.entities.currency_pair import CurrencyPair
-from src.domain.entities.order import Order, OrderExecutionResult, ExchangeInfo
+from src.domain.entities.order import Order, OrderExecutionResult
 from src.domain.factories.order_factory import OrderFactory
 from src.domain.factories.deal_factory import DealFactory
 from src.domain.entities.deal import Deal
@@ -28,11 +28,15 @@ async def test_execute_trading_strategy_success():
     exchange = MagicMock()
     exchange.check_sufficient_balance = AsyncMock(return_value=(True, 'USDT', 1000))
     exchange.fetch_ticker = AsyncMock(return_value={'last': 10.0})
-    exchange.get_symbol_info = AsyncMock(return_value=ExchangeInfo(
-        symbol='BTCUSDT', min_qty=0.001, max_qty=100, step_size=0.001,
-        min_price=0.01, max_price=100000.0, tick_size=0.01, min_notional=1,
-        fees={'maker':0.001, 'taker':0.001}, precision={'amount': 0.001, 'price': 0.01}
-    ))
+    exchange.get_symbol_info = AsyncMock(return_value={
+        'limits': {
+            'amount': {'min': 0.001, 'max': 100},
+            'price': {'min': 0.01, 'max': 100000.0},
+            'cost': {'min': 1}
+        },
+        'precision': {'amount': 0.001, 'price': 0.01},
+        'fees': {'maker': 0.001, 'taker': 0.001},
+    })
 
     order_factory = OrderFactory()
     deal_factory = PatchedDealFactory(order_factory)
@@ -75,11 +79,15 @@ async def test_execute_trading_strategy_insufficient_balance():
     exchange = MagicMock()
     exchange.check_sufficient_balance = AsyncMock(return_value=(False, 'USDT', 5))
     exchange.fetch_ticker = AsyncMock(return_value={'last': 10.0})
-    exchange.get_symbol_info = AsyncMock(return_value=ExchangeInfo(
-        symbol='BTCUSDT', min_qty=0.001, max_qty=100, step_size=0.001,
-        min_price=0.01, max_price=100000.0, tick_size=0.01, min_notional=1,
-        fees={'maker':0.001, 'taker':0.001}, precision={'amount': 0.001, 'price': 0.01}
-    ))
+    exchange.get_symbol_info = AsyncMock(return_value={
+        'limits': {
+            'amount': {'min': 0.001, 'max': 100},
+            'price': {'min': 0.01, 'max': 100000.0},
+            'cost': {'min': 1}
+        },
+        'precision': {'amount': 0.001, 'price': 0.01},
+        'fees': {'maker': 0.001, 'taker': 0.001},
+    })
 
     order_service = MagicMock(spec=UnifiedOrderService)
     deal_service = DealService(InMemoryDealsRepository(), order_service, PatchedDealFactory(OrderFactory()), exchange)
@@ -100,11 +108,15 @@ async def test_execute_trading_strategy_sell_failure_triggers_cancel():
     exchange = MagicMock()
     exchange.check_sufficient_balance = AsyncMock(return_value=(True, 'USDT', 1000))
     exchange.fetch_ticker = AsyncMock(return_value={'last': 10.0})
-    exchange.get_symbol_info = AsyncMock(return_value=ExchangeInfo(
-        symbol='BTCUSDT', min_qty=0.001, max_qty=100, step_size=0.001,
-        min_price=0.01, max_price=100000.0, tick_size=0.01, min_notional=1,
-        fees={'maker':0.001, 'taker':0.001}, precision={'amount': 0.001, 'price': 0.01}
-    ))
+    exchange.get_symbol_info = AsyncMock(return_value={
+        'limits': {
+            'amount': {'min': 0.001, 'max': 100},
+            'price': {'min': 0.01, 'max': 100000.0},
+            'cost': {'min': 1}
+        },
+        'precision': {'amount': 0.001, 'price': 0.01},
+        'fees': {'maker': 0.001, 'taker': 0.001},
+    })
 
     order_factory = OrderFactory()
     deal_factory = PatchedDealFactory(order_factory)

@@ -76,7 +76,7 @@ class OrderPlacementService:
             
             # Корректируем цену согласно precision с биржи
             market_info = await self.exchange_connector.get_symbol_info(symbol)
-            price_precision = market_info.precision.get('price')
+            price_precision = market_info.get('precision', {}).get('price')
             if price_precision:
                 price = float(DecimalRoundingService.round_by_tick_size(
                     price, str(price_precision), rounding_mode=ROUND_DOWN
@@ -131,7 +131,7 @@ class OrderPlacementService:
             
             # Корректируем цену согласно precision с биржи
             market_info = await self.exchange_connector.get_symbol_info(symbol)
-            price_precision = market_info.precision.get('price')
+            price_precision = market_info.get('precision', {}).get('price')
             if price_precision:
                 price = float(DecimalRoundingService.round_by_tick_size(
                     price, str(price_precision), rounding_mode=ROUND_UP

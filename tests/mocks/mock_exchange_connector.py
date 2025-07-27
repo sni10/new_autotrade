@@ -1,7 +1,6 @@
 import time
 from typing import Dict, List, Optional, Any, Tuple
 
-from src.domain.entities.order import ExchangeInfo
 
 
 class MockCcxtExchangeConnector:
@@ -20,20 +19,8 @@ class MockCcxtExchangeConnector:
     async def fetch_balance(self) -> Dict[str, Any]:
         return self._balances.copy()
 
-    async def get_symbol_info(self, symbol: str) -> ExchangeInfo:
-        info = self._market_info[symbol]
-        return ExchangeInfo(
-            symbol=symbol,
-            min_qty=info['limits']['amount']['min'],
-            max_qty=info['limits']['amount']['max'],
-            step_size=info['precision']['amount'],
-            min_price=info['limits']['price']['min'],
-            max_price=info['limits']['price']['max'],
-            tick_size=info['precision']['price'],
-            min_notional=info['limits']['cost']['min'],
-            fees=info.get('fees', {'maker': 0.001, 'taker': 0.001}),
-            precision=info['precision']
-        )
+    async def get_symbol_info(self, symbol: str) -> Dict[str, Any]:
+        return self._market_info[symbol]
 
     async def create_order(self, symbol: str, side: str, order_type: str, amount: float, price: Optional[float] = None, params: Optional[Dict] = None) -> Dict[str, Any]:
         order_id = f"mock_{self._order_id_counter}"

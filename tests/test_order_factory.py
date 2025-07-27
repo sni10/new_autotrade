@@ -4,22 +4,19 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from domain.factories.order_factory import OrderFactory
-from domain.entities.order import ExchangeInfo, Order
+from domain.entities.order import Order
 
 
 def _make_info():
-    return ExchangeInfo(
-        symbol="BTCUSDT",
-        min_qty=0.001,
-        max_qty=100,
-        step_size=0.001,
-        min_price=10,
-        max_price=100000,
-        tick_size=0.01,
-        min_notional=10,
-        fees={"maker": 0.001},
-        precision={'amount': 0.001, 'price': 0.01}
-    )
+    return {
+        "limits": {
+            "amount": {"min": 0.001, "max": 100},
+            "price": {"min": 10, "max": 100000},
+            "cost": {"min": 10}
+        },
+        "precision": {"amount": 0.001, "price": 0.01},
+        "fees": {"maker": 0.001, "taker": 0.001}
+    }
 
 
 def test_create_orders_and_metadata():

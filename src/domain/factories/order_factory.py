@@ -4,7 +4,7 @@ import uuid
 import math
 from itertools import count
 from typing import Optional, Dict, Any
-from domain.entities.order import Order, ExchangeInfo
+from domain.entities.order import Order
 
 # 🔧 Генератор уникальных ID на основе счетчика + timestamp
 _id_gen = count(int(time.time()*1e6))
@@ -24,7 +24,7 @@ class OrderFactory:
     🚀 РАСШИРЕННАЯ фабрика для создания ордеров с валидацией и поддержкой биржевых параметров
     """
 
-    def __init__(self, exchange_info_cache: Optional[Dict[str, ExchangeInfo]] = None):
+    def __init__(self, exchange_info_cache: Optional[Dict[str, Dict[str, Any]]] = None):
         """
         Инициализация фабрики
 
@@ -322,22 +322,29 @@ class OrderFactory:
         # Проверяем против exchange info если доступно
         if symbol in self.exchange_info_cache:
             exchange_info = self.exchange_info_cache[symbol]
+            limits = exchange_info.get('limits', {})
+            precision = exchange_info.get('precision', {})
 
-            if amount < exchange_info.min_qty:
-                errors.append(f"Amount {amount} below minimum {exchange_info.min_qty}")
-            if amount > exchange_info.max_qty:
-                errors.append(f"Amount {amount} above maximum {exchange_info.max_qty}")
+            min_qty = limits.get('amount', {}).get('min')
+            max_qty = limits.get('amount', {}).get('max')
+            min_price = limits.get('price', {}).get('min')
+            max_price = limits.get('price', {}).get('max')
+            min_notional = limits.get('cost', {}).get('min')
+
+            if min_qty is not None and amount < min_qty:
+                errors.append(f"Amount {amount} below minimum {min_qty}")
+            if max_qty is not None and amount > max_qty:
+                errors.append(f"Amount {amount} above maximum {max_qty}")
 
             if price is not None:
-                if price < exchange_info.min_price:
-                    errors.append(f"Price {price} below minimum {exchange_info.min_price}")
-                if price > exchange_info.max_price:
-                    errors.append(f"Price {price} above maximum {exchange_info.max_price}")
+                if min_price is not None and price < min_price:
+                    errors.append(f"Price {price} below minimum {min_price}")
+                if max_price is not None and price > max_price:
+                    errors.append(f"Price {price} above maximum {max_price}")
 
-                # Проверяем минимальную стоимость ордера
                 notional_value = amount * price
-                if notional_value < exchange_info.min_notional:
-                    errors.append(f"Order value {notional_value} below minimum {exchange_info.min_notional}")
+                if min_notional is not None and notional_value < min_notional:
+                    errors.append(f"Order value {notional_value} below minimum {min_notional}")
 
         return len(errors) == 0, errors
 
@@ -353,14 +360,19 @@ class OrderFactory:
             return amount
 
         exchange_info = self.exchange_info_cache[symbol]
-        step_size = exchange_info.step_size
+        step_size = exchange_info.get('precision', {}).get('amount') or exchange_info.get('step_size')
 
         if step_size > 0:
             precision = len(str(step_size).split('.')[-1]) if '.' in str(step_size) else 0
             steps = amount / step_size
             steps = math.ceil(steps) if round_up else math.floor(steps)
             adjusted = round(steps * step_size, precision)
-            adjusted = min(max(adjusted, exchange_info.min_qty), exchange_info.max_qty)
+            min_qty = exchange_info.get('limits', {}).get('amount', {}).get('min')
+            max_qty = exchange_info.get('limits', {}).get('amount', {}).get('max')
+            if min_qty is not None:
+                adjusted = max(adjusted, min_qty)
+            if max_qty is not None:
+                adjusted = min(adjusted, max_qty)
             return adjusted
 
         return amount
@@ -373,23 +385,26 @@ class OrderFactory:
             return price
 
         exchange_info = self.exchange_info_cache[symbol]
-        tick_size = exchange_info.tick_size
+        tick_size = exchange_info.get('precision', {}).get('price') or exchange_info.get('tick_size')
 
         if tick_size > 0:
             # Округляем до ближайшего tick_size
             precision = len(str(tick_size).split('.')[-1]) if '.' in str(tick_size) else 0
             adjusted = round(price // tick_size * tick_size, precision)
-            return max(adjusted, exchange_info.min_price)
+            min_price = exchange_info.get('limits', {}).get('price', {}).get('min')
+            if min_price is not None:
+                return max(adjusted, min_price)
+            return adjusted
 
         return price
 
-    def update_exchange_info(self, symbol: str, exchange_info: ExchangeInfo) -> None:
+    def update_exchange_info(self, symbol: str, exchange_info: Dict[str, Any]) -> None:
         """
         🔄 Обновляет информацию о торговой паре
         """
         self.exchange_info_cache[symbol] = exchange_info
 
-    def get_exchange_info(self, symbol: str) -> Optional[ExchangeInfo]:
+    def get_exchange_info(self, symbol: str) -> Optional[Dict[str, Any]]:
         """
         📊 Возвращает информацию о торговой паре
         """

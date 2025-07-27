@@ -3,7 +3,7 @@ import pytest
 import time
 
 from src.domain.entities.currency_pair import CurrencyPair
-from src.domain.entities.order import Order, ExchangeInfo
+from src.domain.entities.order import Order
 from src.domain.factories.order_factory import OrderFactory
 from src.domain.factories.deal_factory import DealFactory
 from src.domain.entities.deal import Deal
