@@ -4,7 +4,7 @@ import logging
 from typing import List
 
 from domain.services.deals.deal_service import DealService
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.entities.deal import Deal
 from domain.entities.order import Order
 
@@ -17,7 +17,7 @@ class DealCompletionMonitor:
     логирует их статус и закрывает сделку в случае полного исполнения.
     """
 
-    def __init__(self, deal_service: DealService, order_service: OrderService, check_interval_seconds: int = 30):
+    def __init__(self, deal_service: DealService, order_service: UnifiedOrderService, check_interval_seconds: int = 30):
         self.deal_service = deal_service
         self.order_service = order_service
         self.check_interval_seconds = check_interval_seconds

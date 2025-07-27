@@ -117,13 +117,6 @@ class StateManagementService:
                 logger.error(f"❌ Pre-transition handlers failed for {previous_state.value} → {new_state.value}")
                 return False
             
-            # Обновляем состояние
-            self.current_state = new_state
-            self.state_info.previous_state = previous_state
-            self.state_info.current_state = new_state
-            self.state_info.state_changed_at = int(time.time() * 1000)
-            self.state_transitions_count += 1
-            
             # Записываем переход
             transition = StateTransition(
                 from_state=previous_state,
@@ -134,8 +127,14 @@ class StateManagementService:
                 duration_ms=int((time.time() - start_time) * 1000),
                 metadata=metadata or {}
             )
-            
             await self.state_repo.log_state_transition(transition)
+
+            # Обновляем состояние
+            self.current_state = new_state
+            self.state_info.previous_state = previous_state
+            self.state_info.current_state = new_state
+            self.state_info.state_changed_at = int(time.time() * 1000)
+            self.state_transitions_count += 1
             
             # Выполняем пост-обработчики
             await self._execute_post_transition_handlers(previous_state, new_state)
@@ -242,19 +241,20 @@ class StateManagementService:
             active_deals = []
             if self.deals_repo:
                 deals = await self.deals_repo.get_active_deals()
-                active_deals = [deal.to_dict() for deal in deals]
+                active_deals = [deal.to_dict() if hasattr(deal, 'to_dict') else deal for deal in deals]
             
             # Собираем данные о заказах
             pending_orders = []
             if self.orders_repo:
                 orders = await self.orders_repo.get_open_orders()
-                pending_orders = [order.to_dict() for order in orders]
+                pending_orders = [order.to_dict() if hasattr(order, 'to_dict') else order for order in orders]
             
             # Собираем системные метрики
             system_metrics = await self._collect_system_metrics()
             
             # Создаем снимок
             snapshot = SystemSnapshot(
+                snapshot_id=snapshot_id,
                 timestamp=int(time.time() * 1000),
                 application_state=self.current_state,
                 trading_sessions=list(self.trading_sessions.values()),

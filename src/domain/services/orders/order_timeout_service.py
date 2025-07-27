@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from domain.entities.order import Order
 from domain.entities.currency_pair import CurrencyPair
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 

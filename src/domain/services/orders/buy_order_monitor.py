@@ -4,9 +4,9 @@ import logging
 import time
 from typing import List, Optional
 from domain.entities.order import Order
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class BuyOrderMonitor:
 
     def __init__(
         self,
-        order_service: OrderService,
+        order_service: UnifiedOrderService,
         deal_service: DealService, # ❗️ ДОБАВЛЕНО
         exchange_connector: CcxtExchangeConnector,
         max_age_minutes: float = 15.0,
@@ -106,6 +106,9 @@ class BuyOrderMonitor:
             ticker = await self.exchange.fetch_ticker(order.symbol)
             current_price = float(ticker['last'])
             
+            if order.price <= 0:
+                return False # Не можем вычислить отклонение, если цена ордера 0
+
             # Для BUY: если рынок ушел выше нашей цены
             price_deviation = ((current_price - order.price) / order.price) * 100
             
@@ -126,10 +129,12 @@ class BuyOrderMonitor:
             logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id} для сделки {order.deal_id}")
 
             # 1. Отменяем старый BUY ордер
-            cancel_success = await self.order_service.cancel_order(order)
-            if not cancel_success:
+            cancelled_order = await self.order_service.cancel_order(order)
+            if not cancelled_order or not cancelled_order.is_closed():
                 logger.error(f"❌ Не удалось отменить BUY ордер {order.order_id}")
                 return
+            # Обновляем ссылку на ордер, чтобы дальнейшие операции использовали актуальный статус
+            order = cancelled_order
             self.stats['orders_cancelled'] += 1
             logger.info(f"✅ BUY ордер {order.order_id} отменен")
 

@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 from domain.entities.order import Order, OrderExecutionResult
 from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class OrderExecutionService:
 
     def __init__(
         self,
-        order_service: OrderService,
+        order_service: 'UnifiedOrderService',
         deal_service: DealService,
         exchange_connector: CcxtExchangeConnector
     ):

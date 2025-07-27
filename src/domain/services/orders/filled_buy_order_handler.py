@@ -4,7 +4,7 @@ import logging
 from typing import List
 
 from domain.entities.order import Order
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class FilledBuyOrderHandler:
     соответствующие им PENDING SELL ордера на биржу.
     """
 
-    def __init__(self, order_service: OrderService, deal_service: DealService):
+    def __init__(self, order_service: 'UnifiedOrderService', deal_service: DealService):
         self.order_service = order_service
         self.deal_service = deal_service
         self.processed_buy_orders = set()

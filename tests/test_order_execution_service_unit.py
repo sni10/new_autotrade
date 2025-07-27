@@ -1,23 +1,20 @@
-import sys
-import os
 import asyncio
 import pytest
 import time
 from unittest.mock import AsyncMock, MagicMock
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+from src.domain.entities.currency_pair import CurrencyPair
+from src.domain.entities.order import Order, OrderExecutionResult, ExchangeInfo
+from src.domain.factories.order_factory import OrderFactory
+from src.domain.factories.deal_factory import DealFactory
+from src.domain.entities.deal import Deal
+from src.domain.services.deals.deal_service import DealService
+from src.domain.services.orders.unified_order_service import UnifiedOrderService
+from src.domain.services.orders.order_execution_service import OrderExecutionService
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
-from domain.entities.currency_pair import CurrencyPair
-from domain.entities.order import Order, OrderExecutionResult, ExchangeInfo
-from domain.factories.order_factory import OrderFactory
-from domain.factories.deal_factory import DealFactory
-from domain.entities.deal import Deal
-from domain.services.deals.deal_service import DealService
-from domain.services.orders.order_execution_service import OrderExecutionService
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-
-from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
-from infrastructure.repositories.deals_repository import InMemoryDealsRepository
+from src.infrastructure.repositories.orders_repository import InMemoryOrdersRepository
+from src.infrastructure.repositories.deals_repository import InMemoryDealsRepository
 
 
 class PatchedDealFactory(DealFactory):
@@ -51,7 +48,7 @@ async def test_execute_trading_strategy_success():
         # НЕ присваиваем exchange_id, так как ордер локальный
         return OrderExecutionResult(success=True, order=order)
 
-    order_service = MagicMock()
+    order_service = MagicMock(spec=UnifiedOrderService)
     order_service.create_and_place_buy_order = AsyncMock(side_effect=make_buy_order)
     order_service.create_local_sell_order = AsyncMock(side_effect=make_sell_order) # Изменено
     order_service.cancel_order = AsyncMock(return_value=True)
@@ -84,7 +81,7 @@ async def test_execute_trading_strategy_insufficient_balance():
         fees={'maker':0.001, 'taker':0.001}, precision={'amount': 0.001, 'price': 0.01}
     ))
 
-    order_service = MagicMock()
+    order_service = MagicMock(spec=UnifiedOrderService)
     deal_service = DealService(InMemoryDealsRepository(), order_service, PatchedDealFactory(OrderFactory()), exchange)
 
     svc = OrderExecutionService(order_service, deal_service, exchange)
@@ -120,7 +117,7 @@ async def test_execute_trading_strategy_sell_failure_triggers_cancel():
     async def fail_sell(symbol, amount, price, deal_id, order_type):
         return OrderExecutionResult(success=False, error_message='fail')
 
-    order_service = MagicMock()
+    order_service = MagicMock(spec=UnifiedOrderService)
     order_service.create_and_place_buy_order = AsyncMock(side_effect=make_buy_order)
     order_service.create_local_sell_order = AsyncMock(side_effect=fail_sell) # Изменено
     order_service.cancel_order = AsyncMock(return_value=True)

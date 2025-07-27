@@ -11,7 +11,13 @@ from domain.services.deals.deal_service import DealService
 from domain.services.market_data.orderbook_analyzer import OrderBookSignal
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
-from domain.services.market_data.ticker_service import TickerService
+from domain.services.market_data.refactored_ticker_service import RefactoredTickerService
+from domain.services.market_data.ticker_processor import TickerProcessor
+from domain.services.indicators.indicator_calculation_service import IndicatorCalculationService
+from domain.services.signals.signal_generation_service import SignalGenerationService
+from infrastructure.repositories.stream_data_repository import InMemoryStreamDataRepository
+from infrastructure.repositories.indicator_repository import InMemoryIndicatorRepository
+from infrastructure.repositories.trading_signal_repository import InMemoryTradingSignalRepository
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.trading.signal_cooldown_manager import SignalCooldownManager
 from domain.services.utils.orderbook_cache import OrderBookCache
@@ -34,8 +40,20 @@ async def run_realtime_trading(
 ):
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
-    repository = InMemoryTickerRepository(max_size=5000)
-    ticker_service = TickerService(repository)
+    stream_repo = InMemoryStreamDataRepository()
+    indicator_repo = InMemoryIndicatorRepository()
+    signal_repo = InMemoryTradingSignalRepository()
+
+    ticker_processor = TickerProcessor(stream_repo)
+    indicator_service = IndicatorCalculationService(stream_repo, indicator_repo)
+    signal_service = SignalGenerationService(signal_repo)
+
+    refactored_ticker_service = RefactoredTickerService(
+        ticker_processor,
+        indicator_service,
+        signal_service
+    )
+    
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
     
@@ -66,19 +84,11 @@ async def run_realtime_trading(
                 ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
 
                 start_process = time.time()
-                await ticker_service.process_ticker(ticker_data)
+                await refactored_ticker_service.process_ticker(currency_pair.symbol, ticker_data)
                 end_process = time.time()
 
                 processing_time = end_process - start_process
                 counter += 1
-
-                if len(repository.tickers) < 50:
-                    if counter % 100 == 0:
-                        logger.info(
-                            "🟡 Накоплено %s тиков, нужно 50",
-                            len(repository.tickers),
-                        )
-                    continue
 
                 # Периодически обновляем кеш стакана для стоп-лосса
                 if counter - last_orderbook_update >= orderbook_update_interval:
@@ -90,16 +100,7 @@ async def run_realtime_trading(
                     except Exception as e:
                         logger.debug(f"⚠️ Не удалось обновить кеш стакана: {e}")
 
-                ticker_signal = await ticker_service.get_signal()
-
-                if len(repository.tickers) > 0:
-                    last_ticker = repository.tickers[-1]
-                    signals_count = len(last_ticker.signals) if last_ticker.signals else 0
-                    logger_perf.log_tick(
-                        price=float(last_ticker.close),
-                        processing_time=processing_time,
-                        signals_count=signals_count,
-                    )
+                ticker_signal = await refactored_ticker_service.get_signal(currency_pair.symbol)
 
                 if ticker_signal == "BUY":
                     # Анализ стакана
@@ -114,104 +115,103 @@ async def run_realtime_trading(
                     # Синхронизация ордеров перед принятием решения
                     await order_execution_service.monitor_active_orders()
 
-                    if len(repository.tickers) > 0:
-                        last_ticker = repository.tickers[-1]
-                        if last_ticker.signals:
-                            current_price = float(last_ticker.close)
+                    current_price = await refactored_ticker_service.get_latest_price(currency_pair.symbol)
 
-                            active_deals_count = len(deal_service.get_open_deals())
-                            can_buy, reason = cooldown_manager.can_buy(
-                                active_deals_count=active_deals_count,
-                                max_deals=currency_pair.deal_count,
+                    if current_price:
+                        active_deals_count = len(deal_service.get_open_deals())
+                        can_buy, reason = cooldown_manager.can_buy(
+                            active_deals_count=active_deals_count,
+                            max_deals=currency_pair.deal_count,
+                        )
+
+                        if not can_buy:
+                            if counter % 20 == 0:
+                                logger.info(
+                                    "🚫 BUY заблокирован: %s | Цена: %s",
+                                    reason,
+                                    current_price,
+                                )
+                            continue
+
+                        logger.info("\n" + "=" * 80)
+                        logger.info(
+                            "🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService..."
+                        )
+                        logger.info("=" * 80)
+
+                        all_indicators = await refactored_ticker_service.get_all_indicators(currency_pair.symbol)
+                        macd = all_indicators.get('macd', 0.0)
+                        signal = all_indicators.get('macd_signal', 0.0)
+                        hist = all_indicators.get('macd_histogram', 0.0)
+
+                        logger.info("   📈 MACD > Signal: %.6f > %.6f", macd, signal)
+                        logger.info("   📊 Histogram: %.6f", hist)
+                        logger.info("   💰 Текущая цена: %s USDT", current_price)
+                        logger.info(
+                            "   🎯 Активных сделок: %s/%s",
+                            active_deals_count,
+                            currency_pair.deal_count,
+                        )
+
+                        try:
+                            # Используем бюджет из currency_pair
+                            budget = currency_pair.deal_quota
+
+                            # Проверка баланса перед выполнением
+                            balance_ok, balance_reason = await deal_service.check_balance_before_deal(
+                                quote_currency=currency_pair.quote_currency,
+                                required_amount=budget
                             )
-
-                            if not can_buy:
-                                if counter % 20 == 0:
-                                    logger.info(
-                                        "🚫 BUY заблокирован: %s | Цена: %s",
-                                        reason,
-                                        current_price,
-                                    )
+                            if not balance_ok:
+                                logger.error(f"❌ Недостаточно средств: {balance_reason}")
                                 continue
 
-                            logger.info("\n" + "=" * 80)
-                            logger.info(
-                                "🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService..."
-                            )
-                            logger.info("=" * 80)
-
-                            macd = last_ticker.signals.get('macd', 0.0)
-                            signal = last_ticker.signals.get('signal', 0.0)
-                            hist = last_ticker.signals.get('histogram', 0.0)
-
-                            logger.info("   📈 MACD > Signal: %.6f > %.6f", macd, signal)
-                            logger.info("   📊 Histogram: %.6f", hist)
-                            logger.info("   💰 Текущая цена: %s USDT", current_price)
-                            logger.info(
-                                "   🎯 Активных сделок: %s/%s",
-                                active_deals_count,
-                                currency_pair.deal_count,
+                            strategy_result = refactored_ticker_service.calculate_strategy(
+                                buy_price=current_price,
+                                budget=budget,
+                                currency_pair=currency_pair,
+                                profit_percent=currency_pair.profit_markup,
                             )
 
-                            try:
-                                # Используем бюджет из currency_pair
-                                budget = currency_pair.deal_quota
-
-                                # Проверка баланса перед выполнением
-                                balance_ok, balance_reason = await deal_service.check_balance_before_deal(
-                                    quote_currency=currency_pair.quote_currency,
-                                    required_amount=budget
+                            if isinstance(strategy_result, dict) and "comment" in strategy_result:
+                                logger.error(
+                                    "❌ Ошибка в калькуляторе: %s",
+                                    strategy_result["comment"],
                                 )
-                                if not balance_ok:
-                                    logger.error(f"❌ Недостаточно средств: {balance_reason}")
-                                    continue
+                                continue
 
-                                strategy_result = ticker_service.calculate_strategy(
-                                    buy_price=current_price,
-                                    budget=budget,
-                                    currency_pair=currency_pair,
-                                    profit_percent=currency_pair.profit_markup,
-                                )
-
-                                if isinstance(strategy_result, dict) and "comment" in strategy_result:
-                                    logger.error(
-                                        "❌ Ошибка в калькуляторе: %s",
-                                        strategy_result["comment"],
-                                    )
-                                    continue
-
-                                logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
-                                execution_result = await order_execution_service.execute_trading_strategy(
-                                    currency_pair=currency_pair,
-                                    strategy_result=strategy_result,
-                                    metadata={
-                                        'trigger': 'macd_signal',
-                                        'macd_data': {
-                                            'macd': macd,
-                                            'signal': signal,
-                                            'histogram': hist,
-                                        },
-                                        'market_price': current_price,
-                                        'timestamp': int(time.time() * 1000),
+                            logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
+                            execution_result = await order_execution_service.execute_trading_strategy(
+                                currency_pair=currency_pair,
+                                strategy_result=strategy_result,
+                                metadata={
+                                    'trigger': 'macd_signal',
+                                    'macd_data': {
+                                        'macd': macd,
+                                        'signal': signal,
+                                        'histogram': hist,
                                     },
+                                    'market_price': current_price,
+                                    'timestamp': int(time.time() * 1000),
+                                },
+                            )
+
+                            if execution_result.success:
+                                logger.info("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
+                            else:
+                                logger.error(
+                                    "❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА: %s",
+                                    execution_result.error_message,
                                 )
 
-                                if execution_result.success:
-                                    logger.info("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
-                                else:
-                                    logger.error(
-                                        "❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА: %s",
-                                        execution_result.error_message,
-                                    )
+                        except Exception as calc_error:
+                            logger.exception(
+                                "❌ Ошибка в стратегии: %s",
+                                calc_error,
+                            )
 
-                            except Exception as calc_error:
-                                logger.exception(
-                                    "❌ Ошибка в стратегии: %s",
-                                    calc_error,
-                                )
-
-                            logger.info("=" * 80)
-                            logger.info("🔄 Продолжаем мониторинг...\n")
+                        logger.info("=" * 80)
+                        logger.info("🔄 Продолжаем мониторинг...\n")
 
                 if counter % 50 == 0:  # Изменено с 100 на 50 для более частого вывода
                     # Запускаем обработчик исполненных BUY ордеров

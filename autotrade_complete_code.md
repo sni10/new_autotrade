@@ -1,8 +1,8 @@
 # 🤖 AutoTrade - Полный код проекта
 
-**Сгенерировано:** 2025-07-26 19:06:35  
+**Сгенерировано:** 2025-07-27 13:08:26  
 **Проект:** F:\HOME\new_autotrade  
-**Файлов обработано:** 59 из 71  
+**Файлов обработано:** 113 из 136  
 **Общий размер:** 0 байт  
 **Строк кода:** 0  
 
@@ -12,6 +12,7 @@
 
 - [🌳 Структура проекта](#-структура-проекта)
 - [📊 Статистика файлов](#-статистика-файлов)
+- [📄 INI файлы](#ini-файлы)
 - [📝 Документация](#-документация)
 - [🐍 Python файлы](#-python-файлы)
 - [📄 TXT файлы](#txt-файлы)
@@ -34,19 +35,33 @@
 │       └── versioning.yml
 ├── .gitignore
 ├── 22.py
+├── _postgresql
+│   ├── __init__.py
+│   ├── test_postgresql_cache_repository.py
+│   ├── test_postgresql_configuration_repository.py
+│   ├── test_postgresql_deals_repository.py
+│   ├── test_postgresql_indicator_repository.py
+│   ├── test_postgresql_order_book_repository.py
+│   ├── test_postgresql_statistics_repository.py
+│   └── test_postgresql_trading_signal_repository.py
 ├── AGENTS.md
+├── AutoTrade Миграция Данных и Управле.txt
 ├── binance_keys
 │   ├── .gitignore
 │   ├── id_ed25519.pem
 │   └── id_ed25519pub.pem
+├── CCXT_COMPLIANCE_CRITICAL_AUDIT.md
 ├── CLAUDE.md
 ├── DATA_ARCHITECTURE_REFACTORING_PLAN.md
 ├── DATA_ARCHITECTURE_REFACTORING_PLAN_FIXED.md
+├── db_connection_info.md
+├── docker-compose.yml
 ├── Dockerfile
 ├── exchange_analysis_report.txt
 ├── GEMINI.md
 ├── main.py
 ├── order_history_viewer.py
+├── pytest.ini
 ├── quick_swap.py
 ├── README.md
 ├── requirements.txt
@@ -54,6 +69,7 @@
 ├── sandbox_analysis.py
 ├── schema-app.puml
 ├── schema-app.svg
+├── schema.sql
 ├── src
 │   ├── __init__.py
 │   ├── application
@@ -65,14 +81,35 @@
 │   │   ├── __init__.py
 │   │   ├── entities
 │   │   │   ├── __init__.py
+│   │   │   ├── application_state.py
+│   │   │   ├── ccxt_currency_pair.py
+│   │   │   ├── configuration.py
 │   │   │   ├── currency_pair.py
 │   │   │   ├── deal.py
+│   │   │   ├── indicator_data.py
 │   │   │   ├── order.py
-│   │   │   └── ticker.py
+│   │   │   ├── order_backup.py
+│   │   │   ├── order_book.py
+│   │   │   ├── order_ccxt_compliant.py
+│   │   │   ├── statistics.py
+│   │   │   ├── ticker.py
+│   │   │   └── trading_signal.py
 │   │   ├── factories
 │   │   │   ├── __init__.py
 │   │   │   ├── deal_factory.py
 │   │   │   └── order_factory.py
+│   │   ├── repositories
+│   │   │   ├── __init__.py
+│   │   │   ├── i_cache_repository.py
+│   │   │   ├── i_configuration_repository.py
+│   │   │   ├── i_deals_repository.py
+│   │   │   ├── i_indicator_repository.py
+│   │   │   ├── i_order_book_repository.py
+│   │   │   ├── i_orders_repository.py
+│   │   │   ├── i_state_repository.py
+│   │   │   ├── i_statistics_repository.py
+│   │   │   ├── i_stream_data_repository.py
+│   │   │   └── i_trading_signal_repository.py
 │   │   └── services
 │   │       ├── __init__.py
 │   │       ├── deals
@@ -81,22 +118,36 @@
 │   │       │   └── deal_service.py
 │   │       ├── indicators
 │   │       │   ├── __init__.py
-│   │       │   └── cached_indicator_service.py
+│   │       │   └── indicator_calculation_service.py
 │   │       ├── market_data
 │   │       │   ├── __init__.py
+│   │       │   ├── ccxt_market_service.py
 │   │       │   ├── market_analysis_service.py
 │   │       │   ├── orderbook_analyzer.py
 │   │       │   ├── orderbook_service.py
-│   │       │   └── ticker_service.py
+│   │       │   ├── refactored_ticker_service.py
+│   │       │   └── ticker_processor.py
 │   │       ├── orders
 │   │       │   ├── __init__.py
+│   │       │   ├── balance_service.py
 │   │       │   ├── buy_order_monitor.py
+│   │       │   ├── ccxt_order_execution_service.py
+│   │       │   ├── ccxt_unified_order_service.py
 │   │       │   ├── filled_buy_order_handler.py
+│   │       │   ├── order_cancellation_service.py
 │   │       │   ├── order_execution_service.py
-│   │       │   ├── order_service.py
-│   │       │   └── order_timeout_service.py
+│   │       │   ├── order_monitoring_service.py
+│   │       │   ├── order_placement_service.py
+│   │       │   ├── order_timeout_service.py
+│   │       │   ├── order_validation_service.py
+│   │       │   └── unified_order_service.py
 │   │       ├── risk
 │   │       │   └── stop_loss_monitor.py
+│   │       ├── signals
+│   │       │   └── signal_generation_service.py
+│   │       ├── state
+│   │       │   ├── __init__.py
+│   │       │   └── state_management_service.py
 │   │       └── trading
 │   │           ├── __init__.py
 │   │           ├── signal_cooldown_manager.py
@@ -106,12 +157,34 @@
 │       ├── __init__.py
 │       ├── connectors
 │       │   ├── __init__.py
+│       │   ├── ccxt_exchange_connector.py
+│       │   ├── exchange_adapter.py
 │       │   └── exchange_connector.py
 │       ├── database
+│       │   ├── ccxt_database_config.py
+│       │   ├── database_manager.py
+│       │   └── schemas
+│       │       ├── postgresql_ccxt_schema.sql
+│       │       ├── postgresql_schema.sql
+│       │       └── sqlite_schema.sql
 │       └── repositories
 │           ├── __init__.py
 │           ├── deals_repository.py
+│           ├── in_memory_state_repository.py
 │           ├── orders_repository.py
+│           ├── postgresql
+│           │   ├── __init__.py
+│           │   ├── postgresql_cache_repository.py
+│           │   ├── postgresql_configuration_repository.py
+│           │   ├── postgresql_deals_repository.py
+│           │   ├── postgresql_indicator_repository.py
+│           │   ├── postgresql_order_book_repository.py
+│           │   ├── postgresql_orders_repository.py
+│           │   ├── postgresql_orders_repository_ccxt.py
+│           │   ├── postgresql_statistics_repository.py
+│           │   └── postgresql_trading_signal_repository.py
+│           ├── stream
+│           │   └── in_memory_stream_data_repository.py
 │           └── tickers_repository.py
 └── test_prod.py
 ```
@@ -120,9 +193,9 @@
 
 | Метрика | Значение |
 |---------|----------|
-| Всего файлов найдено | 71 |
-| Обработано файлов | 59 |
-| Пропущено файлов | 12 |
+| Всего файлов найдено | 136 |
+| Обработано файлов | 113 |
+| Пропущено файлов | 23 |
 | Общее количество строк | 0 |
 | Общий размер (байт) | 0 |
 
@@ -130,10 +203,31 @@
 
 | Тип | Количество |
 |-----|------------|
-| .md | 6 |
-| .py | 48 |
-| .txt | 2 |
-| .yml | 3 |
+| .ini | 1 |
+| .md | 8 |
+| .py | 97 |
+| .txt | 3 |
+| .yml | 4 |
+
+## 📄 INI файлы
+
+### 📄 `pytest.ini`
+
+```text
+[tool:pytest]
+testpaths = tests
+python_paths = .
+addopts = 
+    --verbose
+    --tb=short
+    --strict-markers
+    --disable-warnings
+    --asyncio-mode=auto
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+asyncio_mode = auto
+```
 
 ## 📝 Markdown документация
 
@@ -248,6 +342,819 @@ pytest
 
 Следование этим правилам поможет поддерживать целостность архитектуры и стабильность проекта.
 
+```
+
+### 📄 `CCXT_COMPLIANCE_CRITICAL_AUDIT.md`
+
+```markdown
+# 🚨 CCXT COMPLIANCE CRITICAL AUDIT REPORT
+
+## Статус: КРИТИЧЕСКИЙ 
+**Дата создания:** 2025-01-27  
+**Приоритет:** ВЫСШИЙ - БЛОКИРУЕТ ВСЕ РАЗРАБОТКИ  
+**Уровень угрозы:** КРАСНЫЙ  
+
+---
+
+## 📋 EXECUTIVE SUMMARY
+
+После полного аудита кодовой базы AutoTrade v2.4.0 выявлены **КРИТИЧЕСКИЕ** несоответствия стандартам CCXT, которые делают систему **ПОЛНОСТЬЮ НЕСОВМЕСТИМОЙ** с реальными криптовалютными биржами. Проблемы носят фундаментальный архитектурный характер и требуют **НЕМЕДЛЕННОГО** исправления.
+
+### 🔴 КРИТИЧЕСКИЙ СТАТУС
+- ❌ Order Entity полностью не совместим с CCXT
+- ❌ CurrencyPair игнорирует биржевые стандарты  
+- ❌ Exchange Connector нарушает CCXT API
+- ❌ База данных не поддерживает CCXT структуры
+- ❌ Тесты не проверяют совместимость с CCXT
+- ❌ **СИСТЕМА НЕ РАБОТАЕТ С РЕАЛЬНЫМИ БИРЖАМИ**
+
+---
+
+## 🔍 ДЕТАЛЬНЫЙ АНАЛИЗ ПРОБЛЕМ
+
+### 1. ORDER ENTITY - ПОЛНОЕ НЕСООТВЕТСТВИЕ CCXT
+
+**Файл:** `src/domain/entities/order.py:32-90`
+
+#### ❌ КРИТИЧЕСКИЕ ПРОБЛЕМЫ:
+```python
+# ТЕКУЩАЯ НЕПРАВИЛЬНАЯ СТРУКТУРА:
+class Order:
+    def __init__(self):
+        self.order_id = order_id          # ❌ Должно быть 'id'
+        self.exchange_id = None           # ❌ Дублирует 'id'
+        self.order_type = None            # ❌ Должно быть 'type'
+        self.currency_pair_id = None      # ❌ Должно быть 'symbol'
+        self.deal_id = None               # ❌ Кастомное поле, не из CCXT
+        self.retries = 0                  # ❌ Кастомное поле
+        
+        # ОТСУТСТВУЮТ ОБЯЗАТЕЛЬНЫЕ CCXT ПОЛЯ:
+        # self.datetime = None            # ❌ ISO8601 строка
+        # self.timestamp = None           # ❌ Unix timestamp  
+        # self.lastTradeTimestamp = None  # ❌ Время последней сделки
+        # self.trades = []                # ❌ Массив сделок
+        # self.info = {}                  # ❌ Полный ответ биржи
+        # self.cost = None                # ❌ Общая стоимость
+        # self.timeInForce = None         # ❌ Время жизни ордера
+```
+
+#### ✅ ТРЕБУЕМАЯ CCXT СТРУКТУРА:
+```python
+# ПРАВИЛЬНАЯ CCXT СОВМЕСТИМАЯ СТРУКТУРА:
+class Order:
+    def __init__(self):
+        # ОБЯЗАТЕЛЬНЫЕ CCXT ПОЛЯ:
+        self.id = None                    # exchange order ID (строка!)
+        self.clientOrderId = None         # клиентский ID
+        self.datetime = None              # ISO8601 datetime строка
+        self.timestamp = None             # Unix timestamp в миллисекундах
+        self.lastTradeTimestamp = None    # время последней сделки
+        self.status = None                # 'open'|'closed'|'canceled'
+        self.symbol = None                # 'BTC/USDT'
+        self.type = None                  # 'limit'|'market'|'stop'
+        self.timeInForce = None           # 'GTC'|'IOC'|'FOK'
+        self.side = None                  # 'buy'|'sell'
+        self.price = None                 # цена за единицу
+        self.amount = None                # запрошенное количество
+        self.filled = None                # исполненное количество
+        self.remaining = None             # оставшееся количество
+        self.cost = None                  # общая стоимость (filled * price)
+        self.average = None               # средняя цена исполнения
+        self.trades = []                  # массив сделок
+        self.fee = {                      # структура комиссии
+            'cost': None,                 # размер комиссии
+            'currency': None,             # валюта комиссии
+            'rate': None                  # ставка комиссии
+        }
+        self.info = {}                    # полный ответ от биржи
+        
+        # ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ ПРОЕКТА:
+        self.deal_id = None               # связь со сделкой AutoTrade
+        self.local_order_id = None        # внутренний ID для AutoTrade
+
+    def update_from_ccxt_response(self, ccxt_response: dict):
+        """Обновление Order из CCXT ответа"""
+        self.id = ccxt_response['id']
+        self.clientOrderId = ccxt_response.get('clientOrderId')
+        self.datetime = ccxt_response['datetime']
+        self.timestamp = ccxt_response['timestamp']
+        self.lastTradeTimestamp = ccxt_response.get('lastTradeTimestamp')
+        self.status = ccxt_response['status']
+        self.symbol = ccxt_response['symbol']
+        self.type = ccxt_response['type']
+        self.timeInForce = ccxt_response.get('timeInForce')
+        self.side = ccxt_response['side']
+        self.price = ccxt_response['price']
+        self.amount = ccxt_response['amount']
+        self.filled = ccxt_response['filled']
+        self.remaining = ccxt_response['remaining']
+        self.cost = ccxt_response['cost']
+        self.average = ccxt_response.get('average')
+        self.trades = ccxt_response.get('trades', [])
+        self.fee = ccxt_response.get('fee', {})
+        self.info = ccxt_response.get('info', {})
+
+    def to_ccxt_dict(self) -> dict:
+        """Преобразование в CCXT совместимый словарь"""
+        return {
+            'id': self.id,
+            'clientOrderId': self.clientOrderId,
+            'datetime': self.datetime,
+            'timestamp': self.timestamp,
+            'lastTradeTimestamp': self.lastTradeTimestamp,
+            'status': self.status,
+            'symbol': self.symbol,
+            'type': self.type,
+            'timeInForce': self.timeInForce,
+            'side': self.side,
+            'price': self.price,
+            'amount': self.amount,
+            'filled': self.filled,
+            'remaining': self.remaining,
+            'cost': self.cost,
+            'average': self.average,
+            'trades': self.trades,
+            'fee': self.fee,
+            'info': self.info
+        }
+```
+
+### 2. CURRENCY PAIR - ИГНОРИРОВАНИЕ CCXT MARKETS
+
+**Файл:** `src/domain/entities/currency_pair.py:40-50`
+
+#### ❌ КРИТИЧЕСКИЕ ПРОБЛЕМЫ:
+```python
+# НЕПРАВИЛЬНАЯ ОБРАБОТКА CCXT ДАННЫХ:
+def update_exchange_info(self, market_data: dict):
+    self.precision = market_data.get('precision', {})      # ❌ Частичная обработка
+    self.limits = market_data.get('limits', {})            # ❌ Не все поля
+    self.taker_fee = market_data.get('taker', self.taker_fee) # ❌ Неполная структура
+    # ❌ ОТСУТСТВУЕТ: id, baseId, quoteId, active, type, info
+```
+
+#### ✅ ТРЕБУЕМАЯ CCXT INTEGRATION:
+```python
+def update_from_ccxt_market(self, market: dict):
+    """Полная интеграция с CCXT market структурой"""
+    # Основная информация
+    self.id = market['id']                    # биржевой идентификатор
+    self.symbol = market['symbol']            # стандартизированный символ
+    self.base = market['base']                # базовая валюта
+    self.quote = market['quote']              # котируемая валюта
+    self.baseId = market['baseId']            # ID базовой валюты на бирже
+    self.quoteId = market['quoteId']          # ID котируемой валюты на бирже
+    self.active = market['active']            # активность торговой пары
+    self.type = market['type']                # 'spot'|'margin'|'future'
+    
+    # Точность
+    self.precision = {
+        'amount': market['precision']['amount'],
+        'price': market['precision']['price'],
+        'cost': market['precision'].get('cost', 8)
+    }
+    
+    # Лимиты
+    self.limits = {
+        'amount': {
+            'min': market['limits']['amount'].get('min'),
+            'max': market['limits']['amount'].get('max')
+        },
+        'price': {
+            'min': market['limits']['price'].get('min'), 
+            'max': market['limits']['price'].get('max')
+        },
+        'cost': {
+            'min': market['limits']['cost'].get('min'),
+            'max': market['limits']['cost'].get('max')
+        }
+    }
+    
+    # Комиссии
+    self.maker = market.get('maker', 0.001)
+    self.taker = market.get('taker', 0.001)
+    
+    # Полная информация от биржи
+    self.info = market.get('info', {})
+```
+
+### 3. EXCHANGE CONNECTOR - НАРУШЕНИЕ CCXT API
+
+**Файл:** `src/infrastructure/connectors/exchange_connector.py:168-193`
+
+#### ❌ КРИТИЧЕСКИЕ ПРОБЛЕМЫ:
+```python
+# НЕПРАВИЛЬНОЕ СОЗДАНИЕ КАСТОМНОЙ СТРУКТУРЫ:
+def get_symbol_info(self, symbol: str) -> ExchangeInfo:
+    exchange_info = ExchangeInfo(              # ❌ Кастомная структура
+        symbol=normalized_symbol,
+        min_qty=limits.get('amount', {}).get('min'),
+        max_qty=limits.get('amount', {}).get('max'),
+        step_size=precision.get('amount'),     # ❌ Потеря данных
+        precision=precision                    # ❌ Неполная интеграция
+    )
+    # ❌ ПОТЕРЯ: info, baseId, quoteId, active, type
+```
+
+#### ✅ ТРЕБУЕМЫЙ CCXT ПОДХОД:
+```python
+async def get_market_info(self, symbol: str) -> dict:
+    """Возвращает полную CCXT market структуру"""
+    markets = await self.load_markets()
+    normalized_symbol = self._normalize_symbol(symbol)
+    market = markets.get(normalized_symbol)
+    
+    if not market:
+        raise ValueError(f"Symbol {normalized_symbol} not found")
+    
+    # Возвращаем оригинальную CCXT структуру без изменений
+    return market
+
+async def validate_order_params(self, symbol: str, side: str, amount: float, price: float) -> tuple[bool, str]:
+    """Валидация параметров ордера по CCXT правилам"""
+    market = await self.get_market_info(symbol)
+    
+    # Проверка лимитов amount
+    min_amount = market['limits']['amount']['min']
+    max_amount = market['limits']['amount']['max']
+    if min_amount and amount < min_amount:
+        return False, f"Amount {amount} below minimum {min_amount}"
+    if max_amount and amount > max_amount:
+        return False, f"Amount {amount} above maximum {max_amount}"
+    
+    # Проверка precision
+    amount_precision = market['precision']['amount']
+    if not self._check_precision(amount, amount_precision):
+        return False, f"Amount precision violation"
+    
+    return True, "Valid"
+```
+
+### 4. ORDER EXECUTION SERVICE - НЕСОВМЕСТИМОСТЬ
+
+**Файл:** `src/domain/services/orders/order_execution_service.py:527-581`
+
+#### ❌ КРИТИЧЕСКИЕ ПРОБЛЕМЫ:
+```python
+# СОЗДАНИЕ НЕСОВМЕСТИМЫХ ORDER ОБЪЕКТОВ:
+order = Order(
+    order_id=self.order_service.generate_order_id(),  # ❌ Кастомный ID
+    deal_id=deal_id,                                  # ❌ Не CCXT поле
+    currency_pair_id=currency_pair_id,                # ❌ Должно быть symbol
+    side="SELL",
+    order_type="MARKET",                              # ❌ Должно быть type
+    exchange_order_id=order_result.exchange_order_id, # ❌ Дублирование
+)
+# ❌ ОТСУТСТВУЕТ: обработка trades, fee, info, timestamp
+```
+
+#### ✅ ТРЕБУЕМЫЙ ПОДХОД:
+```python
+async def create_ccxt_compatible_order(self, ccxt_order_response: dict, deal_id: int) -> Order:
+    """Создание Order из CCXT ответа"""
+    order = Order()
+    
+    # Заполняем из CCXT ответа
+    order.update_from_ccxt_response(ccxt_order_response)
+    
+    # Добавляем проектные поля
+    order.deal_id = deal_id
+    order.local_order_id = self.generate_local_id()
+    
+    return order
+
+async def place_order_with_ccxt(self, symbol: str, side: str, type: str, amount: float, price: float = None) -> Order:
+    """Размещение ордера через CCXT с полной совместимостью"""
+    try:
+        # Размещаем ордер через CCXT
+        ccxt_response = await self.exchange_connector.create_order(
+            symbol, side, type, amount, price
+        )
+        
+        # Создаем Order из CCXT ответа
+        order = await self.create_ccxt_compatible_order(ccxt_response, deal_id)
+        
+        # Сохраняем в репозиторий
+        await self.orders_repository.save(order)
+        
+        return order
+        
+    except Exception as e:
+        logger.error(f"Failed to place CCXT order: {e}")
+        raise
+```
+
+### 5. POSTGRESQL SCHEMA - НЕ ПОДДЕРЖИВАЕТ CCXT
+
+**Файл:** `src/infrastructure/repositories/postgresql/postgresql_orders_repository.py:22-50`
+
+#### ❌ КРИТИЧЕСКИЕ ПРОБЛЕМЫ:
+```sql
+-- ТЕКУЩАЯ НЕПРАВИЛЬНАЯ СХЕМА:
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY,              -- ❌ Должно быть строка (exchange ID)
+    side VARCHAR,                        
+    type VARCHAR,                        -- ❌ Неправильное именование
+    exchange_id VARCHAR,                 -- ❌ Дублирует поле id
+    currency_pair_id VARCHAR,            -- ❌ Должно быть symbol
+    deal_id INTEGER,                     -- ❌ Не CCXT поле
+    retries INTEGER,                     -- ❌ Не CCXT поле
+    
+    -- ОТСУТСТВУЮТ ОБЯЗАТЕЛЬНЫЕ CCXT ПОЛЯ:
+    -- datetime, timestamp, lastTradeTimestamp
+    -- trades, info, cost, average, timeInForce
+);
+```
+
+#### ✅ ТРЕБУЕМАЯ CCXT СОВМЕСТИМАЯ СХЕМА:
+```sql
+-- НОВАЯ CCXT СОВМЕСТИМАЯ СХЕМА:
+CREATE TABLE orders (
+    -- CCXT ОБЯЗАТЕЛЬНЫЕ ПОЛЯ
+    id VARCHAR PRIMARY KEY,              -- exchange order ID (строка!)
+    client_order_id VARCHAR,             -- клиентский ID ордера
+    datetime TIMESTAMP WITH TIME ZONE,   -- ISO8601 datetime
+    timestamp BIGINT,                    -- Unix timestamp в миллисекундах
+    last_trade_timestamp BIGINT,         -- время последней сделки
+    status VARCHAR NOT NULL,             -- open|closed|canceled|expired|rejected
+    symbol VARCHAR NOT NULL,             -- стандартизированный символ (BTC/USDT)
+    type VARCHAR NOT NULL,               -- limit|market|stop|stopLimit
+    time_in_force VARCHAR,               -- GTC|IOC|FOK|PO
+    side VARCHAR NOT NULL,               -- buy|sell
+    price DECIMAL(20,8),                 -- цена за единицу
+    amount DECIMAL(20,8) NOT NULL,       -- запрошенное количество
+    filled DECIMAL(20,8) DEFAULT 0,      -- исполненное количество
+    remaining DECIMAL(20,8),             -- оставшееся количество
+    cost DECIMAL(20,8),                  -- общая стоимость (filled * average)
+    average DECIMAL(20,8),               -- средняя цена исполнения
+    trades JSONB DEFAULT '[]',           -- массив сделок
+    fee JSONB DEFAULT '{}',              -- структура комиссии
+    info JSONB DEFAULT '{}',             -- полный ответ от биржи
+    
+    -- ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ AUTOTRADE
+    deal_id INTEGER,                     -- связь со сделкой
+    local_order_id SERIAL,               -- внутренний AutoTrade ID
+    created_at TIMESTAMP DEFAULT NOW(),  -- время создания в AutoTrade
+    updated_at TIMESTAMP DEFAULT NOW(),  -- время последнего обновления
+    
+    -- ОГРАНИЧЕНИЯ И ИНДЕКСЫ
+    CONSTRAINT unique_exchange_id UNIQUE (id),
+    INDEX idx_orders_symbol (symbol),
+    INDEX idx_orders_status (status),
+    INDEX idx_orders_deal_id (deal_id),
+    INDEX idx_orders_timestamp (timestamp),
+    INDEX idx_orders_side_status (side, status)
+);
+
+-- ТРИГГЕР ДЛЯ АВТООБНОВЛЕНИЯ updated_at
+CREATE OR REPLACE FUNCTION update_orders_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_orders_updated_at
+    BEFORE UPDATE ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_orders_updated_at();
+```
+
+### 6. MAIN.PY - НЕПРАВИЛЬНАЯ ИНИЦИАЛИЗАЦИЯ
+
+**Файл:** `main.py:95-117`
+
+#### ❌ КРИТИЧЕСКИЕ ПРОБЛЕМЫ:
+```python
+# НЕПРАВИЛЬНАЯ ИНИЦИАЛИЗАЦИЯ:
+order_factory.update_exchange_info(symbol_ccxt, symbol_info)  # ❌ Кастомная структура
+# Должно быть:
+# order_factory.update_from_ccxt_market(symbol_ccxt, ccxt_market)
+
+# ПОТЕРЯ CCXT ДАННЫХ:
+markets = await pro_exchange_connector_prod.load_markets()
+market_details = markets.get(currency_pair.symbol)
+if market_details:
+    currency_pair.update_exchange_info(market_details)     # ❌ Неполная обработка
+    # Должно быть:
+    # currency_pair.update_from_ccxt_market(market_details)
+```
+
+### 7. ТЕСТЫ - ОТСУТСТВИЕ CCXT ВАЛИДАЦИИ
+
+**Проблема:** Тесты не проверяют совместимость с реальными CCXT структурами
+
+#### ❌ ОТСУТСТВУЮТ КРИТИЧЕСКИЕ ТЕСТЫ:
+- Тесты создания Order из реальных CCXT ответов
+- Валидация всех CCXT полей
+- Сериализация/десериализация CCXT структур
+- Integration тесты с sandbox биржами
+- Проверка обработки trades массива
+- Валидация fee структуры
+- Проверка info объекта
+
+#### ✅ ТРЕБУЕМЫЕ ТЕСТЫ:
+```python
+# tests/ccxt_compliance/test_order_ccxt_compatibility.py
+def test_order_from_ccxt_binance_response():
+    """Тест создания Order из реального ответа Binance"""
+    binance_order = {
+        "id": "28457",
+        "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
+        "datetime": "2017-08-17T12:42:48.000Z",
+        "timestamp": 1502962968000,
+        "lastTradeTimestamp": 1502962968123,
+        "status": "open",
+        "symbol": "BTC/USDT",
+        "type": "limit",
+        "timeInForce": "GTC",
+        "side": "buy",
+        "price": 4000.00,
+        "amount": 1.0,
+        "filled": 0.0,
+        "remaining": 1.0,
+        "cost": 0.0,
+        "average": None,
+        "trades": [],
+        "fee": {"cost": 0.0, "currency": "USDT"},
+        "info": {"orderId": 28457, "status": "NEW"}
+    }
+    
+    order = Order()
+    order.update_from_ccxt_response(binance_order)
+    
+    assert order.id == "28457"
+    assert order.symbol == "BTC/USDT"
+    assert order.timestamp == 1502962968000
+    assert order.status == "open"
+    assert order.info["orderId"] == 28457
+
+def test_order_serialization_ccxt_compatibility():
+    """Тест совместимости сериализации с CCXT"""
+    order = Order()
+    # ... заполнение данными
+    
+    serialized = order.to_ccxt_dict()
+    
+    # Проверяем все обязательные CCXT поля
+    required_fields = ['id', 'datetime', 'timestamp', 'status', 'symbol', 
+                      'type', 'side', 'amount', 'filled', 'remaining', 
+                      'cost', 'trades', 'fee', 'info']
+    
+    for field in required_fields:
+        assert field in serialized
+
+def test_currency_pair_from_ccxt_market():
+    """Тест создания CurrencyPair из CCXT market"""
+    ccxt_market = {
+        "id": "BTCUSDT",
+        "symbol": "BTC/USDT",
+        "base": "BTC",
+        "quote": "USDT",
+        "baseId": "btc",
+        "quoteId": "usdt",
+        "active": True,
+        "type": "spot",
+        "precision": {"amount": 8, "price": 2},
+        "limits": {
+            "amount": {"min": 0.00001, "max": 10000.0},
+            "price": {"min": 0.01, "max": 1000000.0},
+            "cost": {"min": 10.0}
+        },
+        "maker": 0.001,
+        "taker": 0.001,
+        "info": {"status": "TRADING"}
+    }
+    
+    currency_pair = CurrencyPair("BTC", "USDT")
+    currency_pair.update_from_ccxt_market(ccxt_market)
+    
+    assert currency_pair.id == "BTCUSDT"
+    assert currency_pair.symbol == "BTC/USDT"
+    assert currency_pair.precision["amount"] == 8
+    assert currency_pair.limits["amount"]["min"] == 0.00001
+    assert currency_pair.info["status"] == "TRADING"
+```
+
+---
+
+## 🛠️ ПЛАН КРИТИЧЕСКОГО ИСПРАВЛЕНИЯ (4 ЭТАПА)
+
+### ЭТАП 1: EMERGENCY FIXES (1-2 дня) ⚡
+**Приоритет:** КРИТИЧЕСКИЙ - БЛОКИРУЕТ ВСЕ
+
+#### 1.1. Order Entity Complete Restructure
+```bash
+# Файлы для ПОЛНОЙ перестройки:
+src/domain/entities/order.py                    # ПЕРЕПИСАТЬ ПОЛНОСТЬЮ
+src/domain/factories/order_factory.py           # ОБНОВИТЬ под новую структуру
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **ПЕРЕПИСАТЬ Order Entity** - полная совместимость с CCXT
+2. ✅ **Добавить все обязательные CCXT поля** (datetime, timestamp, trades, fee, info)
+3. ✅ **Создать методы CCXT интеграции** (update_from_ccxt_response, to_ccxt_dict)
+4. ✅ **Реализовать валидацию CCXT структур**
+5. ✅ **Создать backward compatibility layer** для существующего кода
+
+#### 1.2. Database Schema Emergency Update
+```bash
+# Файлы для КРИТИЧЕСКИХ изменений:
+src/infrastructure/database/schemas/postgresql_schema.sql    # НОВАЯ СХЕМА
+src/infrastructure/database/schemas/sqlite_schema.sql       # НОВАЯ СХЕМА  
+migrations/001_ccxt_compliance_migration.sql                # MIGRATION SCRIPT
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Создать CCXT совместимую схему** - полная поддержка всех полей
+2. ✅ **Написать БЕЗОПАСНЫЙ migration скрипт** - без потери данных
+3. ✅ **Добавить JSONB поддержку** для trades, fee, info
+4. ✅ **Создать правильные индексы** для производительности
+5. ✅ **Тестирование миграции** на тестовых данных
+
+#### 1.3. PostgreSQL Repository Implementation
+```bash
+# Файлы для СОЗДАНИЯ:
+src/infrastructure/repositories/postgresql/postgresql_orders_repository.py  # СОЗДАТЬ
+src/domain/repositories/i_orders_repository.py                             # ОБНОВИТЬ
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Полная реализация PostgreSQL репозитория** для ордеров
+2. ✅ **JSONB сериализация/десериализация** для сложных полей
+3. ✅ **Обработка всех CCXT полей** без потерь
+4. ✅ **Performance optimization** для частых запросов
+5. ✅ **Error handling** для database операций
+
+### ЭТАП 2: CORE SERVICES COMPLETE OVERHAUL (3-5 дней) 🔧
+**Приоритет:** ВЫСОКИЙ
+
+#### 2.1. Exchange Connector Total Refactor
+```bash
+# Файлы для ПОЛНОЙ переработки:
+src/infrastructure/connectors/exchange_connector.py         # ПЕРЕПИСАТЬ
+src/domain/entities/currency_pair.py                        # ОБНОВИТЬ
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Удалить ВСЕ кастомные структуры** (ExchangeInfo и др.)
+2. ✅ **Возвращать только оригинальные CCXT объекты**
+3. ✅ **Реализовать полную CCXT error handling**
+4. ✅ **Добавить CCXT валидацию всех параметров**
+5. ✅ **Тестирование с реальными биржами**
+
+#### 2.2. Order Services Complete Rewrite  
+```bash
+# Файлы для ПОЛНОЙ переработки:
+src/domain/services/orders/order_execution_service.py       # ПЕРЕПИСАТЬ
+src/domain/services/orders/unified_order_service.py         # ОБНОВИТЬ
+src/domain/services/orders/order_placement_service.py       # ОБНОВИТЬ
+src/domain/services/orders/buy_order_monitor.py             # ОБНОВИТЬ
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Реализовать создание ордеров ТОЛЬКО через CCXT ответы**
+2. ✅ **Обработка trades массива** для accurate fee calculation
+3. ✅ **Синхронизация с биржей через CCXT structures**
+4. ✅ **Правильная обработка всех статусов ордеров**
+5. ✅ **Real-time order updates** через CCXT
+
+#### 2.3. CurrencyPair CCXT Integration
+```bash
+# Файлы для ОБНОВЛЕНИЯ:
+src/domain/entities/currency_pair.py                        # ПЕРЕПИСАТЬ
+main.py                                                     # ОБНОВИТЬ инициализацию
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Полная интеграция с CCXT market структурой**
+2. ✅ **Сохранение всех биржевых параметров**
+3. ✅ **Правильная обработка precision и limits**
+4. ✅ **Market validation** перед торговлей
+5. ✅ **Dynamic market updates** от биржи
+
+### ЭТАП 3: COMPREHENSIVE TESTING (2-3 дня) 🧪
+**Приоритет:** ВЫСОКИЙ
+
+#### 3.1. CCXT Compliance Test Suite
+```bash
+# Новые файлы для СОЗДАНИЯ:
+tests/ccxt_compliance/                                       # НОВАЯ ПАПКА
+tests/ccxt_compliance/test_order_ccxt_compatibility.py       # КРИТИЧЕСКИЕ ТЕСТЫ
+tests/ccxt_compliance/test_market_ccxt_compatibility.py      # КРИТИЧЕСКИЕ ТЕСТЫ
+tests/ccxt_compliance/test_exchange_ccxt_integration.py      # КРИТИЧЕСКИЕ ТЕСТЫ
+tests/ccxt_compliance/test_database_ccxt_persistence.py     # КРИТИЧЕСКИЕ ТЕСТЫ
+```
+
+**КРИТИЧЕСКИЕ ТЕСТЫ:**
+1. ✅ **Реальные CCXT данные от всех поддерживаемых бирж**
+2. ✅ **Полная валидация всех CCXT полей**
+3. ✅ **Сериализация/десериализация без потерь**
+4. ✅ **Database persistence всех CCXT структур**
+5. ✅ **Performance тесты с большими объемами данных**
+
+#### 3.2. Integration Testing с Real Exchanges
+```bash
+# Файлы для СОЗДАНИЯ:
+tests/integration/test_real_exchange_compatibility.py        # РЕАЛЬНЫЕ БИРЖИ
+tests/integration/test_sandbox_trading.py                   # SANDBOX ТЕСТЫ
+```
+
+**КРИТИЧЕСКИЕ ТЕСТЫ:**
+1. ✅ **Тестирование с Binance Sandbox**
+2. ✅ **Проверка order lifecycle** от создания до заполнения
+3. ✅ **Валидация fee calculation** с реальными данными
+4. ✅ **Error handling** для всех типов биржевых ошибок
+5. ✅ **WebSocket integration** для real-time updates
+
+#### 3.3. Regression Testing Complete Suite
+```bash
+# Файлы для ОБНОВЛЕНИЯ:
+tests/test_*.py                                             # ВСЕ СУЩЕСТВУЮЩИЕ ТЕСТЫ
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Обновить ВСЕ существующие тесты** под новую структуру
+2. ✅ **Добавить CCXT mock responses** везде
+3. ✅ **Проверить backward compatibility** где возможно
+4. ✅ **Performance regression testing**
+5. ✅ **Memory usage optimization testing**
+
+### ЭТАП 4: PRODUCTION READINESS (1-2 дня) 🚀
+**Приоритет:** СРЕДНИЙ
+
+#### 4.1. Documentation Complete Overhaul
+```bash
+# Файлы для ПОЛНОГО обновления:
+docs/development/ccxt_data_structures.md                    # ОБНОВИТЬ
+README.md                                                   # ОБНОВИТЬ
+CLAUDE.md                                                   # ОБНОВИТЬ
+docs/api/order_management.md                               # СОЗДАТЬ
+docs/migration/ccxt_compliance_guide.md                    # СОЗДАТЬ
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **Полная документация новых CCXT структур**
+2. ✅ **Migration guide** для разработчиков
+3. ✅ **API documentation** с CCXT примерами
+4. ✅ **Troubleshooting guide** для CCXT ошибок
+5. ✅ **Best practices** для CCXT integration
+
+#### 4.2. Monitoring & Alerting Setup
+```bash
+# Файлы для СОЗДАНИЯ/ОБНОВЛЕНИЯ:
+src/application/utils/ccxt_monitoring.py                    # СОЗДАТЬ
+src/application/utils/performance_logger.py                 # ОБНОВИТЬ
+```
+
+**КРИТИЧЕСКИЕ ДЕЙСТВИЯ:**
+1. ✅ **CCXT operations monitoring**
+2. ✅ **Data consistency alerting**
+3. ✅ **Performance metrics** для CCXT calls
+4. ✅ **Error rate monitoring** по биржам
+5. ✅ **Dashboard** для CCXT compliance metrics
+
+---
+
+## 📊 КРИТИЧЕСКИЕ TIMELINE & RESOURCES
+
+### ⚡ ЭКСТРЕННЫЕ Временные рамки:
+- **Этап 1 (EMERGENCY):** 1-2 дня (НЕМЕДЛЕННО)
+- **Этап 2 (CORE REWRITE):** 3-5 дней  
+- **Этап 3 (TESTING):** 2-3 дня
+- **Этап 4 (PRODUCTION):** 1-2 дня
+- **🚨 КРИТИЧЕСКИЙ ИТОГО:** 7-12 дней
+
+### 👥 КРИТИЧЕСКИЕ Ресурсы:
+- **Senior Developer:** 1.5 FTE (ПОЛНАЯ мобилизация)
+- **Lead Architect:** 0.5 FTE (консультации)
+- **QA Engineer:** 1 FTE (критическое тестирование)
+- **DevOps:** 0.5 FTE (database migration, monitoring)
+
+### ⚠️ КРИТИЧЕСКИЕ Риски:
+1. **CRITICAL:** Потеря всех существующих данных
+2. **HIGH:** Полная остановка разработки на 2 недели
+3. **HIGH:** Breaking changes во всех API
+4. **MEDIUM:** Необходимость переписать большую часть кода
+5. **LOW:** Performance degradation (временная)
+
+---
+
+## 🧪 CRITICAL VALIDATION CHECKLIST
+
+### ✅ CCXT Compliance CRITICAL Verification:
+
+#### Order Entity - ЖИЗНЕННО ВАЖНО:
+- [ ] **ВСЕ обязательные CCXT поля присутствуют и правильно типизированы**
+- [ ] **Именование полей ТОЧНО соответствует CCXT стандарту**
+- [ ] **Сериализация/десериализация работает БЕЗ ПОТЕРЬ**
+- [ ] **Валидация CCXT структур ВСЕГДА проходит**
+- [ ] **Backward compatibility НЕ НАРУШАЕТ новую логику**
+
+#### Exchange Integration - КРИТИЧНО:
+- [ ] **ТОЛЬКО оригинальные CCXT объекты возвращаются**
+- [ ] **НЕТ потери данных при любых преобразованиях**
+- [ ] **Error handling ПОЛНОСТЬЮ соответствует CCXT exceptions**
+- [ ] **ВСЕ CCXT методы работают без исключений**
+- [ ] **WebSocket интеграция СТАБИЛЬНА 24/7**
+
+#### Database Schema - ЖИЗНЕННО ВАЖНО:
+- [ ] **ВСЕ CCXT поля сохраняются без потерь**
+- [ ] **JSONB поля корректно обрабатываются во ВСЕХ случаях**
+- [ ] **Индексы оптимизированы для ВСЕХ запросов**
+- [ ] **Migration скрипты работают БЕЗ потери данных**
+- [ ] **Performance НЕ ХУЖЕ предыдущей версии**
+
+#### Testing - КРИТИЧНО:
+- [ ] **Unit тесты покрывают ВСЕ CCXT сценарии (100%)**
+- [ ] **Integration тесты с РЕАЛЬНЫМИ биржами проходят**
+- [ ] **ВСЕ Regression тесты проходят без исключений**
+- [ ] **Performance тесты показывают приемлемые результаты**
+- [ ] **Error handling тестируется на ВСЕХ типах ошибок**
+
+---
+
+## 🚨 КРИТИЧЕСКИЕ ПРЕДУПРЕЖДЕНИЯ
+
+### ⛔ НЕМЕДЛЕННО ПРЕКРАТИТЬ:
+1. **❌ ВСЮ разработку новых фичей** - они будут несовместимы
+2. **❌ ЛЮБЫЕ попытки деплоя в production** - ГАРАНТИРОВАННЫЕ сбои
+3. **❌ Тестирование с реальными деньгами** - ВЫСОЧАЙШИЙ риск потерь
+4. **❌ Масштабирование команды/инфраструктуры** - проблемы усугубятся
+5. **❌ Обновление зависимостей** - может сломать текущий код
+
+### ✅ РАЗРЕШЕНО делать ТОЛЬКО:
+1. ✅ **Исправление CCXT compliance** согласно этому плану
+2. ✅ **Code review** существующей бизнес-логики  
+3. ✅ **Подготовка test data** с реальных бирж
+4. ✅ **Документирование** текущего поведения
+5. ✅ **Planning** следующих этапов после исправления
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+### 🟢 ЭТАП 1 ЗАВЕРШЕН КОГДА:
+- Order Entity полностью совместим с CCXT
+- Database schema поддерживает все CCXT поля
+- PostgreSQL repository полностью реализован
+- Migration скрипты протестированы
+
+### 🟢 ЭТАП 2 ЗАВЕРШЕН КОГДА:
+- Exchange Connector возвращает только CCXT объекты
+- Order Services работают с CCXT структурами
+- CurrencyPair полностью интегрирован с CCXT markets
+- Все сервисы обновлены под новую архитектуру
+
+### 🟢 ЭТАП 3 ЗАВЕРШЕН КОГДА:
+- 100% покрытие CCXT compliance тестами
+- Integration тесты проходят с реальными биржами
+- Все regression тесты зеленые
+- Performance соответствует требованиям
+
+### 🟢 ПРОЕКТ ГОТОВ К PRODUCTION КОГДА:
+- ✅ ВСЕ CCXT поля корректно обрабатываются
+- ✅ Система работает с реальными биржами без ошибок
+- ✅ Все тесты проходят
+- ✅ Documentation обновлена
+- ✅ Monitoring настроен
+
+---
+
+## 📞 КРИТИЧЕСКИЕ КОНТАКТЫ
+
+**🚨 EMERGENCY RESPONSE TEAM:**
+- **Technical Lead:** Немедленная мобилизация для исправления
+- **Senior Developer:** Полная занятость на CCXT compliance  
+- **QA Lead:** Критическое тестирование на каждом этапе
+- **DevOps:** Database migration и monitoring
+- **Product Owner:** Принятие решений по breaking changes
+
+**📅 КРИТИЧЕСКИЕ MILESTONE REVIEWS:**
+- **Day 2:** Этап 1 - Order Entity & Database
+- **Day 7:** Этап 2 - Core Services Rewrite  
+- **Day 10:** Этап 3 - Testing Complete
+- **Day 12:** Этап 4 - Production Ready
+
+**🔴 ESCALATION PROCEDURE:**
+При любых блокерах или критических проблемах - немедленная эскалация на Technical Lead
+
+---
+
+## 📎 CRITICAL APPENDICES
+
+### A. CCXT Reference Structures - ОБРАЗЦЫ для копирования
+### B. Migration Scripts - ГОТОВЫЕ к выполнению  
+### C. Test Data Samples - РЕАЛЬНЫЕ данные от бирж
+### D. Performance Benchmarks - ТРЕБОВАНИЯ производительности
+### E. Emergency Rollback Procedures - ПЛАН отката
+
+---
+
+**🔴 КРИТИЧЕСКОЕ ВНИМАНИЕ: Этот план является БЛОКИРУЮЩИМ для ВСЕХ других разработок до ПОЛНОГО исправления всех проблем совместимости с CCXT. СИСТЕМА НЕ РАБОТАЕТ С РЕАЛЬНЫМИ БИРЖАМИ.**
+
+**⚡ НАЧИНАТЬ ИСПРАВЛЕНИЯ НЕМЕДЛЕННО - КАЖДЫЙ ДЕНЬ ЗАДЕРЖКИ УВЕЛИЧИВАЕТ РИСКИ.**
 ```
 
 ### 📄 `CLAUDE.md`
@@ -2374,6 +3281,35 @@ class CachedIndicatorService:
 **Главное**: Не изобретать новые сущности, а оптимизировать существующие!
 ```
 
+### 📄 `db_connection_info.md`
+
+```markdown
+Привет, это Gemini.
+
+Я настроил базу данных PostgreSQL для этого проекта. Вот как к ней подключиться:
+
+1.  **Запуск базы данных:**
+    Убедитесь, что у вас установлен Docker и docker-compose. Выполните в корне проекта:
+    ```bash
+    docker-compose up -d
+    ```
+
+2.  **Параметры подключения:**
+    - **Хост:** localhost
+    - **Порт:** 5432
+    - **Пользователь:** user
+    - **Пароль:** password
+    - **Имя БД:** autotrade
+
+3.  **Строка подключения (psql):**
+    ```bash
+    PGPASSWORD=password psql -h localhost -p 5432 -U user -d autotrade
+    ```
+
+Это все, что нужно для начала работы. База данных готова к приему подключений от приложения.
+
+```
+
 ### 📄 `GEMINI.md`
 
 ```markdown
@@ -3486,7 +4422,7 @@ def main():
     """Главная функция"""
     # Захардкоженный путь к проекту
     project_path = r"F:\HOME\new_autotrade"
-    output_file = r"F:\HOME\new_autotrade\src\autotrade_complete_code.md"
+    output_file = r"/autotrade_complete_code.md"
 
     print(f"🎯 Собираем код проекта: {project_path}")
     print(f"📝 Выходной файл: {output_file}")
@@ -3508,9 +4444,36 @@ if __name__ == "__main__":
     main()
 ```
 
+### 📄 `_postgresql\__init__.py`
+
+```python
+"""
+Tests for PostgreSQL repository implementations.
+
+This module contains comprehensive unit tests for all PostgreSQL repository
+implementations in the AutoTrade v2.4.0 refactoring project. The tests cover:
+
+- PostgreSQLIndicatorRepository: Technical indicators storage and analysis
+- PostgreSQLOrderBookRepository: Order book data and liquidity analysis  
+- PostgreSQLTradingSignalRepository: Trading signals and consensus analysis
+- PostgreSQLStatisticsRepository: System metrics and performance statistics
+- PostgreSQLConfigurationRepository: Dynamic configuration management
+- PostgreSQLCacheRepository: Caching with TTL support
+
+All tests use mock database managers to ensure isolation and fast execution.
+The tests verify:
+- Basic CRUD operations
+- Data validation and type conversion
+- Error handling and edge cases
+- Concurrent operations
+- Database-specific features (aggregations, analytics, etc.)
+"""
+```
+
 ### 📄 `main.py`
 
 ```python
+
 # main.py - Полностью исправленная версия с особым запуском для Windows
 import asyncio
 import sys
@@ -3522,9 +4485,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 # --- Условная настройка для Windows ---
-# Этот блок должен быть в самом верху, до любых вызовов asyncio
 if sys.platform == "win32":
-    # Устанавливаем политику цикла событий ДО его создания
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     try:
         import win32api
@@ -3535,58 +4496,43 @@ else:
     win32api = None
 
 # --- Основные импорты проекта ---
-# Добавляем src в sys.path ПЕРЕД всеми импортами из проекта
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-from domain.entities.currency_pair import CurrencyPair
-from domain.services.deals.deal_service import DealService
-from domain.services.orders.order_service import OrderService
-from domain.services.orders.order_execution_service import OrderExecutionService
-from domain.services.orders.buy_order_monitor import BuyOrderMonitor
-from domain.factories.order_factory import OrderFactory
-from domain.factories.deal_factory import DealFactory
-from infrastructure.repositories.deals_repository import InMemoryDealsRepository
-from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-from config.config_loader import load_config
-from application.use_cases.run_realtime_trading import run_realtime_trading
-from domain.services.risk.stop_loss_monitor import StopLossMonitor
-from domain.services.deals.deal_completion_monitor import DealCompletionMonitor
-from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
+from src.domain.entities.currency_pair import CurrencyPair
+from src.domain.services.deals.deal_service import DealService
+from src.domain.services.orders.order_service import OrderService
+from src.domain.services.orders.order_execution_service import OrderExecutionService
+from src.domain.services.orders.buy_order_monitor import BuyOrderMonitor
+from src.domain.factories.order_factory import OrderFactory
+from src.domain.factories.deal_factory import DealFactory
+from src.infrastructure.repositories.deals_repository import InMemoryDealsRepository
+from src.infrastructure.repositories.orders_repository import InMemoryOrdersRepository
+from src.infrastructure.repositories.in_memory_state_repository import InMemoryStateRepository
+from src.domain.services.state.state_management_service import StateManagementService
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.config.config_loader import load_config
+from src.application.use_cases.run_realtime_trading import run_realtime_trading
+from src.domain.services.risk.stop_loss_monitor import StopLossMonitor
+from src.domain.services.deals.deal_completion_monitor import DealCompletionMonitor
+from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
 
-# Загружаем переменные окружения из .env файла
 load_dotenv()
 
 # Настройка логирования
 log_dir = "logs"
 if not os.path.exists(log_dir):
     os.makedirs(log_dir)
-
-# Имя файла лога с временной меткой
 log_filename = f"autotrade_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
 log_filepath = os.path.join(log_dir, log_filename)
-
-# Создаем обработчики с явным указанием кодировки UTF-8
 file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
-stream_handler = logging.StreamHandler(sys.stdout) # Используем sys.stdout для лучшей совместимости
-
-# Устанавливаем форматтер для обоих обработчиков
+stream_handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 stream_handler.setFormatter(formatter)
-
-# Настраиваем корневой логгер
-logging.basicConfig(
-    level=logging.INFO,
-    handlers=[
-        file_handler,
-        stream_handler
-    ]
-)
+logging.basicConfig(level=logging.INFO, handlers=[file_handler, stream_handler])
 logger = logging.getLogger(__name__)
 
 def time_sync_windows():
-    """Синхронизация времени с серверами Binance для Windows."""
     if not win32api:
         return
     try:
@@ -3601,7 +4547,6 @@ def time_sync_windows():
         logger.warning(f"⚠️ Не удалось синхронизировать время: {e}")
 
 async def main():
-    """🚀 ГЛАВНАЯ функция с интеграцией OrderExecutionService и мониторинга"""
     if sys.platform == "win32":
         time_sync_windows()
 
@@ -3612,39 +4557,48 @@ async def main():
     symbol_ccxt = f"{base_currency}{quote_currency}"
     symbol_display = f"{base_currency}/{quote_currency}"
 
-    logger.info(f"🚀 ЗАПУСК AutoTrade v2.3.0 для {symbol_display}")
+    logger.info(f"🚀 ЗАПУСК AutoTrade v2.4.0 для {symbol_display}")
     
+    state_service = None
     buy_order_monitor = None
     stop_loss_monitor = None
     pro_exchange_connector_prod = None
     pro_exchange_connector_sandbox = None
 
     try:
-        # 1. Инициализация коннекторов
+        # 1. Инициализация репозиториев
+        db_manager = DatabaseManager(config['database'])
+        await db_manager.connect()
+        deals_repo = PostgreSQLDealsRepository(db_manager)
+        orders_repo = PostgreSQLOrdersRepository(db_manager)
+        state_repo = InMemoryStateRepository() # Оставляем InMemory для состояния сессии
+        logger.info("✅ Репозитории созданы (PostgreSQL, InMemoryState)")
+
+        # 2. Инициализация StateManagementService
+        state_service = StateManagementService(state_repo, deals_repo, orders_repo)
+        await state_service.initialize()
+        logger.info("✅ StateManagementService инициализирован")
+
+        # 3. Инициализация коннекторов
         pro_exchange_connector_prod = CcxtExchangeConnector(use_sandbox=False)
         pro_exchange_connector_sandbox = CcxtExchangeConnector(use_sandbox=True)
         logger.info("✅ Коннекторы инициализированы (Production, Sandbox)")
 
-        # 2. Инициализация репозиториев
-        deals_repo = InMemoryDealsRepository()
-        orders_repo = InMemoryOrdersRepository(max_orders=50000)
-        logger.info("✅ Репозитории созданы (InMemory)")
-
-        # 3. Инициализация фабрик
+        # 4. Инициализация фабрик
         order_factory = OrderFactory()
         symbol_info = await pro_exchange_connector_prod.get_symbol_info(symbol_ccxt)
         order_factory.update_exchange_info(symbol_ccxt, symbol_info)
         deal_factory = DealFactory(order_factory)
         logger.info(f"✅ Фабрики созданы, Exchange info для {symbol_ccxt} загружена")
 
-        # 4. Инициализация сервисов
+        # 5. Инициализация сервисов
         order_service = OrderService(orders_repo, order_factory, pro_exchange_connector_sandbox, currency_pair_symbol=symbol_ccxt)
         deal_service = DealService(deals_repo, order_service, deal_factory, pro_exchange_connector_sandbox)
         order_execution_service = OrderExecutionService(order_service, deal_service, pro_exchange_connector_sandbox)
         orderbook_analyzer = OrderBookAnalyzer(config.get("orderbook_analyzer", {}))
         logger.info("✅ Основные сервисы созданы")
 
-        # 5. Инициализация мониторинга
+        # 6. Инициализация мониторинга
         buy_order_monitor_cfg = config.get("buy_order_monitor", {})
         buy_order_monitor = BuyOrderMonitor(
             order_service=order_service,
@@ -3657,25 +4611,18 @@ async def main():
         asyncio.create_task(buy_order_monitor.start_monitoring())
         logger.info("✅ BuyOrderMonitor запущен")
 
-        # 5.2. Запуск мониторинга завершения сделок
-        deal_completion_monitor = DealCompletionMonitor(
-            deal_service=deal_service,
-            order_service=order_service,
-            check_interval_seconds=30  # Проверка каждые 30 секунд
-        )
+        deal_completion_monitor = DealCompletionMonitor(deal_service=deal_service, order_service=order_service, check_interval_seconds=30)
         asyncio.create_task(deal_completion_monitor.start_monitoring())
         logger.info("✅ DealCompletionMonitor запущен")
 
         risk_config = config.get("risk_management", {})
         if risk_config.get("enable_stop_loss", False):
-            # Получаем настройки умного стоп-лосса
             smart_config = risk_config.get("smart_stop_loss", {})
-            
             stop_loss_monitor = StopLossMonitor(
                 deal_service=deal_service,
                 order_execution_service=order_execution_service,
                 exchange_connector=pro_exchange_connector_sandbox,
-                orderbook_analyzer=orderbook_analyzer,  # Добавляем анализатор стакана
+                orderbook_analyzer=orderbook_analyzer,
                 stop_loss_percent=risk_config.get("stop_loss_percent", 2.0),
                 check_interval_seconds=risk_config.get("stop_loss_check_interval_seconds", 60),
                 warning_percent=smart_config.get("warning_percent", 5.0),
@@ -3685,7 +4632,7 @@ async def main():
             asyncio.create_task(stop_loss_monitor.start_monitoring())
             logger.info("✅ StopLossMonitor запущен с умным анализом стакана")
 
-        # 6. Проверка подключения и баланса
+        # 7. Проверка подключения и баланса
         if not await pro_exchange_connector_sandbox.test_connection():
             logger.error("❌ Подключение к бирже неудачно. Завершение работы...")
             return
@@ -3694,23 +4641,22 @@ async def main():
         usdt_balance = balance.get('USDT', {}).get('free', 0.0)
         logger.info(f"💰 Доступный баланс в песочнице: {usdt_balance:.4f} USDT")
 
-        # 7. Создание объекта CurrencyPair
+        # 8. Создание объекта CurrencyPair
         currency_pair = CurrencyPair(
             base_currency=base_currency,
             quote_currency=quote_currency,
             symbol=symbol_ccxt,
             deal_quota=pair_cfg.get("deal_quota", 100.0),
             deal_count=pair_cfg.get("deal_count", 1),
-            profit_markup=pair_cfg.get("profit_markup", 0.005)  # 0.5%
+            profit_markup=pair_cfg.get("profit_markup", 0.005)
         )
-        # ЗАГРУЗКА АКТУАЛЬНЫХ ДАННЫХ С БИРЖИ
         markets = await pro_exchange_connector_prod.load_markets()
         market_details = markets.get(currency_pair.symbol)
         if market_details:
             currency_pair.update_exchange_info(market_details)
             logger.info(f"✅ Config updated with precision and limits for {currency_pair.symbol}")
 
-        # 8. Запуск основного цикла торговли
+        # 9. Запуск основного цикла торговли
         logger.info("="*80)
         logger.info("🚀 СИСТЕМА ГОТОВА К ЗАПУСКУ ТОРГОВЛИ")
         logger.info(f'   - Валютная пара: {symbol_display}')
@@ -3718,27 +4664,31 @@ async def main():
         logger.info(f'   - Режим: Sandbox (безопасно)')
         logger.info("="*80)
 
+        await state_service.start_trading_session(symbol_ccxt)
+
         await run_realtime_trading(
             pro_exchange_connector_prod=pro_exchange_connector_prod,
             pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
             currency_pair=currency_pair,
             deal_service=deal_service,
             order_execution_service=order_execution_service,
-            buy_order_monitor=buy_order_monitor, # Возвращено
+            buy_order_monitor=buy_order_monitor,
             orderbook_analyzer=orderbook_analyzer,
-            deal_completion_monitor=deal_completion_monitor,  # Добавлен новый параметр
-            stop_loss_monitor=stop_loss_monitor if 'stop_loss_monitor' in locals() else None  # Передаем StopLossMonitor
+            deal_completion_monitor=deal_completion_monitor,
+            stop_loss_monitor=stop_loss_monitor
         )
 
     except Exception as e:
         logger.error(f"❌ Критическая ошибка в main(): {e}", exc_info=True)
+        if state_service:
+            await state_service.emergency_shutdown()
     finally:
         logger.info("🔴 Завершение работы, закрытие соединений...")
+        if state_service:
+            await state_service.request_graceful_shutdown()
         if buy_order_monitor:
             buy_order_monitor.stop_monitoring()
-        if 'deal_completion_monitor' in locals() and deal_completion_monitor:
-            deal_completion_monitor.stop_monitoring()
-        if 'stop_loss_monitor' in locals() and stop_loss_monitor:
+        if stop_loss_monitor:
             stop_loss_monitor.stop_monitoring()
         if pro_exchange_connector_prod:
             await pro_exchange_connector_prod.close()
@@ -3746,11 +4696,8 @@ async def main():
             await pro_exchange_connector_sandbox.close()
         logger.info("👋 AutoTrade завершен")
 
-# --- Специальный запуск для Windows и других систем ---
 if __name__ == "__main__":
     try:
-        # Этот метод запуска является более надежным в сложных окружениях,
-        # таких как запуск под отладчиком в Windows.
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(main())
@@ -3760,6 +4707,7 @@ if __name__ == "__main__":
         logger.error(f"❌ Критическая ошибка при запуске: {e}", exc_info=True)
     finally:
         logger.info("👋 AutoTrade завершен")
+
 ```
 
 ### 📄 `order_history_viewer.py`
@@ -4324,7 +5272,13 @@ from domain.services.deals.deal_service import DealService
 from domain.services.market_data.orderbook_analyzer import OrderBookSignal
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
-from domain.services.market_data.ticker_service import TickerService
+from domain.services.market_data.refactored_ticker_service import RefactoredTickerService
+from domain.services.market_data.ticker_processor import TickerProcessor
+from domain.services.indicators.indicator_calculation_service import IndicatorCalculationService
+from domain.services.signals.signal_generation_service import SignalGenerationService
+from infrastructure.repositories.stream_data_repository import InMemoryStreamDataRepository
+from infrastructure.repositories.indicator_repository import InMemoryIndicatorRepository
+from infrastructure.repositories.trading_signal_repository import InMemoryTradingSignalRepository
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.trading.signal_cooldown_manager import SignalCooldownManager
 from domain.services.utils.orderbook_cache import OrderBookCache
@@ -4347,8 +5301,20 @@ async def run_realtime_trading(
 ):
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
-    repository = InMemoryTickerRepository(max_size=5000)
-    ticker_service = TickerService(repository)
+    stream_repo = InMemoryStreamDataRepository()
+    indicator_repo = InMemoryIndicatorRepository()
+    signal_repo = InMemoryTradingSignalRepository()
+
+    ticker_processor = TickerProcessor(stream_repo)
+    indicator_service = IndicatorCalculationService(stream_repo, indicator_repo)
+    signal_service = SignalGenerationService(signal_repo)
+
+    refactored_ticker_service = RefactoredTickerService(
+        ticker_processor,
+        indicator_service,
+        signal_service
+    )
+    
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
     
@@ -4379,19 +5345,11 @@ async def run_realtime_trading(
                 ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
 
                 start_process = time.time()
-                await ticker_service.process_ticker(ticker_data)
+                await refactored_ticker_service.process_ticker(currency_pair.symbol, ticker_data)
                 end_process = time.time()
 
                 processing_time = end_process - start_process
                 counter += 1
-
-                if len(repository.tickers) < 50:
-                    if counter % 100 == 0:
-                        logger.info(
-                            "🟡 Накоплено %s тиков, нужно 50",
-                            len(repository.tickers),
-                        )
-                    continue
 
                 # Периодически обновляем кеш стакана для стоп-лосса
                 if counter - last_orderbook_update >= orderbook_update_interval:
@@ -4403,16 +5361,7 @@ async def run_realtime_trading(
                     except Exception as e:
                         logger.debug(f"⚠️ Не удалось обновить кеш стакана: {e}")
 
-                ticker_signal = await ticker_service.get_signal()
-
-                if len(repository.tickers) > 0:
-                    last_ticker = repository.tickers[-1]
-                    signals_count = len(last_ticker.signals) if last_ticker.signals else 0
-                    logger_perf.log_tick(
-                        price=float(last_ticker.close),
-                        processing_time=processing_time,
-                        signals_count=signals_count,
-                    )
+                ticker_signal = await refactored_ticker_service.get_signal(currency_pair.symbol)
 
                 if ticker_signal == "BUY":
                     # Анализ стакана
@@ -4427,104 +5376,103 @@ async def run_realtime_trading(
                     # Синхронизация ордеров перед принятием решения
                     await order_execution_service.monitor_active_orders()
 
-                    if len(repository.tickers) > 0:
-                        last_ticker = repository.tickers[-1]
-                        if last_ticker.signals:
-                            current_price = float(last_ticker.close)
+                    current_price = await refactored_ticker_service.get_latest_price(currency_pair.symbol)
 
-                            active_deals_count = len(deal_service.get_open_deals())
-                            can_buy, reason = cooldown_manager.can_buy(
-                                active_deals_count=active_deals_count,
-                                max_deals=currency_pair.deal_count,
+                    if current_price:
+                        active_deals_count = len(deal_service.get_open_deals())
+                        can_buy, reason = cooldown_manager.can_buy(
+                            active_deals_count=active_deals_count,
+                            max_deals=currency_pair.deal_count,
+                        )
+
+                        if not can_buy:
+                            if counter % 20 == 0:
+                                logger.info(
+                                    "🚫 BUY заблокирован: %s | Цена: %s",
+                                    reason,
+                                    current_price,
+                                )
+                            continue
+
+                        logger.info("\n" + "=" * 80)
+                        logger.info(
+                            "🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService..."
+                        )
+                        logger.info("=" * 80)
+
+                        all_indicators = await refactored_ticker_service.get_all_indicators(currency_pair.symbol)
+                        macd = all_indicators.get('macd', 0.0)
+                        signal = all_indicators.get('macd_signal', 0.0)
+                        hist = all_indicators.get('macd_histogram', 0.0)
+
+                        logger.info("   📈 MACD > Signal: %.6f > %.6f", macd, signal)
+                        logger.info("   📊 Histogram: %.6f", hist)
+                        logger.info("   💰 Текущая цена: %s USDT", current_price)
+                        logger.info(
+                            "   🎯 Активных сделок: %s/%s",
+                            active_deals_count,
+                            currency_pair.deal_count,
+                        )
+
+                        try:
+                            # Используем бюджет из currency_pair
+                            budget = currency_pair.deal_quota
+
+                            # Проверка баланса перед выполнением
+                            balance_ok, balance_reason = await deal_service.check_balance_before_deal(
+                                quote_currency=currency_pair.quote_currency,
+                                required_amount=budget
                             )
-
-                            if not can_buy:
-                                if counter % 20 == 0:
-                                    logger.info(
-                                        "🚫 BUY заблокирован: %s | Цена: %s",
-                                        reason,
-                                        current_price,
-                                    )
+                            if not balance_ok:
+                                logger.error(f"❌ Недостаточно средств: {balance_reason}")
                                 continue
 
-                            logger.info("\n" + "=" * 80)
-                            logger.info(
-                                "🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ВЫПОЛНЯЕМ ЧЕРЕЗ OrderExecutionService..."
-                            )
-                            logger.info("=" * 80)
-
-                            macd = last_ticker.signals.get('macd', 0.0)
-                            signal = last_ticker.signals.get('signal', 0.0)
-                            hist = last_ticker.signals.get('histogram', 0.0)
-
-                            logger.info("   📈 MACD > Signal: %.6f > %.6f", macd, signal)
-                            logger.info("   📊 Histogram: %.6f", hist)
-                            logger.info("   💰 Текущая цена: %s USDT", current_price)
-                            logger.info(
-                                "   🎯 Активных сделок: %s/%s",
-                                active_deals_count,
-                                currency_pair.deal_count,
+                            strategy_result = refactored_ticker_service.calculate_strategy(
+                                buy_price=current_price,
+                                budget=budget,
+                                currency_pair=currency_pair,
+                                profit_percent=currency_pair.profit_markup,
                             )
 
-                            try:
-                                # Используем бюджет из currency_pair
-                                budget = currency_pair.deal_quota
-
-                                # Проверка баланса перед выполнением
-                                balance_ok, balance_reason = await deal_service.check_balance_before_deal(
-                                    quote_currency=currency_pair.quote_currency,
-                                    required_amount=budget
+                            if isinstance(strategy_result, dict) and "comment" in strategy_result:
+                                logger.error(
+                                    "❌ Ошибка в калькуляторе: %s",
+                                    strategy_result["comment"],
                                 )
-                                if not balance_ok:
-                                    logger.error(f"❌ Недостаточно средств: {balance_reason}")
-                                    continue
+                                continue
 
-                                strategy_result = ticker_service.calculate_strategy(
-                                    buy_price=current_price,
-                                    budget=budget,
-                                    currency_pair=currency_pair,
-                                    profit_percent=currency_pair.profit_markup,
-                                )
-
-                                if isinstance(strategy_result, dict) and "comment" in strategy_result:
-                                    logger.error(
-                                        "❌ Ошибка в калькуляторе: %s",
-                                        strategy_result["comment"],
-                                    )
-                                    continue
-
-                                logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
-                                execution_result = await order_execution_service.execute_trading_strategy(
-                                    currency_pair=currency_pair,
-                                    strategy_result=strategy_result,
-                                    metadata={
-                                        'trigger': 'macd_signal',
-                                        'macd_data': {
-                                            'macd': macd,
-                                            'signal': signal,
-                                            'histogram': hist,
-                                        },
-                                        'market_price': current_price,
-                                        'timestamp': int(time.time() * 1000),
+                            logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
+                            execution_result = await order_execution_service.execute_trading_strategy(
+                                currency_pair=currency_pair,
+                                strategy_result=strategy_result,
+                                metadata={
+                                    'trigger': 'macd_signal',
+                                    'macd_data': {
+                                        'macd': macd,
+                                        'signal': signal,
+                                        'histogram': hist,
                                     },
+                                    'market_price': current_price,
+                                    'timestamp': int(time.time() * 1000),
+                                },
+                            )
+
+                            if execution_result.success:
+                                logger.info("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
+                            else:
+                                logger.error(
+                                    "❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА: %s",
+                                    execution_result.error_message,
                                 )
 
-                                if execution_result.success:
-                                    logger.info("🎉 СТРАТЕГИЯ ВЫПОЛНЕНА УСПЕШНО!")
-                                else:
-                                    logger.error(
-                                        "❌ СТРАТЕГИЯ НЕ ВЫПОЛНЕНА: %s",
-                                        execution_result.error_message,
-                                    )
+                        except Exception as calc_error:
+                            logger.exception(
+                                "❌ Ошибка в стратегии: %s",
+                                calc_error,
+                            )
 
-                            except Exception as calc_error:
-                                logger.exception(
-                                    "❌ Ошибка в стратегии: %s",
-                                    calc_error,
-                                )
-
-                            logger.info("=" * 80)
-                            logger.info("🔄 Продолжаем мониторинг...\n")
+                        logger.info("=" * 80)
+                        logger.info("🔄 Продолжаем мониторинг...\n")
 
                 if counter % 50 == 0:  # Изменено с 100 на 50 для более частого вывода
                     # Запускаем обработчик исполненных BUY ордеров
@@ -4667,6 +5615,1094 @@ async def run_realtime_trading(
 
 ```python
 """Domain entities for the trading system."""
+```
+
+### 📄 `src\domain\entities\application_state.py`
+
+```python
+from dataclasses import dataclass, field
+from typing import Dict, List, Any, Optional
+from datetime import datetime
+from enum import Enum
+
+from src.domain.entities.deal import Deal
+from src.domain.entities.order import Order
+
+
+class ApplicationState(Enum):
+    """Состояния приложения"""
+    STARTING = "starting"
+    RUNNING = "running"
+    PAUSING = "pausing"
+    PAUSED = "paused"
+    STOPPING = "stopping"
+    STOPPED = "stopped"
+    ERROR = "error"
+    RECOVERY = "recovery"
+
+
+class ShutdownReason(Enum):
+    """Причины остановки приложения"""
+    USER_REQUEST = "user_request"
+    GRACEFUL_SHUTDOWN = "graceful_shutdown"
+    ERROR_SHUTDOWN = "error_shutdown"
+    EMERGENCY_STOP = "emergency_stop"
+    SYSTEM_SIGNAL = "system_signal"
+    MAINTENANCE = "maintenance"
+
+
+@dataclass
+class TradingSessionState:
+    """Состояние торговой сессии"""
+    session_id: str
+    currency_pair: str
+    is_active: bool
+    start_timestamp: int
+    last_activity_timestamp: int
+    active_deals_count: int
+    open_orders_count: int
+    total_profit: float = 0.0
+    total_fees: float = 0.0
+    processed_tickers: int = 0
+    generated_signals: int = 0
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class SystemSnapshot:
+    """Снимок состояния системы"""
+    snapshot_id: str
+    timestamp: int
+    application_state: ApplicationState
+    trading_sessions: List[TradingSessionState] = field(default_factory=list)
+    active_deals: List[Dict[str, Any]] = field(default_factory=list)
+    pending_orders: List[Dict[str, Any]] = field(default_factory=list)
+    system_metrics: Dict[str, Any] = field(default_factory=dict)
+    configuration_checksum: Optional[str] = None
+    error_info: Optional[Dict[str, Any]] = None
+
+
+@dataclass 
+class RecoveryInfo:
+    """Информация для восстановления"""
+    snapshot_id: str
+    created_at: int
+    application_version: str
+    recovery_priority: int = 1  # 1=highest, 5=lowest
+    recovery_notes: Optional[str] = None
+    validation_status: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class StateTransition:
+    """Переход состояний"""
+    from_state: ApplicationState
+    to_state: ApplicationState
+    timestamp: int
+    reason: str
+    success: bool
+    duration_ms: Optional[int] = None
+    error_message: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ApplicationStateInfo:
+    """Полная информация о состоянии приложения"""
+    current_state: ApplicationState
+    previous_state: Optional[ApplicationState] = None
+    state_changed_at: Optional[int] = None
+    uptime_seconds: int = 0
+    restart_count: int = 0
+    last_shutdown_reason: Optional[ShutdownReason] = None
+    last_error: Optional[Dict[str, Any]] = None
+    
+    # Операционная информация
+    trading_active: bool = False
+    maintenance_mode: bool = False
+    safe_shutdown_requested: bool = False
+    emergency_stop_active: bool = False
+    
+    # Статистика сессии
+    session_start_time: Optional[int] = None
+    deals_processed: int = 0
+    orders_processed: int = 0
+    errors_count: int = 0
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразовать в словарь для сериализации"""
+        return {
+            'current_state': self.current_state.value,
+            'previous_state': self.previous_state.value if self.previous_state else None,
+            'state_changed_at': self.state_changed_at,
+            'uptime_seconds': self.uptime_seconds,
+            'restart_count': self.restart_count,
+            'last_shutdown_reason': self.last_shutdown_reason.value if self.last_shutdown_reason else None,
+            'last_error': self.last_error,
+            'trading_active': self.trading_active,
+            'maintenance_mode': self.maintenance_mode,
+            'safe_shutdown_requested': self.safe_shutdown_requested,
+            'emergency_stop_active': self.emergency_stop_active,
+            'session_start_time': self.session_start_time,
+            'deals_processed': self.deals_processed,
+            'orders_processed': self.orders_processed,
+            'errors_count': self.errors_count
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ApplicationStateInfo':
+        """Создать из словаря"""
+        return cls(
+            current_state=ApplicationState(data['current_state']),
+            previous_state=ApplicationState(data['previous_state']) if data.get('previous_state') else None,
+            state_changed_at=data.get('state_changed_at'),
+            uptime_seconds=data.get('uptime_seconds', 0),
+            restart_count=data.get('restart_count', 0),
+            last_shutdown_reason=ShutdownReason(data['last_shutdown_reason']) if data.get('last_shutdown_reason') else None,
+            last_error=data.get('last_error'),
+            trading_active=data.get('trading_active', False),
+            maintenance_mode=data.get('maintenance_mode', False),
+            safe_shutdown_requested=data.get('safe_shutdown_requested', False),
+            emergency_stop_active=data.get('emergency_stop_active', False),
+            session_start_time=data.get('session_start_time'),
+            deals_processed=data.get('deals_processed', 0),
+            orders_processed=data.get('orders_processed', 0),
+            errors_count=data.get('errors_count', 0)
+        )
+```
+
+### 📄 `src\domain\entities\ccxt_currency_pair.py`
+
+```python
+# domain/entities/ccxt_currency_pair.py
+import logging
+import time
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CCXTMarketInfo:
+    """
+    🚀 CCXT Market Information Structure
+    
+    Содержит полную информацию о торговой паре в формате CCXT market structure
+    """
+    # CCXT основные поля
+    id: str                                    # биржевой идентификатор (BTCUSDT)
+    symbol: str                               # стандартизированный символ (BTC/USDT)
+    base: str                                 # базовая валюта (BTC)
+    quote: str                                # котируемая валюта (USDT)
+    base_id: Optional[str] = None             # ID базовой валюты на бирже
+    quote_id: Optional[str] = None            # ID котируемой валюты на бирже
+    active: bool = True                       # активность торговой пары
+    
+    # CCXT типы рынков
+    type: str = 'spot'                        # тип рынка
+    spot: bool = True                         # доступность спот торговли
+    margin: bool = False                      # доступность маржинальной торговли
+    future: bool = False                      # доступность фьючерсной торговли
+    swap: bool = False                        # доступность своп торговли
+    option: bool = False                      # доступность опционной торговли
+    contract: bool = False                    # контрактная торговля
+    linear: Optional[bool] = None             # линейные контракты
+    inverse: Optional[bool] = None            # обратные контракты
+    
+    # CCXT точность (precision)
+    precision: Dict[str, Any] = field(default_factory=lambda: {
+        'amount': 8,
+        'price': 2,
+        'cost': 8
+    })
+    
+    # CCXT лимиты (limits)
+    limits: Dict[str, Any] = field(default_factory=lambda: {
+        'amount': {'min': 0.00001, 'max': None},
+        'price': {'min': 0.01, 'max': None},
+        'cost': {'min': 10, 'max': None},
+        'leverage': {'min': None, 'max': None}
+    })
+    
+    # CCXT комиссии (fees)
+    maker: float = 0.001                      # комиссия мейкера
+    taker: float = 0.001                      # комиссия тейкера
+    
+    # CCXT дополнительная информация
+    info: Dict[str, Any] = field(default_factory=dict)  # полный ответ от биржи
+    
+    # AutoTrade дополнительные поля
+    last_updated: Optional[int] = None        # время последнего обновления
+    
+    def __post_init__(self):
+        if self.last_updated is None:
+            self.last_updated = int(time.time() * 1000)
+
+
+class CCXTCurrencyPair:
+    """
+    🚀 CCXT COMPLIANT Currency Pair Entity
+    
+    Полностью совместимая с CCXT сущность торговой пары.
+    Интегрируется с CCXT markets и поддерживает все стандартные поля CCXT.
+    
+    Основные возможности:
+    - Загрузка данных из CCXT markets
+    - Валидация торговых параметров
+    - Расчет торговых размеров с учетом precision
+    - Проверка лимитов ордеров
+    - Кэширование market data
+    """
+
+    def __init__(
+        self,
+        symbol: str,
+        base_currency: Optional[str] = None,
+        quote_currency: Optional[str] = None,
+        # AutoTrade торговые параметры
+        order_life_time: int = 60,              # время жизни ордера в минутах
+        deal_quota: float = 100.0,              # размер сделки в quote валюте
+        profit_markup: float = 0.015,           # желаемый профит (1.5%)
+        deal_count: int = 1,                    # максимальное количество открытых сделок
+        # Дополнительные настройки
+        enable_auto_update: bool = True,        # автообновление данных с биржи
+        cache_ttl_seconds: int = 300           # TTL кэша market data (5 минут)
+    ):
+        # Парсинг символа
+        if '/' in symbol:
+            self.symbol = symbol
+            if not base_currency or not quote_currency:
+                parts = symbol.split('/')
+                self.base_currency = base_currency or parts[0]
+                self.quote_currency = quote_currency or parts[1]
+            else:
+                self.base_currency = base_currency
+                self.quote_currency = quote_currency
+        else:
+            # Попытка парсинга без разделителя (BTCUSDT -> BTC/USDT)
+            self.base_currency = base_currency
+            self.quote_currency = quote_currency
+            if base_currency and quote_currency:
+                self.symbol = f"{base_currency}/{quote_currency}"
+            else:
+                # Попытка автоматического парсинга популярных пар
+                parsed = self._parse_symbol_without_separator(symbol)
+                if parsed:
+                    self.base_currency, self.quote_currency = parsed
+                    self.symbol = f"{self.base_currency}/{self.quote_currency}"
+                else:
+                    raise ValueError(f"Cannot parse symbol: {symbol}")
+
+        # AutoTrade параметры
+        self.order_life_time = order_life_time
+        self.deal_quota = deal_quota
+        self.profit_markup = profit_markup
+        self.deal_count = deal_count
+        
+        # Настройки
+        self.enable_auto_update = enable_auto_update
+        self.cache_ttl_seconds = cache_ttl_seconds
+        
+        # CCXT market информация
+        self.market_info: Optional[CCXTMarketInfo] = None
+        self._market_cache_time: float = 0
+        
+        # Статистика
+        self.stats = {
+            'market_updates': 0,
+            'validation_checks': 0,
+            'calculation_operations': 0,
+            'last_activity': int(time.time() * 1000)
+        }
+
+    # ===== CCXT INTEGRATION METHODS =====
+
+    def update_from_ccxt_market(self, ccxt_market: Dict[str, Any]) -> bool:
+        """
+        Обновляет торговую пару данными из CCXT market structure
+        """
+        try:
+            # Валидируем CCXT market structure
+            if not self._validate_ccxt_market(ccxt_market):
+                logger.error(f"Invalid CCXT market structure for {self.symbol}")
+                return False
+
+            # Создаем CCXTMarketInfo из CCXT данных
+            self.market_info = CCXTMarketInfo(
+                id=ccxt_market.get('id', ''),
+                symbol=ccxt_market.get('symbol', self.symbol),
+                base=ccxt_market.get('base', self.base_currency),
+                quote=ccxt_market.get('quote', self.quote_currency),
+                base_id=ccxt_market.get('baseId'),
+                quote_id=ccxt_market.get('quoteId'),
+                active=ccxt_market.get('active', True),
+                type=ccxt_market.get('type', 'spot'),
+                spot=ccxt_market.get('spot', True),
+                margin=ccxt_market.get('margin', False),
+                future=ccxt_market.get('future', False),
+                swap=ccxt_market.get('swap', False),
+                option=ccxt_market.get('option', False),
+                contract=ccxt_market.get('contract', False),
+                linear=ccxt_market.get('linear'),
+                inverse=ccxt_market.get('inverse'),
+                precision=ccxt_market.get('precision', {}),
+                limits=ccxt_market.get('limits', {}),
+                maker=ccxt_market.get('maker', 0.001),
+                taker=ccxt_market.get('taker', 0.001),
+                info=ccxt_market.get('info', {}),
+                last_updated=int(time.time() * 1000)
+            )
+
+            # Обновляем кэш
+            self._market_cache_time = time.time()
+            
+            # Обновляем статистику
+            self.stats['market_updates'] += 1
+            self.stats['last_activity'] = int(time.time() * 1000)
+
+            logger.debug(f"✅ Updated {self.symbol} with CCXT market data")
+            logger.debug(f"   Precision: {self.market_info.precision}")
+            logger.debug(f"   Limits: {self.market_info.limits}")
+            logger.debug(f"   Fees: maker={self.market_info.maker}, taker={self.market_info.taker}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update {self.symbol} with CCXT market data: {e}")
+            return False
+
+    def is_market_data_fresh(self) -> bool:
+        """
+        Проверяет актуальность market data
+        """
+        if not self.market_info:
+            return False
+        
+        age_seconds = time.time() - self._market_cache_time
+        return age_seconds < self.cache_ttl_seconds
+
+    def get_ccxt_market_dict(self) -> Optional[Dict[str, Any]]:
+        """
+        Возвращает market info в формате CCXT market structure
+        """
+        if not self.market_info:
+            return None
+
+        return {
+            'id': self.market_info.id,
+            'symbol': self.market_info.symbol,
+            'base': self.market_info.base,
+            'quote': self.market_info.quote,
+            'baseId': self.market_info.base_id,
+            'quoteId': self.market_info.quote_id,
+            'active': self.market_info.active,
+            'type': self.market_info.type,
+            'spot': self.market_info.spot,
+            'margin': self.market_info.margin,
+            'future': self.market_info.future,
+            'swap': self.market_info.swap,
+            'option': self.market_info.option,
+            'contract': self.market_info.contract,
+            'linear': self.market_info.linear,
+            'inverse': self.market_info.inverse,
+            'precision': self.market_info.precision,
+            'limits': self.market_info.limits,
+            'maker': self.market_info.maker,
+            'taker': self.market_info.taker,
+            'info': self.market_info.info
+        }
+
+    # ===== TRADING CALCULATIONS =====
+
+    def calculate_order_amount_precision(self, amount: float) -> float:
+        """
+        Рассчитывает точное количество с учетом precision amount
+        """
+        if not self.market_info or 'amount' not in self.market_info.precision:
+            return amount
+
+        precision = self.market_info.precision['amount']
+        
+        if isinstance(precision, int):
+            # Количество знаков после запятой
+            return round(amount, precision)
+        elif isinstance(precision, float):
+            # Шаг округления
+            return round(amount / precision) * precision
+        else:
+            return amount
+
+    def calculate_order_price_precision(self, price: float) -> float:
+        """
+        Рассчитывает точную цену с учетом precision price
+        """
+        if not self.market_info or 'price' not in self.market_info.precision:
+            return price
+
+        precision = self.market_info.precision['price']
+        
+        if isinstance(precision, int):
+            # Количество знаков после запятой
+            return round(price, precision)
+        elif isinstance(precision, float):
+            # Шаг округления
+            return round(price / precision) * precision
+        else:
+            return price
+
+    def calculate_optimal_buy_amount(self, price: float) -> float:
+        """
+        Рассчитывает оптимальное количество для покупки на основе deal_quota
+        """
+        try:
+            # Базовый расчет количества
+            raw_amount = self.deal_quota / price
+            
+            # Применяем precision
+            precise_amount = self.calculate_order_amount_precision(raw_amount)
+            
+            # Проверяем минимальные лимиты
+            if self.market_info and 'amount' in self.market_info.limits:
+                min_amount = self.market_info.limits['amount'].get('min', 0)
+                if precise_amount < min_amount:
+                    logger.warning(f"Calculated amount {precise_amount} below minimum {min_amount}")
+                    precise_amount = min_amount
+            
+            self.stats['calculation_operations'] += 1
+            return precise_amount
+
+        except Exception as e:
+            logger.error(f"Failed to calculate optimal buy amount: {e}")
+            return 0.0
+
+    def calculate_sell_price_with_profit(self, buy_price: float) -> float:
+        """
+        Рассчитывает цену продажи с учетом желаемого профита и комиссий
+        """
+        try:
+            # Учитываем комиссии при расчете профита
+            maker_fee = self.market_info.maker if self.market_info else 0.001
+            taker_fee = self.market_info.taker if self.market_info else 0.001
+            
+            # Общие комиссии (покупка + продажа)
+            total_fee_rate = taker_fee + maker_fee
+            
+            # Цена продажи = цена покупки * (1 + профит + комиссии)
+            sell_price = buy_price * (1 + self.profit_markup + total_fee_rate)
+            
+            # Применяем precision
+            precise_sell_price = self.calculate_order_price_precision(sell_price)
+            
+            self.stats['calculation_operations'] += 1
+            return precise_sell_price
+
+        except Exception as e:
+            logger.error(f"Failed to calculate sell price: {e}")
+            return buy_price * 1.02  # Fallback 2%
+
+    # ===== VALIDATION METHODS =====
+
+    def validate_order_amount(self, amount: float) -> tuple[bool, str]:
+        """
+        Валидирует количество ордера согласно CCXT limits
+        """
+        self.stats['validation_checks'] += 1
+        
+        if not self.market_info:
+            return False, "Market info not available"
+
+        try:
+            limits = self.market_info.limits.get('amount', {})
+            
+            # Проверка минимального количества
+            min_amount = limits.get('min')
+            if min_amount is not None and amount < min_amount:
+                return False, f"Amount {amount} below minimum {min_amount}"
+            
+            # Проверка максимального количества
+            max_amount = limits.get('max')
+            if max_amount is not None and amount > max_amount:
+                return False, f"Amount {amount} above maximum {max_amount}"
+            
+            return True, "Valid"
+
+        except Exception as e:
+            return False, f"Validation error: {str(e)}"
+
+    def validate_order_price(self, price: float) -> tuple[bool, str]:
+        """
+        Валидирует цену ордера согласно CCXT limits
+        """
+        self.stats['validation_checks'] += 1
+        
+        if not self.market_info:
+            return False, "Market info not available"
+
+        try:
+            limits = self.market_info.limits.get('price', {})
+            
+            # Проверка минимальной цены
+            min_price = limits.get('min')
+            if min_price is not None and price < min_price:
+                return False, f"Price {price} below minimum {min_price}"
+            
+            # Проверка максимальной цены
+            max_price = limits.get('max')
+            if max_price is not None and price > max_price:
+                return False, f"Price {price} above maximum {max_price}"
+            
+            return True, "Valid"
+
+        except Exception as e:
+            return False, f"Validation error: {str(e)}"
+
+    def validate_order_cost(self, amount: float, price: float) -> tuple[bool, str]:
+        """
+        Валидирует общую стоимость ордера согласно CCXT limits
+        """
+        self.stats['validation_checks'] += 1
+        
+        if not self.market_info:
+            return False, "Market info not available"
+
+        try:
+            cost = amount * price
+            limits = self.market_info.limits.get('cost', {})
+            
+            # Проверка минимальной стоимости
+            min_cost = limits.get('min')
+            if min_cost is not None and cost < min_cost:
+                return False, f"Order cost {cost} below minimum {min_cost}"
+            
+            # Проверка максимальной стоимости
+            max_cost = limits.get('max')
+            if max_cost is not None and cost > max_cost:
+                return False, f"Order cost {cost} above maximum {max_cost}"
+            
+            return True, "Valid"
+
+        except Exception as e:
+            return False, f"Validation error: {str(e)}"
+
+    def validate_trading_pair(self) -> tuple[bool, List[str]]:
+        """
+        Полная валидация торговой пары
+        """
+        errors = []
+
+        if not self.market_info:
+            errors.append("Market info not loaded")
+            return False, errors
+
+        # Проверка активности
+        if not self.market_info.active:
+            errors.append("Trading pair is not active")
+
+        # Проверка поддержки спот торговли
+        if not self.market_info.spot:
+            errors.append("Spot trading not supported")
+
+        # Проверка базовых параметров
+        if not self.base_currency or not self.quote_currency:
+            errors.append("Base or quote currency not defined")
+
+        # Проверка наличия необходимых precision данных
+        if not self.market_info.precision:
+            errors.append("Precision data missing")
+
+        # Проверка наличия лимитов
+        if not self.market_info.limits:
+            errors.append("Limits data missing")
+
+        return len(errors) == 0, errors
+
+    # ===== HELPER METHODS =====
+
+    def _parse_symbol_without_separator(self, symbol: str) -> Optional[tuple[str, str]]:
+        """
+        Парсинг символа без разделителя (BTCUSDT -> (BTC, USDT))
+        """
+        # Популярные quote валюты в порядке приоритета
+        quote_currencies = ['USDT', 'USDC', 'BUSD', 'BTC', 'ETH', 'BNB', 'USD', 'EUR']
+        
+        for quote in quote_currencies:
+            if symbol.endswith(quote):
+                base = symbol[:-len(quote)]
+                if len(base) >= 2:  # Минимальная длина базовой валюты
+                    return base, quote
+        
+        return None
+
+    def _validate_ccxt_market(self, market_data: Dict[str, Any]) -> bool:
+        """
+        Валидация CCXT market structure
+        """
+        required_fields = ['symbol', 'base', 'quote', 'active']
+        
+        for field in required_fields:
+            if field not in market_data:
+                logger.error(f"Missing required field in CCXT market: {field}")
+                return False
+        
+        return True
+
+    # ===== INFORMATION METHODS =====
+
+    def get_trading_info(self) -> Dict[str, Any]:
+        """
+        Получение полной торговой информации
+        """
+        info = {
+            'symbol': self.symbol,
+            'base_currency': self.base_currency,
+            'quote_currency': self.quote_currency,
+            'autotrade_params': {
+                'order_life_time': self.order_life_time,
+                'deal_quota': self.deal_quota,
+                'profit_markup': self.profit_markup,
+                'deal_count': self.deal_count
+            },
+            'market_data_available': self.market_info is not None,
+            'market_data_fresh': self.is_market_data_fresh(),
+            'stats': self.stats.copy()
+        }
+
+        if self.market_info:
+            info['ccxt_market_info'] = {
+                'id': self.market_info.id,
+                'active': self.market_info.active,
+                'type': self.market_info.type,
+                'precision': self.market_info.precision,
+                'limits': self.market_info.limits,
+                'maker_fee': self.market_info.maker,
+                'taker_fee': self.market_info.taker,
+                'last_updated': self.market_info.last_updated
+            }
+
+        return info
+
+    def get_fees_info(self) -> Dict[str, float]:
+        """
+        Получение информации о комиссиях
+        """
+        if self.market_info:
+            return {
+                'maker': self.market_info.maker,
+                'taker': self.market_info.taker,
+                'total_round_trip': self.market_info.maker + self.market_info.taker
+            }
+        else:
+            return {
+                'maker': 0.001,
+                'taker': 0.001,
+                'total_round_trip': 0.002
+            }
+
+    def update_autotrade_params(
+        self,
+        order_life_time: Optional[int] = None,
+        deal_quota: Optional[float] = None,
+        profit_markup: Optional[float] = None,
+        deal_count: Optional[int] = None
+    ):
+        """
+        Обновление параметров торговли AutoTrade
+        """
+        if order_life_time is not None:
+            self.order_life_time = order_life_time
+        if deal_quota is not None:
+            self.deal_quota = deal_quota
+        if profit_markup is not None:
+            self.profit_markup = profit_markup
+        if deal_count is not None:
+            self.deal_count = deal_count
+
+        self.stats['last_activity'] = int(time.time() * 1000)
+        logger.info(f"Updated AutoTrade params for {self.symbol}")
+
+    def reset_statistics(self):
+        """
+        Сброс статистики
+        """
+        self.stats = {
+            'market_updates': 0,
+            'validation_checks': 0,
+            'calculation_operations': 0,
+            'last_activity': int(time.time() * 1000)
+        }
+
+    # ===== LEGACY COMPATIBILITY =====
+
+    @property
+    def precision(self) -> Dict[str, Any]:
+        """LEGACY: Возвращает precision для обратной совместимости"""
+        return self.market_info.precision if self.market_info else {}
+
+    @property
+    def limits(self) -> Dict[str, Any]:
+        """LEGACY: Возвращает limits для обратной совместимости"""
+        return self.market_info.limits if self.market_info else {}
+
+    @property
+    def taker_fee(self) -> float:
+        """LEGACY: Возвращает taker fee для обратной совместимости"""
+        return self.market_info.taker if self.market_info else 0.001
+
+    @property
+    def maker_fee(self) -> float:
+        """LEGACY: Возвращает maker fee для обратной совместимости"""
+        return self.market_info.maker if self.market_info else 0.001
+
+    def update_exchange_info(self, market_data: Dict[str, Any]):
+        """LEGACY: Для обратной совместимости"""
+        self.update_from_ccxt_market(market_data)
+
+    # ===== STRING REPRESENTATIONS =====
+
+    def __repr__(self):
+        return (f"CCXTCurrencyPair(symbol={self.symbol}, "
+                f"quota={self.deal_quota}, profit={self.profit_markup*100:.1f}%, "
+                f"market_data={'✓' if self.market_info else '✗'})")
+
+    def __str__(self):
+        return f"{self.symbol} ({self.base_currency}/{self.quote_currency})"
+
+
+# ===== FACTORY FUNCTIONS =====
+
+def create_ccxt_currency_pair_from_symbol(symbol: str, **kwargs) -> CCXTCurrencyPair:
+    """
+    Factory function для создания CCXTCurrencyPair из символа
+    """
+    return CCXTCurrencyPair(symbol=symbol, **kwargs)
+
+
+def create_ccxt_currency_pair_from_market(ccxt_market: Dict[str, Any], **kwargs) -> CCXTCurrencyPair:
+    """
+    Factory function для создания CCXTCurrencyPair из CCXT market data
+    """
+    pair = CCXTCurrencyPair(
+        symbol=ccxt_market['symbol'],
+        base_currency=ccxt_market['base'],
+        quote_currency=ccxt_market['quote'],
+        **kwargs
+    )
+    
+    pair.update_from_ccxt_market(ccxt_market)
+    return pair
+```
+
+### 📄 `src\domain\entities\configuration.py`
+
+```python
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, Union, List
+from datetime import datetime
+import json
+from enum import Enum
+
+
+class ConfigCategory(Enum):
+    """Категории конфигурации"""
+    TRADING = "trading"
+    RISK_MANAGEMENT = "risk_management"
+    TECHNICAL_INDICATORS = "technical_indicators"
+    ORDER_BOOK = "order_book"
+    EXCHANGE = "exchange"
+    SYSTEM = "system"
+    NOTIFICATIONS = "notifications"
+    LOGGING = "logging"
+    PERFORMANCE = "performance"
+
+
+class ConfigType(Enum):
+    """Типы конфигурационных значений"""
+    STRING = "string"
+    INTEGER = "integer"
+    FLOAT = "float"
+    BOOLEAN = "boolean"
+    JSON = "json"
+    LIST = "list"
+    DICT = "dict"
+
+
+@dataclass
+class Configuration:
+    """Сущность для управления динамической конфигурацией"""
+    
+    def __init__(
+        self,
+        key: str,
+        value: Any,
+        category: ConfigCategory,
+        config_type: ConfigType = ConfigType.STRING,
+        description: Optional[str] = None,
+        is_secret: bool = False,
+        is_required: bool = False,
+        default_value: Optional[Any] = None,
+        validation_rules: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None
+    ):
+        self.key = key
+        self.value = value
+        self.category = category
+        self.config_type = config_type
+        self.description = description
+        self.is_secret = is_secret
+        self.is_required = is_required
+        self.default_value = default_value
+        self.validation_rules = validation_rules or {}
+        self.tags = tags or []
+        self.created_at = datetime.now()
+        self.updated_at = datetime.now()
+        
+        # Валидация при создании
+        self._validate_value()
+    
+    @property
+    def full_key(self) -> str:
+        """Полный ключ с категорией"""
+        return f"{self.category.value}.{self.key}"
+    
+    def _validate_value(self) -> None:
+        """Валидация значения согласно типу и правилам"""
+        # Проверка типа
+        if not self._is_type_valid():
+            raise ValueError(f"Value {self.value} is not valid for type {self.config_type.value}")
+        
+        # Применение правил валидации
+        self._apply_validation_rules()
+    
+    def _is_type_valid(self) -> bool:
+        """Проверка соответствия типу"""
+        if self.value is None:
+            return not self.is_required
+        
+        type_mapping = {
+            ConfigType.STRING: str,
+            ConfigType.INTEGER: int,
+            ConfigType.FLOAT: (int, float),
+            ConfigType.BOOLEAN: bool,
+            ConfigType.LIST: list,
+            ConfigType.DICT: dict
+        }
+        
+        if self.config_type == ConfigType.JSON:
+            # JSON может быть любым сериализуемым типом
+            try:
+                json.dumps(self.value)
+                return True
+            except (TypeError, ValueError):
+                return False
+        
+        expected_type = type_mapping.get(self.config_type)
+        if expected_type:
+            return isinstance(self.value, expected_type)
+        
+        return True
+    
+    def _apply_validation_rules(self) -> None:
+        """Применение правил валидации"""
+        if not self.validation_rules:
+            return
+        
+        # Проверка минимального значения
+        if "min_value" in self.validation_rules and self.is_numeric():
+            min_val = self.validation_rules["min_value"]
+            if self.get_numeric_value() < min_val:
+                raise ValueError(f"Value {self.value} is less than minimum {min_val}")
+        
+        # Проверка максимального значения
+        if "max_value" in self.validation_rules and self.is_numeric():
+            max_val = self.validation_rules["max_value"]
+            if self.get_numeric_value() > max_val:
+                raise ValueError(f"Value {self.value} is greater than maximum {max_val}")
+        
+        # Проверка длины строки
+        if "max_length" in self.validation_rules and isinstance(self.value, str):
+            max_len = self.validation_rules["max_length"]
+            if len(self.value) > max_len:
+                raise ValueError(f"String length {len(self.value)} exceeds maximum {max_len}")
+        
+        # Проверка допустимых значений
+        if "allowed_values" in self.validation_rules:
+            allowed = self.validation_rules["allowed_values"]
+            if self.value not in allowed:
+                raise ValueError(f"Value {self.value} not in allowed values: {allowed}")
+        
+        # Проверка регулярного выражения
+        if "regex" in self.validation_rules and isinstance(self.value, str):
+            import re
+            pattern = self.validation_rules["regex"]
+            if not re.match(pattern, self.value):
+                raise ValueError(f"Value {self.value} does not match pattern {pattern}")
+    
+    def is_numeric(self) -> bool:
+        """Проверка, является ли значение числовым"""
+        return isinstance(self.value, (int, float))
+    
+    def get_numeric_value(self) -> Optional[float]:
+        """Получение числового значения"""
+        if self.is_numeric():
+            return float(self.value)
+        return None
+    
+    def get_bool_value(self) -> Optional[bool]:
+        """Получение булевого значения с умной конвертацией"""
+        if isinstance(self.value, bool):
+            return self.value
+        if isinstance(self.value, str):
+            return self.value.lower() in ("true", "yes", "1", "on", "enabled")
+        if isinstance(self.value, (int, float)):
+            return bool(self.value)
+        return None
+    
+    def get_list_value(self) -> Optional[List[Any]]:
+        """Получение списка с умной конвертацией"""
+        if isinstance(self.value, list):
+            return self.value
+        if isinstance(self.value, str):
+            # Пробуем распарсить как JSON или разделить по запятым
+            try:
+                parsed = json.loads(self.value)
+                if isinstance(parsed, list):
+                    return parsed
+            except json.JSONDecodeError:
+                # Разделяем по запятым
+                return [item.strip() for item in self.value.split(",") if item.strip()]
+        return None
+    
+    def get_dict_value(self) -> Optional[Dict[str, Any]]:
+        """Получение словаря с умной конвертацией"""
+        if isinstance(self.value, dict):
+            return self.value
+        if isinstance(self.value, str):
+            try:
+                parsed = json.loads(self.value)
+                if isinstance(parsed, dict):
+                    return parsed
+            except json.JSONDecodeError:
+                pass
+        return None
+    
+    def update_value(self, new_value: Any) -> None:
+        """Обновление значения с валидацией"""
+        old_value = self.value
+        self.value = new_value
+        self.updated_at = datetime.now()
+        
+        try:
+            self._validate_value()
+        except ValueError:
+            # Откатываем изменения при ошибке валидации
+            self.value = old_value
+            raise
+    
+    def reset_to_default(self) -> bool:
+        """Сброс к значению по умолчанию"""
+        if self.default_value is not None:
+            self.update_value(self.default_value)
+            return True
+        return False
+    
+    def add_tag(self, tag: str) -> None:
+        """Добавление тега"""
+        if tag not in self.tags:
+            self.tags.append(tag)
+            self.updated_at = datetime.now()
+    
+    def remove_tag(self, tag: str) -> None:
+        """Удаление тега"""
+        if tag in self.tags:
+            self.tags.remove(tag)
+            self.updated_at = datetime.now()
+    
+    def has_tag(self, tag: str) -> bool:
+        """Проверка наличия тега"""
+        return tag in self.tags
+    
+    def is_modified(self) -> bool:
+        """Проверка, было ли значение изменено"""
+        return self.value != self.default_value
+    
+    def get_display_value(self) -> str:
+        """Получение значения для отображения (скрывает секреты)"""
+        if self.is_secret:
+            return "***HIDDEN***" if self.value else "***NOT_SET***"
+        
+        if isinstance(self.value, (dict, list)):
+            return json.dumps(self.value, indent=2)
+        
+        return str(self.value)
+    
+    def to_dict(self, include_secrets: bool = False) -> Dict[str, Any]:
+        """Конвертация в словарь для сериализации"""
+        result = {
+            "key": self.key,
+            "category": self.category.value,
+            "config_type": self.config_type.value,
+            "description": self.description,
+            "is_secret": self.is_secret,
+            "is_required": self.is_required,
+            "default_value": self.default_value,
+            "validation_rules": self.validation_rules,
+            "tags": self.tags,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "is_modified": self.is_modified()
+        }
+        
+        # Включаем значение только если не секрет или явно запрошено
+        if include_secrets or not self.is_secret:
+            result["value"] = self.value
+        else:
+            result["value"] = self.get_display_value()
+        
+        return result
+    
+    def to_json(self, include_secrets: bool = False) -> str:
+        """Конвертация в JSON строку"""
+        return json.dumps(self.to_dict(include_secrets))
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Configuration':
+        """Создание из словаря"""
+        config = cls(
+            key=data["key"],
+            value=data["value"],
+            category=ConfigCategory(data["category"]),
+            config_type=ConfigType(data.get("config_type", "string")),
+            description=data.get("description"),
+            is_secret=data.get("is_secret", False),
+            is_required=data.get("is_required", False),
+            default_value=data.get("default_value"),
+            validation_rules=data.get("validation_rules", {}),
+            tags=data.get("tags", [])
+        )
+        
+        if "created_at" in data:
+            config.created_at = datetime.fromisoformat(data["created_at"])
+        if "updated_at" in data:
+            config.updated_at = datetime.fromisoformat(data["updated_at"])
+        
+        return config
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> 'Configuration':
+        """Создание из JSON строки"""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+    
+    def __str__(self) -> str:
+        return f"Configuration({self.full_key}={self.get_display_value()})"
+    
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Configuration):
+            return False
+        return self.full_key == other.full_key
 ```
 
 ### 📄 `src\domain\entities\currency_pair.py`
@@ -4815,7 +6851,682 @@ class Deal:
 
 ```
 
+### 📄 `src\domain\entities\indicator_data.py`
+
+```python
+from dataclasses import dataclass
+from typing import Dict, Any, Optional
+from datetime import datetime
+import json
+from enum import Enum
+
+
+class IndicatorType(Enum):
+    """Типы индикаторов"""
+    SMA = "sma"
+    EMA = "ema"
+    RSI = "rsi"
+    MACD = "macd"
+    MACD_SIGNAL = "macd_signal"
+    MACD_HISTOGRAM = "macd_histogram"
+    BOLLINGER_UPPER = "bollinger_upper"
+    BOLLINGER_MIDDLE = "bollinger_middle"
+    BOLLINGER_LOWER = "bollinger_lower"
+    VOLUME = "volume"
+    VOLATILITY = "volatility"
+
+
+class IndicatorLevel(Enum):
+    """Уровень сложности вычисления индикатора"""
+    FAST = "fast"      # Каждый тик
+    MEDIUM = "medium"  # Каждые 10 тиков
+    HEAVY = "heavy"    # Каждые 50 тиков
+
+
+@dataclass
+class IndicatorData:
+    """Сущность для хранения вычисленных индикаторов"""
+    
+    def __init__(
+        self,
+        symbol: str,
+        timestamp: int,
+        indicator_type: IndicatorType,
+        value: float,
+        period: Optional[int] = None,
+        level: IndicatorLevel = IndicatorLevel.FAST,
+        metadata: Optional[Dict[str, Any]] = None
+    ):
+        self.symbol = symbol
+        self.timestamp = timestamp
+        self.indicator_type = indicator_type
+        self.value = value
+        self.period = period
+        self.level = level
+        self.metadata = metadata or {}
+        self.created_at = datetime.now()
+    
+    @property
+    def indicator_name(self) -> str:
+        """Полное имя индикатора с периодом"""
+        if self.period:
+            return f"{self.indicator_type.value}_{self.period}"
+        return self.indicator_type.value
+    
+    def is_valid(self) -> bool:
+        """Проверка валидности данных индикатора"""
+        return (
+            self.symbol is not None and
+            self.timestamp > 0 and
+            self.value is not None and
+            not (isinstance(self.value, float) and (
+                self.value != self.value or  # NaN check
+                abs(self.value) == float('inf')  # Infinity check
+            ))
+        )
+    
+    def is_bullish_signal(self) -> bool:
+        """Определение бычьего сигнала для типичных индикаторов"""
+        if self.indicator_type == IndicatorType.RSI:
+            return 30 <= self.value <= 70  # Нейтральная зона
+        elif self.indicator_type == IndicatorType.MACD_HISTOGRAM:
+            return self.value > 0
+        elif self.indicator_type in [IndicatorType.SMA, IndicatorType.EMA]:
+            # Для SMA/EMA нужен контекст цены, возвращаем None
+            return None
+        return None
+    
+    def is_bearish_signal(self) -> bool:
+        """Определение медвежьего сигнала для типичных индикаторов"""
+        if self.indicator_type == IndicatorType.RSI:
+            return self.value > 70 or self.value < 30  # Перекупленность/перепроданность
+        elif self.indicator_type == IndicatorType.MACD_HISTOGRAM:
+            return self.value < 0
+        return None
+    
+    def get_signal_strength(self) -> float:
+        """Получение силы сигнала от 0 до 1"""
+        if self.indicator_type == IndicatorType.RSI:
+            if self.value > 70:
+                return min((self.value - 70) / 30, 1.0)  # Сила перекупленности
+            elif self.value < 30:
+                return min((30 - self.value) / 30, 1.0)  # Сила перепроданности
+            else:
+                return 0.0  # Нейтральная зона
+        elif self.indicator_type == IndicatorType.MACD_HISTOGRAM:
+            return min(abs(self.value) / 100, 1.0)  # Нормализация к [-1, 1]
+        return 0.5  # Дефолтная средняя сила
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Конвертация в словарь для сериализации"""
+        return {
+            "symbol": self.symbol,
+            "timestamp": self.timestamp,
+            "indicator_type": self.indicator_type.value,
+            "value": self.value,
+            "period": self.period,
+            "level": self.level.value,
+            "metadata": self.metadata,
+            "created_at": self.created_at.isoformat()
+        }
+    
+    def to_json(self) -> str:
+        """Конвертация в JSON строку"""
+        return json.dumps(self.to_dict())
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'IndicatorData':
+        """Создание из словаря"""
+        indicator = cls(
+            symbol=data["symbol"],
+            timestamp=data["timestamp"],
+            indicator_type=IndicatorType(data["indicator_type"]),
+            value=data["value"],
+            period=data.get("period"),
+            level=IndicatorLevel(data.get("level", "fast")),
+            metadata=data.get("metadata", {})
+        )
+        if "created_at" in data:
+            indicator.created_at = datetime.fromisoformat(data["created_at"])
+        return indicator
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> 'IndicatorData':
+        """Создание из JSON строки"""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+    
+    def __str__(self) -> str:
+        return f"IndicatorData({self.indicator_name}={self.value:.6f}, {self.symbol}, level={self.level.value})"
+    
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, IndicatorData):
+            return False
+        return (
+            self.symbol == other.symbol and
+            self.timestamp == other.timestamp and
+            self.indicator_type == other.indicator_type and
+            self.period == other.period
+        )
+```
+
 ### 📄 `src\domain\entities\order.py`
+
+```python
+# domain/entities/order_ccxt_compliant.py - CCXT COMPLIANT VERSION
+import time
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+
+class Order:
+    """
+    🚀 CCXT COMPLIANT Order Entity - Полная совместимость с CCXT структурами
+    
+    Эта версия строго соответствует CCXT Unified API для Order Structure:
+    https://docs.ccxt.com/en/latest/manual.html#order-structure
+    
+    Все поля именованы точно по CCXT стандарту, дополнительные поля проекта добавлены отдельно.
+    """
+
+    # CCXT Статусы ордера (точно по стандарту)
+    STATUS_OPEN = "open"
+    STATUS_CLOSED = "closed"
+    STATUS_CANCELED = "canceled"
+    STATUS_EXPIRED = "expired"
+    STATUS_REJECTED = "rejected"
+    
+    # ДОПОЛНИТЕЛЬНЫЕ статусы для проекта
+    STATUS_PENDING = "pending"                # Ордер создан локально, но не размещен на бирже
+    STATUS_PARTIALLY_FILLED = "partial"      # Частично исполнен (для удобства)
+
+    # CCXT Стороны ордера
+    SIDE_BUY = "buy"
+    SIDE_SELL = "sell"
+
+    # CCXT Типы ордера
+    TYPE_LIMIT = "limit"
+    TYPE_MARKET = "market"
+    TYPE_STOP = "stop"
+    TYPE_STOP_LIMIT = "stop_limit"
+    TYPE_TAKE_PROFIT = "take_profit"
+    TYPE_TAKE_PROFIT_LIMIT = "take_profit_limit"
+
+    # CCXT Time in Force
+    TIF_GTC = "GTC"  # Good Till Canceled
+    TIF_IOC = "IOC"  # Immediate Or Cancel
+    TIF_FOK = "FOK"  # Fill Or Kill
+    TIF_PO = "PO"    # Post Only
+
+    def __init__(
+        self,
+        # CCXT ОБЯЗАТЕЛЬНЫЕ ПОЛЯ (точно по стандарту):
+        id: Optional[str] = None,                    # exchange order ID (строка!)
+        clientOrderId: Optional[str] = None,         # клиентский ID ордера
+        datetime: Optional[str] = None,              # ISO8601 datetime строка
+        timestamp: Optional[int] = None,             # Unix timestamp в миллисекундах
+        lastTradeTimestamp: Optional[int] = None,    # время последней сделки
+        status: str = STATUS_PENDING,                # статус ордера
+        symbol: Optional[str] = None,                # торговая пара (BTC/USDT)
+        type: str = TYPE_LIMIT,                      # тип ордера
+        timeInForce: Optional[str] = TIF_GTC,        # время жизни ордера
+        side: str = SIDE_BUY,                        # сторона ордера
+        price: Optional[float] = None,               # цена за единицу
+        amount: float = 0.0,                         # запрошенное количество
+        filled: float = 0.0,                         # исполненное количество
+        remaining: Optional[float] = None,           # оставшееся количество
+        cost: Optional[float] = None,                # общая стоимость (filled * average)
+        average: Optional[float] = None,             # средняя цена исполнения
+        trades: Optional[List[Dict[str, Any]]] = None,  # массив сделок
+        fee: Optional[Dict[str, Any]] = None,        # структура комиссии
+        info: Optional[Dict[str, Any]] = None,       # полный ответ от биржи
+        
+        # ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ AUTOTRADE:
+        deal_id: Optional[int] = None,               # связь со сделкой AutoTrade
+        local_order_id: Optional[int] = None,        # внутренний ID для AutoTrade
+        created_at: Optional[int] = None,            # время создания в AutoTrade
+        last_update: Optional[int] = None,           # последнее обновление
+        error_message: Optional[str] = None,         # сообщение об ошибке
+        retries: int = 0,                           # количество попыток
+        metadata: Optional[Dict[str, Any]] = None    # дополнительная информация проекта
+    ):
+        # CCXT СТАНДАРТНЫЕ ПОЛЯ
+        self.id = id
+        self.clientOrderId = clientOrderId
+        self.datetime = datetime or self._generate_iso_datetime()
+        self.timestamp = timestamp or int(time.time() * 1000)
+        self.lastTradeTimestamp = lastTradeTimestamp
+        self.status = status
+        self.symbol = symbol
+        self.type = type
+        self.timeInForce = timeInForce
+        self.side = side
+        self.price = price
+        self.amount = amount
+        self.filled = filled
+        self.remaining = remaining if remaining is not None else amount
+        self.cost = cost
+        self.average = average
+        self.trades = trades or []
+        self.fee = fee or {'cost': 0.0, 'currency': None, 'rate': None}
+        self.info = info or {}
+        
+        # ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ AUTOTRADE
+        self.deal_id = deal_id
+        self.local_order_id = local_order_id
+        self.created_at = created_at or self.timestamp
+        self.last_update = last_update or self.timestamp
+        self.error_message = error_message
+        self.retries = retries
+        self.metadata = metadata or {}
+
+    def _generate_iso_datetime(self) -> str:
+        """Генерирует ISO8601 datetime строку"""
+        return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+    # ===== CCXT COMPATIBILITY METHODS =====
+
+    def update_from_ccxt_response(self, ccxt_response: Dict[str, Any]) -> None:
+        """
+        Обновляет Order из стандартного CCXT ответа.
+        Это основной метод для синхронизации с биржей.
+        """
+        # Обновляем все CCXT поля
+        self.id = ccxt_response.get('id', self.id)
+        self.clientOrderId = ccxt_response.get('clientOrderId', self.clientOrderId)
+        self.datetime = ccxt_response.get('datetime', self.datetime)
+        self.timestamp = ccxt_response.get('timestamp', self.timestamp)
+        self.lastTradeTimestamp = ccxt_response.get('lastTradeTimestamp', self.lastTradeTimestamp)
+        self.status = ccxt_response.get('status', self.status)
+        self.symbol = ccxt_response.get('symbol', self.symbol)
+        self.type = ccxt_response.get('type', self.type)
+        self.timeInForce = ccxt_response.get('timeInForce', self.timeInForce)
+        self.side = ccxt_response.get('side', self.side)
+        self.price = ccxt_response.get('price', self.price)
+        self.amount = ccxt_response.get('amount', self.amount)
+        self.filled = ccxt_response.get('filled', self.filled)
+        self.remaining = ccxt_response.get('remaining', self.remaining)
+        self.cost = ccxt_response.get('cost', self.cost)
+        self.average = ccxt_response.get('average', self.average)
+        self.trades = ccxt_response.get('trades', self.trades)
+        self.fee = ccxt_response.get('fee', self.fee)
+        self.info = ccxt_response.get('info', self.info)
+        
+        # Обновляем служебные поля
+        self.last_update = int(time.time() * 1000)
+
+    def to_ccxt_dict(self) -> Dict[str, Any]:
+        """
+        Преобразует Order в CCXT совместимый словарь.
+        Возвращает только CCXT поля в правильном формате.
+        """
+        return {
+            'id': self.id,
+            'clientOrderId': self.clientOrderId,
+            'datetime': self.datetime,
+            'timestamp': self.timestamp,
+            'lastTradeTimestamp': self.lastTradeTimestamp,
+            'status': self.status,
+            'symbol': self.symbol,
+            'type': self.type,
+            'timeInForce': self.timeInForce,
+            'side': self.side,
+            'price': self.price,
+            'amount': self.amount,
+            'filled': self.filled,
+            'remaining': self.remaining,
+            'cost': self.cost,
+            'average': self.average,
+            'trades': self.trades,
+            'fee': self.fee,
+            'info': self.info
+        }
+
+    @classmethod
+    def from_ccxt_response(
+        cls, 
+        ccxt_response: Dict[str, Any], 
+        deal_id: Optional[int] = None,
+        local_order_id: Optional[int] = None
+    ) -> 'Order':
+        """
+        Создает Order из CCXT ответа.
+        Это предпочтительный способ создания ордеров из биржевых данных.
+        """
+        order = cls(
+            id=ccxt_response.get('id'),
+            clientOrderId=ccxt_response.get('clientOrderId'),
+            datetime=ccxt_response.get('datetime'),
+            timestamp=ccxt_response.get('timestamp'),
+            lastTradeTimestamp=ccxt_response.get('lastTradeTimestamp'),
+            status=ccxt_response.get('status'),
+            symbol=ccxt_response.get('symbol'),
+            type=ccxt_response.get('type'),
+            timeInForce=ccxt_response.get('timeInForce'),
+            side=ccxt_response.get('side'),
+            price=ccxt_response.get('price'),
+            amount=ccxt_response.get('amount', 0.0),
+            filled=ccxt_response.get('filled', 0.0),
+            remaining=ccxt_response.get('remaining'),
+            cost=ccxt_response.get('cost'),
+            average=ccxt_response.get('average'),
+            trades=ccxt_response.get('trades', []),
+            fee=ccxt_response.get('fee', {'cost': 0.0, 'currency': None, 'rate': None}),
+            info=ccxt_response.get('info', {}),
+            deal_id=deal_id,
+            local_order_id=local_order_id
+        )
+        return order
+
+    # ===== STATUS CHECK METHODS =====
+
+    def is_open(self) -> bool:
+        """Ордер открыт и ожидает исполнения"""
+        return self.status == self.STATUS_OPEN
+
+    def is_closed(self) -> bool:
+        """Ордер закрыт (исполнен полностью)"""
+        return self.status == self.STATUS_CLOSED
+
+    def is_canceled(self) -> bool:
+        """Ордер отменен"""
+        return self.status == self.STATUS_CANCELED
+
+    def is_expired(self) -> bool:
+        """Ордер истек"""
+        return self.status == self.STATUS_EXPIRED
+
+    def is_rejected(self) -> bool:
+        """Ордер отклонен биржей"""
+        return self.status == self.STATUS_REJECTED
+
+    def is_pending(self) -> bool:
+        """Ордер ожидает размещения на бирже (локальный статус)"""
+        return self.status == self.STATUS_PENDING
+
+    def is_partially_filled(self) -> bool:
+        """Ордер частично исполнен"""
+        return self.filled > 0 and self.filled < self.amount
+
+    def is_fully_filled(self) -> bool:
+        """Ордер полностью исполнен"""
+        return self.filled >= self.amount
+
+    def is_final_status(self) -> bool:
+        """Ордер в финальном статусе (не изменится)"""
+        return self.status in [self.STATUS_CLOSED, self.STATUS_CANCELED, self.STATUS_EXPIRED, self.STATUS_REJECTED]
+
+    # ===== CALCULATION METHODS =====
+
+    def get_fill_percentage(self) -> float:
+        """Возвращает процент исполнения ордера (0.0 - 1.0)"""
+        if self.amount == 0:
+            return 0.0
+        return min(self.filled / self.amount, 1.0)
+
+    def get_remaining_amount(self) -> float:
+        """Возвращает оставшийся объем для исполнения"""
+        return max(self.amount - self.filled, 0.0)
+
+    def calculate_total_cost(self) -> float:
+        """Рассчитывает общую стоимость ордера"""
+        if self.cost is not None:
+            return self.cost
+        
+        # Fallback calculation
+        price = self.average if self.average else self.price
+        if price:
+            return self.filled * price
+        return 0.0
+
+    def calculate_total_cost_with_fees(self) -> float:
+        """Рассчитывает общую стоимость с учетом комиссий"""
+        total_cost = self.calculate_total_cost()
+        fee_cost = self.fee.get('cost', 0.0) if self.fee else 0.0
+        return total_cost + fee_cost
+
+    def get_effective_price(self) -> Optional[float]:
+        """Возвращает эффективную цену (average или price)"""
+        return self.average if self.average else self.price
+
+    # ===== VALIDATION METHODS =====
+
+    def validate_ccxt_compliance(self) -> tuple[bool, List[str]]:
+        """Валидирует Order на соответствие CCXT стандарту"""
+        errors = []
+        
+        # Обязательные поля для размещения на бирже
+        if not self.symbol:
+            errors.append("symbol is required")
+        if not self.side:
+            errors.append("side is required")
+        if not self.type:
+            errors.append("type is required")
+        if self.amount <= 0:
+            errors.append("amount must be positive")
+        if self.type == self.TYPE_LIMIT and (not self.price or self.price <= 0):
+            errors.append("price is required for limit orders")
+        
+        # Валидация значений
+        if self.side not in [self.SIDE_BUY, self.SIDE_SELL]:
+            errors.append(f"invalid side: {self.side}")
+        if self.type not in [self.TYPE_LIMIT, self.TYPE_MARKET, self.TYPE_STOP, self.TYPE_STOP_LIMIT]:
+            errors.append(f"invalid type: {self.type}")
+        
+        return len(errors) == 0, errors
+
+    def validate_for_exchange_placement(self) -> tuple[bool, str]:
+        """Валидирует ордер перед размещением на бирже"""
+        is_valid, errors = self.validate_ccxt_compliance()
+        if not is_valid:
+            return False, "; ".join(errors)
+        return True, "Valid"
+
+    # ===== UPDATE METHODS =====
+
+    def mark_as_placed_on_exchange(self, exchange_id: str, exchange_timestamp: Optional[int] = None) -> None:
+        """Помечает ордер как размещенный на бирже"""
+        self.id = exchange_id
+        self.status = self.STATUS_OPEN
+        if exchange_timestamp:
+            self.timestamp = exchange_timestamp
+            self.datetime = datetime.fromtimestamp(exchange_timestamp / 1000, timezone.utc).isoformat().replace('+00:00', 'Z')
+        self.last_update = int(time.time() * 1000)
+
+    def mark_as_failed(self, error_message: str) -> None:
+        """Помечает ордер как отклоненный"""
+        self.status = self.STATUS_REJECTED
+        self.error_message = error_message
+        self.last_update = int(time.time() * 1000)
+
+    def update_filled_amount(self, filled: float, average_price: Optional[float] = None) -> None:
+        """Обновляет исполненное количество"""
+        self.filled = filled
+        self.remaining = max(self.amount - filled, 0.0)
+        
+        if average_price:
+            self.average = average_price
+            self.cost = filled * average_price
+        
+        # Обновляем статус
+        if self.filled >= self.amount:
+            self.status = self.STATUS_CLOSED
+        elif self.filled > 0:
+            self.status = self.STATUS_PARTIALLY_FILLED
+        
+        self.last_update = int(time.time() * 1000)
+
+    def cancel_order(self, reason: Optional[str] = None) -> None:
+        """Отменяет ордер"""
+        self.status = self.STATUS_CANCELED
+        if reason:
+            self.error_message = f"Canceled: {reason}"
+        self.last_update = int(time.time() * 1000)
+
+    # ===== SERIALIZATION METHODS =====
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразует ордер в словарь для сохранения (включает все поля)"""
+        return {
+            # CCXT поля
+            'id': self.id,
+            'clientOrderId': self.clientOrderId,
+            'datetime': self.datetime,
+            'timestamp': self.timestamp,
+            'lastTradeTimestamp': self.lastTradeTimestamp,
+            'status': self.status,
+            'symbol': self.symbol,
+            'type': self.type,
+            'timeInForce': self.timeInForce,
+            'side': self.side,
+            'price': self.price,
+            'amount': self.amount,
+            'filled': self.filled,
+            'remaining': self.remaining,
+            'cost': self.cost,
+            'average': self.average,
+            'trades': self.trades,
+            'fee': self.fee,
+            'info': self.info,
+            
+            # AutoTrade поля
+            'deal_id': self.deal_id,
+            'local_order_id': self.local_order_id,
+            'created_at': self.created_at,
+            'last_update': self.last_update,
+            'error_message': self.error_message,
+            'retries': self.retries,
+            'metadata': self.metadata
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Order':
+        """Создает ордер из словаря"""
+        # Отделяем CCXT поля от AutoTrade полей
+        ccxt_fields = [
+            'id', 'clientOrderId', 'datetime', 'timestamp', 'lastTradeTimestamp',
+            'status', 'symbol', 'type', 'timeInForce', 'side', 'price', 'amount',
+            'filled', 'remaining', 'cost', 'average', 'trades', 'fee', 'info'
+        ]
+        
+        ccxt_data = {k: v for k, v in data.items() if k in ccxt_fields}
+        autotrade_data = {k: v for k, v in data.items() if k not in ccxt_fields}
+        
+        return cls(**ccxt_data, **autotrade_data)
+
+    # ===== COMPATIBILITY METHODS (для обратной совместимости) =====
+
+    @property
+    def order_id(self) -> Optional[int]:
+        """Backward compatibility: возвращает local_order_id"""
+        return self.local_order_id
+
+    @order_id.setter
+    def order_id(self, value: int) -> None:
+        """Backward compatibility: устанавливает local_order_id"""
+        self.local_order_id = value
+
+    @property
+    def exchange_id(self) -> Optional[str]:
+        """Backward compatibility: возвращает id (CCXT exchange ID)"""
+        return self.id
+
+    @exchange_id.setter
+    def exchange_id(self, value: str) -> None:
+        """Backward compatibility: устанавливает id (CCXT exchange ID)"""
+        self.id = value
+
+    @property
+    def order_type(self) -> str:
+        """Backward compatibility: возвращает type"""
+        return self.type
+
+    @order_type.setter
+    def order_type(self, value: str) -> None:
+        """Backward compatibility: устанавливает type"""
+        self.type = value
+
+    def is_filled(self) -> bool:
+        """Backward compatibility: ордер полностью исполнен"""
+        return self.is_fully_filled()
+
+    # ===== STRING REPRESENTATIONS =====
+
+    def __repr__(self):
+        fill_pct = self.get_fill_percentage() * 100
+        return (f"<Order(id={self.id}, local_id={self.local_order_id}, "
+                f"deal_id={self.deal_id}, side={self.side}, type={self.type}, "
+                f"status={self.status}, price={self.price}, amount={self.amount}, "
+                f"filled={self.filled} ({fill_pct:.1f}%), cost={self.cost})>")
+
+    def __str__(self):
+        """Человеко-читаемое представление"""
+        return (f"{self.side} {self.amount} {self.symbol} at {self.price} "
+                f"[{self.status}] filled: {self.filled}")
+
+
+# ===== ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ =====
+
+@dataclass
+class OrderValidationResult:
+    """Результат валидации ордера"""
+    is_valid: bool
+    errors: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
+
+
+@dataclass
+class OrderExecutionResult:
+    """Результат исполнения ордера"""
+    success: bool
+    order: Optional[Order] = None
+    error_message: Optional[str] = None
+    exchange_response: Optional[Dict[str, Any]] = None
+
+
+# ===== UTILITY FUNCTIONS =====
+
+def create_order_from_ccxt(
+    ccxt_response: Dict[str, Any], 
+    deal_id: Optional[int] = None
+) -> Order:
+    """
+    Utility function для создания Order из CCXT ответа
+    """
+    return Order.from_ccxt_response(ccxt_response, deal_id=deal_id)
+
+
+def validate_ccxt_order_structure(data: Dict[str, Any]) -> tuple[bool, List[str]]:
+    """
+    Валидирует структуру данных на соответствие CCXT Order Structure
+    """
+    required_fields = ['id', 'datetime', 'timestamp', 'status', 'symbol', 'type', 'side', 'amount']
+    optional_fields = [
+        'clientOrderId', 'lastTradeTimestamp', 'timeInForce', 'price', 
+        'filled', 'remaining', 'cost', 'average', 'trades', 'fee', 'info'
+    ]
+    
+    errors = []
+    
+    # Проверка обязательных полей
+    for field in required_fields:
+        if field not in data:
+            errors.append(f"Missing required field: {field}")
+    
+    # Проверка типов данных
+    if 'amount' in data and not isinstance(data['amount'], (int, float)):
+        errors.append("amount must be a number")
+    
+    if 'filled' in data and not isinstance(data['filled'], (int, float)):
+        errors.append("filled must be a number")
+    
+    if 'timestamp' in data and not isinstance(data['timestamp'], int):
+        errors.append("timestamp must be an integer")
+    
+    return len(errors) == 0, errors
+```
+
+### 📄 `src\domain\entities\order_backup.py`
 
 ```python
 # domain/entities/order.py.new - ENHANCED для реальной торговли
@@ -5124,6 +7835,877 @@ class ExchangeInfo:
 
 ```
 
+### 📄 `src\domain\entities\order_book.py`
+
+```python
+from dataclasses import dataclass
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import json
+
+
+@dataclass
+class OrderBookLevel:
+    """Уровень стакана заявок (цена и объем)"""
+    price: float
+    volume: float
+
+
+@dataclass 
+class OrderBook:
+    """Сущность данных стакана заявок"""
+    
+    def __init__(self, symbol: str, timestamp: int, bids: List[List[float]], asks: List[List[float]]):
+        self.symbol = symbol
+        self.timestamp = timestamp
+        self.bids = [OrderBookLevel(price=bid[0], volume=bid[1]) for bid in bids]
+        self.asks = [OrderBookLevel(price=ask[0], volume=ask[1]) for ask in asks]
+        self._spread = None
+        self._volume = None
+    
+    @property
+    def best_bid(self) -> Optional[float]:
+        """Лучшая цена покупки"""
+        return self.bids[0].price if self.bids else None
+    
+    @property
+    def best_ask(self) -> Optional[float]:
+        """Лучшая цена продажи"""
+        return self.asks[0].price if self.asks else None
+    
+    @property
+    def spread(self) -> Optional[float]:
+        """Спред между лучшими ценами"""
+        if self._spread is None and self.best_bid and self.best_ask:
+            self._spread = self.best_ask - self.best_bid
+        return self._spread
+    
+    @property
+    def spread_percent(self) -> Optional[float]:
+        """Спред в процентах"""
+        if self.spread and self.best_bid:
+            return (self.spread / self.best_bid) * 100
+        return None
+    
+    @property
+    def total_bid_volume(self) -> float:
+        """Общий объем заявок на покупку"""
+        return sum(level.volume for level in self.bids)
+    
+    @property
+    def total_ask_volume(self) -> float:
+        """Общий объем заявок на продажу"""
+        return sum(level.volume for level in self.asks)
+    
+    @property
+    def volume_imbalance(self) -> float:
+        """Дисбаланс объемов в %"""
+        total_volume = self.total_bid_volume + self.total_ask_volume
+        if total_volume > 0:
+            return ((self.total_bid_volume - self.total_ask_volume) / total_volume) * 100
+        return 0.0
+    
+    def get_levels_in_range(self, percent_range: float = 5.0) -> Dict[str, List[OrderBookLevel]]:
+        """Получить уровни в пределах заданного % от лучших цен"""
+        if not self.best_bid or not self.best_ask:
+            return {"bids": [], "asks": []}
+        
+        mid_price = (self.best_bid + self.best_ask) / 2
+        price_threshold = mid_price * (percent_range / 100)
+        
+        filtered_bids = [
+            level for level in self.bids 
+            if level.price >= mid_price - price_threshold
+        ]
+        filtered_asks = [
+            level for level in self.asks 
+            if level.price <= mid_price + price_threshold
+        ]
+        
+        return {"bids": filtered_bids, "asks": filtered_asks}
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Конвертация в словарь для сериализации"""
+        return {
+            "symbol": self.symbol,
+            "timestamp": self.timestamp,
+            "bids": [[level.price, level.volume] for level in self.bids],
+            "asks": [[level.price, level.volume] for level in self.asks],
+            "spread": self.spread,
+            "spread_percent": self.spread_percent,
+            "volume_imbalance": self.volume_imbalance
+        }
+    
+    def to_json(self) -> str:
+        """Конвертация в JSON строку"""
+        return json.dumps(self.to_dict())
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'OrderBook':
+        """Создание из словаря"""
+        return cls(
+            symbol=data["symbol"],
+            timestamp=data["timestamp"],
+            bids=data["bids"],
+            asks=data["asks"]
+        )
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> 'OrderBook':
+        """Создание из JSON строки"""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+    
+    def __str__(self) -> str:
+        return f"OrderBook({self.symbol}, {self.spread:.6f} spread, {len(self.bids)}x{len(self.asks)} levels)"
+```
+
+### 📄 `src\domain\entities\order_ccxt_compliant.py`
+
+```python
+# domain/entities/order_ccxt_compliant.py - CCXT COMPLIANT VERSION
+import time
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+
+class Order:
+    """
+    🚀 CCXT COMPLIANT Order Entity - Полная совместимость с CCXT структурами
+    
+    Эта версия строго соответствует CCXT Unified API для Order Structure:
+    https://docs.ccxt.com/en/latest/manual.html#order-structure
+    
+    Все поля именованы точно по CCXT стандарту, дополнительные поля проекта добавлены отдельно.
+    """
+
+    # CCXT Статусы ордера (точно по стандарту)
+    STATUS_OPEN = "open"
+    STATUS_CLOSED = "closed"
+    STATUS_CANCELED = "canceled"
+    STATUS_EXPIRED = "expired"
+    STATUS_REJECTED = "rejected"
+    
+    # ДОПОЛНИТЕЛЬНЫЕ статусы для проекта
+    STATUS_PENDING = "pending"                # Ордер создан локально, но не размещен на бирже
+    STATUS_PARTIALLY_FILLED = "partial"      # Частично исполнен (для удобства)
+
+    # CCXT Стороны ордера
+    SIDE_BUY = "buy"
+    SIDE_SELL = "sell"
+
+    # CCXT Типы ордера
+    TYPE_LIMIT = "limit"
+    TYPE_MARKET = "market"
+    TYPE_STOP = "stop"
+    TYPE_STOP_LIMIT = "stop_limit"
+    TYPE_TAKE_PROFIT = "take_profit"
+    TYPE_TAKE_PROFIT_LIMIT = "take_profit_limit"
+
+    # CCXT Time in Force
+    TIF_GTC = "GTC"  # Good Till Canceled
+    TIF_IOC = "IOC"  # Immediate Or Cancel
+    TIF_FOK = "FOK"  # Fill Or Kill
+    TIF_PO = "PO"    # Post Only
+
+    def __init__(
+        self,
+        # CCXT ОБЯЗАТЕЛЬНЫЕ ПОЛЯ (точно по стандарту):
+        id: Optional[str] = None,                    # exchange order ID (строка!)
+        clientOrderId: Optional[str] = None,         # клиентский ID ордера
+        datetime: Optional[str] = None,              # ISO8601 datetime строка
+        timestamp: Optional[int] = None,             # Unix timestamp в миллисекундах
+        lastTradeTimestamp: Optional[int] = None,    # время последней сделки
+        status: str = STATUS_PENDING,                # статус ордера
+        symbol: Optional[str] = None,                # торговая пара (BTC/USDT)
+        type: str = TYPE_LIMIT,                      # тип ордера
+        timeInForce: Optional[str] = TIF_GTC,        # время жизни ордера
+        side: str = SIDE_BUY,                        # сторона ордера
+        price: Optional[float] = None,               # цена за единицу
+        amount: float = 0.0,                         # запрошенное количество
+        filled: float = 0.0,                         # исполненное количество
+        remaining: Optional[float] = None,           # оставшееся количество
+        cost: Optional[float] = None,                # общая стоимость (filled * average)
+        average: Optional[float] = None,             # средняя цена исполнения
+        trades: Optional[List[Dict[str, Any]]] = None,  # массив сделок
+        fee: Optional[Dict[str, Any]] = None,        # структура комиссии
+        info: Optional[Dict[str, Any]] = None,       # полный ответ от биржи
+        
+        # ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ AUTOTRADE:
+        deal_id: Optional[int] = None,               # связь со сделкой AutoTrade
+        local_order_id: Optional[int] = None,        # внутренний ID для AutoTrade
+        created_at: Optional[int] = None,            # время создания в AutoTrade
+        last_update: Optional[int] = None,           # последнее обновление
+        error_message: Optional[str] = None,         # сообщение об ошибке
+        retries: int = 0,                           # количество попыток
+        metadata: Optional[Dict[str, Any]] = None    # дополнительная информация проекта
+    ):
+        # CCXT СТАНДАРТНЫЕ ПОЛЯ
+        self.id = id
+        self.clientOrderId = clientOrderId
+        self.datetime = datetime or self._generate_iso_datetime()
+        self.timestamp = timestamp or int(time.time() * 1000)
+        self.lastTradeTimestamp = lastTradeTimestamp
+        self.status = status
+        self.symbol = symbol
+        self.type = type
+        self.timeInForce = timeInForce
+        self.side = side
+        self.price = price
+        self.amount = amount
+        self.filled = filled
+        self.remaining = remaining if remaining is not None else amount
+        self.cost = cost
+        self.average = average
+        self.trades = trades or []
+        self.fee = fee or {'cost': 0.0, 'currency': None, 'rate': None}
+        self.info = info or {}
+        
+        # ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ AUTOTRADE
+        self.deal_id = deal_id
+        self.local_order_id = local_order_id
+        self.created_at = created_at or self.timestamp
+        self.last_update = last_update or self.timestamp
+        self.error_message = error_message
+        self.retries = retries
+        self.metadata = metadata or {}
+
+    def _generate_iso_datetime(self) -> str:
+        """Генерирует ISO8601 datetime строку"""
+        return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+
+    # ===== CCXT COMPATIBILITY METHODS =====
+
+    def update_from_ccxt_response(self, ccxt_response: Dict[str, Any]) -> None:
+        """
+        Обновляет Order из стандартного CCXT ответа.
+        Это основной метод для синхронизации с биржей.
+        """
+        # Обновляем все CCXT поля
+        self.id = ccxt_response.get('id', self.id)
+        self.clientOrderId = ccxt_response.get('clientOrderId', self.clientOrderId)
+        self.datetime = ccxt_response.get('datetime', self.datetime)
+        self.timestamp = ccxt_response.get('timestamp', self.timestamp)
+        self.lastTradeTimestamp = ccxt_response.get('lastTradeTimestamp', self.lastTradeTimestamp)
+        self.status = ccxt_response.get('status', self.status)
+        self.symbol = ccxt_response.get('symbol', self.symbol)
+        self.type = ccxt_response.get('type', self.type)
+        self.timeInForce = ccxt_response.get('timeInForce', self.timeInForce)
+        self.side = ccxt_response.get('side', self.side)
+        self.price = ccxt_response.get('price', self.price)
+        self.amount = ccxt_response.get('amount', self.amount)
+        self.filled = ccxt_response.get('filled', self.filled)
+        self.remaining = ccxt_response.get('remaining', self.remaining)
+        self.cost = ccxt_response.get('cost', self.cost)
+        self.average = ccxt_response.get('average', self.average)
+        self.trades = ccxt_response.get('trades', self.trades)
+        self.fee = ccxt_response.get('fee', self.fee)
+        self.info = ccxt_response.get('info', self.info)
+        
+        # Обновляем служебные поля
+        self.last_update = int(time.time() * 1000)
+
+    def to_ccxt_dict(self) -> Dict[str, Any]:
+        """
+        Преобразует Order в CCXT совместимый словарь.
+        Возвращает только CCXT поля в правильном формате.
+        """
+        return {
+            'id': self.id,
+            'clientOrderId': self.clientOrderId,
+            'datetime': self.datetime,
+            'timestamp': self.timestamp,
+            'lastTradeTimestamp': self.lastTradeTimestamp,
+            'status': self.status,
+            'symbol': self.symbol,
+            'type': self.type,
+            'timeInForce': self.timeInForce,
+            'side': self.side,
+            'price': self.price,
+            'amount': self.amount,
+            'filled': self.filled,
+            'remaining': self.remaining,
+            'cost': self.cost,
+            'average': self.average,
+            'trades': self.trades,
+            'fee': self.fee,
+            'info': self.info
+        }
+
+    @classmethod
+    def from_ccxt_response(
+        cls, 
+        ccxt_response: Dict[str, Any], 
+        deal_id: Optional[int] = None,
+        local_order_id: Optional[int] = None
+    ) -> 'Order':
+        """
+        Создает Order из CCXT ответа.
+        Это предпочтительный способ создания ордеров из биржевых данных.
+        """
+        order = cls(
+            id=ccxt_response.get('id'),
+            clientOrderId=ccxt_response.get('clientOrderId'),
+            datetime=ccxt_response.get('datetime'),
+            timestamp=ccxt_response.get('timestamp'),
+            lastTradeTimestamp=ccxt_response.get('lastTradeTimestamp'),
+            status=ccxt_response.get('status'),
+            symbol=ccxt_response.get('symbol'),
+            type=ccxt_response.get('type'),
+            timeInForce=ccxt_response.get('timeInForce'),
+            side=ccxt_response.get('side'),
+            price=ccxt_response.get('price'),
+            amount=ccxt_response.get('amount', 0.0),
+            filled=ccxt_response.get('filled', 0.0),
+            remaining=ccxt_response.get('remaining'),
+            cost=ccxt_response.get('cost'),
+            average=ccxt_response.get('average'),
+            trades=ccxt_response.get('trades', []),
+            fee=ccxt_response.get('fee', {'cost': 0.0, 'currency': None, 'rate': None}),
+            info=ccxt_response.get('info', {}),
+            deal_id=deal_id,
+            local_order_id=local_order_id
+        )
+        return order
+
+    # ===== STATUS CHECK METHODS =====
+
+    def is_open(self) -> bool:
+        """Ордер открыт и ожидает исполнения"""
+        return self.status == self.STATUS_OPEN
+
+    def is_closed(self) -> bool:
+        """Ордер закрыт (исполнен полностью)"""
+        return self.status == self.STATUS_CLOSED
+
+    def is_canceled(self) -> bool:
+        """Ордер отменен"""
+        return self.status == self.STATUS_CANCELED
+
+    def is_expired(self) -> bool:
+        """Ордер истек"""
+        return self.status == self.STATUS_EXPIRED
+
+    def is_rejected(self) -> bool:
+        """Ордер отклонен биржей"""
+        return self.status == self.STATUS_REJECTED
+
+    def is_pending(self) -> bool:
+        """Ордер ожидает размещения на бирже (локальный статус)"""
+        return self.status == self.STATUS_PENDING
+
+    def is_partially_filled(self) -> bool:
+        """Ордер частично исполнен"""
+        return self.filled > 0 and self.filled < self.amount
+
+    def is_fully_filled(self) -> bool:
+        """Ордер полностью исполнен"""
+        return self.filled >= self.amount
+
+    def is_final_status(self) -> bool:
+        """Ордер в финальном статусе (не изменится)"""
+        return self.status in [self.STATUS_CLOSED, self.STATUS_CANCELED, self.STATUS_EXPIRED, self.STATUS_REJECTED]
+
+    # ===== CALCULATION METHODS =====
+
+    def get_fill_percentage(self) -> float:
+        """Возвращает процент исполнения ордера (0.0 - 1.0)"""
+        if self.amount == 0:
+            return 0.0
+        return min(self.filled / self.amount, 1.0)
+
+    def get_remaining_amount(self) -> float:
+        """Возвращает оставшийся объем для исполнения"""
+        return max(self.amount - self.filled, 0.0)
+
+    def calculate_total_cost(self) -> float:
+        """Рассчитывает общую стоимость ордера"""
+        if self.cost is not None:
+            return self.cost
+        
+        # Fallback calculation
+        price = self.average if self.average else self.price
+        if price:
+            return self.filled * price
+        return 0.0
+
+    def calculate_total_cost_with_fees(self) -> float:
+        """Рассчитывает общую стоимость с учетом комиссий"""
+        total_cost = self.calculate_total_cost()
+        fee_cost = self.fee.get('cost', 0.0) if self.fee else 0.0
+        return total_cost + fee_cost
+
+    def get_effective_price(self) -> Optional[float]:
+        """Возвращает эффективную цену (average или price)"""
+        return self.average if self.average else self.price
+
+    # ===== VALIDATION METHODS =====
+
+    def validate_ccxt_compliance(self) -> tuple[bool, List[str]]:
+        """Валидирует Order на соответствие CCXT стандарту"""
+        errors = []
+        
+        # Обязательные поля для размещения на бирже
+        if not self.symbol:
+            errors.append("symbol is required")
+        if not self.side:
+            errors.append("side is required")
+        if not self.type:
+            errors.append("type is required")
+        if self.amount <= 0:
+            errors.append("amount must be positive")
+        if self.type == self.TYPE_LIMIT and (not self.price or self.price <= 0):
+            errors.append("price is required for limit orders")
+        
+        # Валидация значений
+        if self.side not in [self.SIDE_BUY, self.SIDE_SELL]:
+            errors.append(f"invalid side: {self.side}")
+        if self.type not in [self.TYPE_LIMIT, self.TYPE_MARKET, self.TYPE_STOP, self.TYPE_STOP_LIMIT]:
+            errors.append(f"invalid type: {self.type}")
+        
+        return len(errors) == 0, errors
+
+    def validate_for_exchange_placement(self) -> tuple[bool, str]:
+        """Валидирует ордер перед размещением на бирже"""
+        is_valid, errors = self.validate_ccxt_compliance()
+        if not is_valid:
+            return False, "; ".join(errors)
+        return True, "Valid"
+
+    # ===== UPDATE METHODS =====
+
+    def mark_as_placed_on_exchange(self, exchange_id: str, exchange_timestamp: Optional[int] = None) -> None:
+        """Помечает ордер как размещенный на бирже"""
+        self.id = exchange_id
+        self.status = self.STATUS_OPEN
+        if exchange_timestamp:
+            self.timestamp = exchange_timestamp
+            self.datetime = datetime.fromtimestamp(exchange_timestamp / 1000, timezone.utc).isoformat().replace('+00:00', 'Z')
+        self.last_update = int(time.time() * 1000)
+
+    def mark_as_failed(self, error_message: str) -> None:
+        """Помечает ордер как отклоненный"""
+        self.status = self.STATUS_REJECTED
+        self.error_message = error_message
+        self.last_update = int(time.time() * 1000)
+
+    def update_filled_amount(self, filled: float, average_price: Optional[float] = None) -> None:
+        """Обновляет исполненное количество"""
+        self.filled = filled
+        self.remaining = max(self.amount - filled, 0.0)
+        
+        if average_price:
+            self.average = average_price
+            self.cost = filled * average_price
+        
+        # Обновляем статус
+        if self.filled >= self.amount:
+            self.status = self.STATUS_CLOSED
+        elif self.filled > 0:
+            self.status = self.STATUS_PARTIALLY_FILLED
+        
+        self.last_update = int(time.time() * 1000)
+
+    def cancel_order(self, reason: Optional[str] = None) -> None:
+        """Отменяет ордер"""
+        self.status = self.STATUS_CANCELED
+        if reason:
+            self.error_message = f"Canceled: {reason}"
+        self.last_update = int(time.time() * 1000)
+
+    # ===== SERIALIZATION METHODS =====
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Преобразует ордер в словарь для сохранения (включает все поля)"""
+        return {
+            # CCXT поля
+            'id': self.id,
+            'clientOrderId': self.clientOrderId,
+            'datetime': self.datetime,
+            'timestamp': self.timestamp,
+            'lastTradeTimestamp': self.lastTradeTimestamp,
+            'status': self.status,
+            'symbol': self.symbol,
+            'type': self.type,
+            'timeInForce': self.timeInForce,
+            'side': self.side,
+            'price': self.price,
+            'amount': self.amount,
+            'filled': self.filled,
+            'remaining': self.remaining,
+            'cost': self.cost,
+            'average': self.average,
+            'trades': self.trades,
+            'fee': self.fee,
+            'info': self.info,
+            
+            # AutoTrade поля
+            'deal_id': self.deal_id,
+            'local_order_id': self.local_order_id,
+            'created_at': self.created_at,
+            'last_update': self.last_update,
+            'error_message': self.error_message,
+            'retries': self.retries,
+            'metadata': self.metadata
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Order':
+        """Создает ордер из словаря"""
+        # Отделяем CCXT поля от AutoTrade полей
+        ccxt_fields = [
+            'id', 'clientOrderId', 'datetime', 'timestamp', 'lastTradeTimestamp',
+            'status', 'symbol', 'type', 'timeInForce', 'side', 'price', 'amount',
+            'filled', 'remaining', 'cost', 'average', 'trades', 'fee', 'info'
+        ]
+        
+        ccxt_data = {k: v for k, v in data.items() if k in ccxt_fields}
+        autotrade_data = {k: v for k, v in data.items() if k not in ccxt_fields}
+        
+        return cls(**ccxt_data, **autotrade_data)
+
+    # ===== COMPATIBILITY METHODS (для обратной совместимости) =====
+
+    @property
+    def order_id(self) -> Optional[int]:
+        """Backward compatibility: возвращает local_order_id"""
+        return self.local_order_id
+
+    @order_id.setter
+    def order_id(self, value: int) -> None:
+        """Backward compatibility: устанавливает local_order_id"""
+        self.local_order_id = value
+
+    @property
+    def exchange_id(self) -> Optional[str]:
+        """Backward compatibility: возвращает id (CCXT exchange ID)"""
+        return self.id
+
+    @exchange_id.setter
+    def exchange_id(self, value: str) -> None:
+        """Backward compatibility: устанавливает id (CCXT exchange ID)"""
+        self.id = value
+
+    @property
+    def order_type(self) -> str:
+        """Backward compatibility: возвращает type"""
+        return self.type
+
+    @order_type.setter
+    def order_type(self, value: str) -> None:
+        """Backward compatibility: устанавливает type"""
+        self.type = value
+
+    def is_filled(self) -> bool:
+        """Backward compatibility: ордер полностью исполнен"""
+        return self.is_fully_filled()
+
+    # ===== STRING REPRESENTATIONS =====
+
+    def __repr__(self):
+        fill_pct = self.get_fill_percentage() * 100
+        return (f"<Order(id={self.id}, local_id={self.local_order_id}, "
+                f"deal_id={self.deal_id}, side={self.side}, type={self.type}, "
+                f"status={self.status}, price={self.price}, amount={self.amount}, "
+                f"filled={self.filled} ({fill_pct:.1f}%), cost={self.cost})>")
+
+    def __str__(self):
+        """Человеко-читаемое представление"""
+        return (f"{self.side} {self.amount} {self.symbol} at {self.price} "
+                f"[{self.status}] filled: {self.filled}")
+
+
+# ===== ДОПОЛНИТЕЛЬНЫЕ КЛАССЫ =====
+
+@dataclass
+class OrderValidationResult:
+    """Результат валидации ордера"""
+    is_valid: bool
+    errors: List[str] = field(default_factory=list)
+    warnings: List[str] = field(default_factory=list)
+
+
+@dataclass
+class OrderExecutionResult:
+    """Результат исполнения ордера"""
+    success: bool
+    order: Optional[Order] = None
+    error_message: Optional[str] = None
+    exchange_response: Optional[Dict[str, Any]] = None
+
+
+# ===== UTILITY FUNCTIONS =====
+
+def create_order_from_ccxt(
+    ccxt_response: Dict[str, Any], 
+    deal_id: Optional[int] = None
+) -> Order:
+    """
+    Utility function для создания Order из CCXT ответа
+    """
+    return Order.from_ccxt_response(ccxt_response, deal_id=deal_id)
+
+
+def validate_ccxt_order_structure(data: Dict[str, Any]) -> tuple[bool, List[str]]:
+    """
+    Валидирует структуру данных на соответствие CCXT Order Structure
+    """
+    required_fields = ['id', 'datetime', 'timestamp', 'status', 'symbol', 'type', 'side', 'amount']
+    optional_fields = [
+        'clientOrderId', 'lastTradeTimestamp', 'timeInForce', 'price', 
+        'filled', 'remaining', 'cost', 'average', 'trades', 'fee', 'info'
+    ]
+    
+    errors = []
+    
+    # Проверка обязательных полей
+    for field in required_fields:
+        if field not in data:
+            errors.append(f"Missing required field: {field}")
+    
+    # Проверка типов данных
+    if 'amount' in data and not isinstance(data['amount'], (int, float)):
+        errors.append("amount must be a number")
+    
+    if 'filled' in data and not isinstance(data['filled'], (int, float)):
+        errors.append("filled must be a number")
+    
+    if 'timestamp' in data and not isinstance(data['timestamp'], int):
+        errors.append("timestamp must be an integer")
+    
+    return len(errors) == 0, errors
+```
+
+### 📄 `src\domain\entities\statistics.py`
+
+```python
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, Union
+from datetime import datetime
+import json
+from enum import Enum
+
+
+class StatisticCategory(Enum):
+    """Категории статистики"""
+    TRADING = "trading"
+    PERFORMANCE = "performance"
+    ORDERS = "orders"
+    DEALS = "deals"
+    MARKET_DATA = "market_data"
+    RISK_MANAGEMENT = "risk_management"
+    SYSTEM = "system"
+    TECHNICAL_INDICATORS = "technical_indicators"
+    ORDER_BOOK = "order_book"
+
+
+class StatisticType(Enum):
+    """Типы статистических метрик"""
+    COUNTER = "counter"        # Счетчик (увеличивается)
+    GAUGE = "gauge"           # Текущее значение
+    HISTOGRAM = "histogram"   # Распределение значений
+    TIMING = "timing"         # Время выполнения
+    RATE = "rate"            # Скорость (событий в секунду)
+    PERCENTAGE = "percentage" # Процентное значение
+
+
+@dataclass
+class Statistics:
+    """Сущность для метрик производительности и статистики торговли"""
+    
+    def __init__(
+        self,
+        metric_name: str,
+        value: Union[int, float, str],
+        category: StatisticCategory,
+        metric_type: StatisticType = StatisticType.GAUGE,
+        timestamp: Optional[int] = None,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+        description: Optional[str] = None
+    ):
+        self.metric_name = metric_name
+        self.value = value
+        self.category = category
+        self.metric_type = metric_type
+        self.timestamp = timestamp or int(datetime.now().timestamp() * 1000)
+        self.symbol = symbol
+        self.tags = tags or {}
+        self.description = description
+        self.created_at = datetime.now()
+        
+        # Генерируем уникальный ID
+        self.metric_id = self._generate_metric_id()
+    
+    def _generate_metric_id(self) -> str:
+        """Генерация уникального ID метрики"""
+        base = f"{self.category.value}_{self.metric_name}_{self.timestamp}"
+        if self.symbol:
+            base += f"_{self.symbol}"
+        return base
+    
+    @property
+    def full_metric_name(self) -> str:
+        """Полное имя метрики с категорией"""
+        return f"{self.category.value}.{self.metric_name}"
+    
+    def is_numeric(self) -> bool:
+        """Проверка, является ли значение числовым"""
+        return isinstance(self.value, (int, float))
+    
+    def get_numeric_value(self) -> Optional[float]:
+        """Получение числового значения"""
+        if self.is_numeric():
+            return float(self.value)
+        return None
+    
+    def is_percentage_valid(self) -> bool:
+        """Проверка валидности процентного значения"""
+        if self.metric_type == StatisticType.PERCENTAGE and self.is_numeric():
+            return 0 <= self.get_numeric_value() <= 100
+        return True
+    
+    def format_value(self) -> str:
+        """Форматированное отображение значения"""
+        if not self.is_numeric():
+            return str(self.value)
+        
+        num_value = self.get_numeric_value()
+        
+        if self.metric_type == StatisticType.PERCENTAGE:
+            return f"{num_value:.2f}%"
+        elif self.metric_type == StatisticType.TIMING:
+            if num_value < 1000:
+                return f"{num_value:.2f}ms"
+            else:
+                return f"{num_value/1000:.2f}s"
+        elif self.metric_type == StatisticType.RATE:
+            return f"{num_value:.2f}/s"
+        elif self.metric_type == StatisticType.COUNTER:
+            return f"{int(num_value)}"
+        else:
+            return f"{num_value:.4f}"
+    
+    def add_tag(self, key: str, value: str) -> None:
+        """Добавление тега"""
+        self.tags[key] = value
+    
+    def remove_tag(self, key: str) -> None:
+        """Удаление тега"""
+        self.tags.pop(key, None)
+    
+    def has_tag(self, key: str, value: Optional[str] = None) -> bool:
+        """Проверка наличия тега"""
+        if key not in self.tags:
+            return False
+        if value is None:
+            return True
+        return self.tags[key] == value
+    
+    def increment(self, delta: Union[int, float] = 1) -> None:
+        """Увеличение значения (для счетчиков)"""
+        if self.is_numeric():
+            self.value = self.get_numeric_value() + delta
+            self.timestamp = int(datetime.now().timestamp() * 1000)
+    
+    def update_value(self, new_value: Union[int, float, str]) -> None:
+        """Обновление значения"""
+        self.value = new_value
+        self.timestamp = int(datetime.now().timestamp() * 1000)
+    
+    def age_seconds(self) -> float:
+        """Возраст метрики в секундах"""
+        current_time = int(datetime.now().timestamp() * 1000)
+        return (current_time - self.timestamp) / 1000.0
+    
+    def is_stale(self, max_age_seconds: float = 300) -> bool:
+        """Проверка устарелости метрики"""
+        return self.age_seconds() > max_age_seconds
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Конвертация в словарь для сериализации"""
+        return {
+            "metric_id": self.metric_id,
+            "metric_name": self.metric_name,
+            "value": self.value,
+            "category": self.category.value,
+            "metric_type": self.metric_type.value,
+            "timestamp": self.timestamp,
+            "symbol": self.symbol,
+            "tags": self.tags,
+            "description": self.description,
+            "created_at": self.created_at.isoformat(),
+            "formatted_value": self.format_value(),
+            "age_seconds": self.age_seconds()
+        }
+    
+    def to_json(self) -> str:
+        """Конвертация в JSON строку"""
+        return json.dumps(self.to_dict())
+    
+    def to_prometheus_format(self) -> str:
+        """Конвертация в формат Prometheus метрик"""
+        labels = []
+        if self.symbol:
+            labels.append(f'symbol="{self.symbol}"')
+        
+        for key, value in self.tags.items():
+            labels.append(f'{key}="{value}"')
+        
+        label_str = "{" + ",".join(labels) + "}" if labels else ""
+        
+        if self.is_numeric():
+            return f"{self.full_metric_name}{label_str} {self.get_numeric_value()}"
+        else:
+            return f"# {self.full_metric_name}{label_str} = {self.value}"
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'Statistics':
+        """Создание из словаря"""
+        stat = cls(
+            metric_name=data["metric_name"],
+            value=data["value"],
+            category=StatisticCategory(data["category"]),
+            metric_type=StatisticType(data.get("metric_type", "gauge")),
+            timestamp=data.get("timestamp"),
+            symbol=data.get("symbol"),
+            tags=data.get("tags", {}),
+            description=data.get("description")
+        )
+        if "created_at" in data:
+            stat.created_at = datetime.fromisoformat(data["created_at"])
+        return stat
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> 'Statistics':
+        """Создание из JSON строки"""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+    
+    @classmethod
+    def create_counter(cls, name: str, category: StatisticCategory, initial_value: int = 0, **kwargs) -> 'Statistics':
+        """Создание счетчика"""
+        return cls(name, initial_value, category, StatisticType.COUNTER, **kwargs)
+    
+    @classmethod
+    def create_timing(cls, name: str, category: StatisticCategory, duration_ms: float, **kwargs) -> 'Statistics':
+        """Создание метрики времени"""
+        return cls(name, duration_ms, category, StatisticType.TIMING, **kwargs)
+    
+    @classmethod
+    def create_percentage(cls, name: str, category: StatisticCategory, percent_value: float, **kwargs) -> 'Statistics':
+        """Создание процентной метрики"""
+        return cls(name, percent_value, category, StatisticType.PERCENTAGE, **kwargs)
+    
+    def __str__(self) -> str:
+        return f"Statistics({self.full_metric_name}={self.format_value()}, {self.symbol or 'global'})"
+    
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Statistics):
+            return False
+        return self.metric_id == other.metric_id
+```
+
 ### 📄 `src\domain\entities\ticker.py`
 
 ```python
@@ -5169,6 +8751,242 @@ class Ticker:
 
     def __repr__(self):
         return f"<Ticker {self.symbol} {self.price} ({self.timestamp})>"
+```
+
+### 📄 `src\domain\entities\trading_signal.py`
+
+```python
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, List
+from datetime import datetime
+import json
+from enum import Enum
+
+
+class SignalType(Enum):
+    """Типы торговых сигналов"""
+    BUY = "buy"
+    SELL = "sell"
+    HOLD = "hold"
+    STRONG_BUY = "strong_buy"
+    STRONG_SELL = "strong_sell"
+    WEAK_BUY = "weak_buy"
+    WEAK_SELL = "weak_sell"
+
+
+class SignalSource(Enum):
+    """Источники сигналов"""
+    MACD = "macd"
+    RSI = "rsi"
+    SMA_CROSSOVER = "sma_crossover"
+    BOLLINGER_BANDS = "bollinger_bands"
+    ORDERBOOK_ANALYSIS = "orderbook_analysis"
+    VOLUME_ANALYSIS = "volume_analysis"
+    COMBINED = "combined"
+
+
+class SignalConfidence(Enum):
+    """Уровни уверенности в сигнале"""
+    VERY_LOW = 0.2
+    LOW = 0.4
+    MEDIUM = 0.6
+    HIGH = 0.8
+    VERY_HIGH = 0.95
+
+
+@dataclass
+class TradingSignal:
+    """Сущность торгового сигнала"""
+    
+    def __init__(
+        self,
+        symbol: str,
+        timestamp: int,
+        signal_type: SignalType,
+        source: SignalSource,
+        strength: float,
+        confidence: float = 0.5,
+        price: Optional[float] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ):
+        self.symbol = symbol
+        self.timestamp = timestamp
+        self.signal_type = signal_type
+        self.source = source
+        self.strength = self._validate_strength(strength)
+        self.confidence = self._validate_confidence(confidence)
+        self.price = price
+        self.metadata = metadata or {}
+        self.created_at = datetime.now()
+        
+        # Добавляем ID для уникальности
+        self.signal_id = f"{symbol}_{timestamp}_{source.value}_{signal_type.value}"
+    
+    def _validate_strength(self, strength: float) -> float:
+        """Валидация силы сигнала (0.0 - 1.0)"""
+        return max(0.0, min(1.0, strength))
+    
+    def _validate_confidence(self, confidence: float) -> float:
+        """Валидация уверенности в сигнале (0.0 - 1.0)"""
+        return max(0.0, min(1.0, confidence))
+    
+    @property
+    def is_actionable(self) -> bool:
+        """Проверка, можно ли действовать по этому сигналу"""
+        return (
+            self.signal_type in [SignalType.BUY, SignalType.SELL, SignalType.STRONG_BUY, SignalType.STRONG_SELL] and
+            self.confidence >= 0.6 and
+            self.strength >= 0.3
+        )
+    
+    @property
+    def is_strong(self) -> bool:
+        """Проверка на сильный сигнал"""
+        return (
+            self.signal_type in [SignalType.STRONG_BUY, SignalType.STRONG_SELL] or
+            (self.strength >= 0.7 and self.confidence >= 0.8)
+        )
+    
+    @property
+    def is_bullish(self) -> bool:
+        """Проверка на бычий сигнал"""
+        return self.signal_type in [SignalType.BUY, SignalType.STRONG_BUY, SignalType.WEAK_BUY]
+    
+    @property
+    def is_bearish(self) -> bool:
+        """Проверка на медвежий сигнал"""
+        return self.signal_type in [SignalType.SELL, SignalType.STRONG_SELL, SignalType.WEAK_SELL]
+    
+    @property
+    def score(self) -> float:
+        """Общий скор сигнала (strength * confidence)"""
+        return self.strength * self.confidence
+    
+    def get_recommendation(self) -> str:
+        """Получение текстовой рекомендации"""
+        if not self.is_actionable:
+            return "HOLD - сигнал недостаточно сильный"
+        
+        if self.is_strong:
+            action = "ПОКУПАТЬ" if self.is_bullish else "ПРОДАВАТЬ"
+            return f"{action} - сильный сигнал (score: {self.score:.2f})"
+        else:
+            action = "рассмотреть покупку" if self.is_bullish else "рассмотреть продажу"
+            return f"{action.capitalize()} - слабый сигнал (score: {self.score:.2f})"
+    
+    def conflicts_with(self, other_signal: 'TradingSignal') -> bool:
+        """Проверка конфликта с другим сигналом"""
+        if not isinstance(other_signal, TradingSignal):
+            return False
+        
+        # Проверяем временную близость (в пределах 1 минуты)
+        time_diff = abs(self.timestamp - other_signal.timestamp)
+        if time_diff > 60000:  # 60 секунд в миллисекундах
+            return False
+        
+        # Проверяем противоположные сигналы
+        return (
+            self.symbol == other_signal.symbol and
+            (
+                (self.is_bullish and other_signal.is_bearish) or
+                (self.is_bearish and other_signal.is_bullish)
+            )
+        )
+    
+    def combine_with(self, other_signal: 'TradingSignal') -> Optional['TradingSignal']:
+        """Комбинирование с другим сигналом того же направления"""
+        if (
+            not isinstance(other_signal, TradingSignal) or
+            self.symbol != other_signal.symbol or
+            self.conflicts_with(other_signal)
+        ):
+            return None
+        
+        # Комбинируем только сигналы одного направления
+        if not ((self.is_bullish and other_signal.is_bullish) or 
+                (self.is_bearish and other_signal.is_bearish)):
+            return None
+        
+        # Создаем комбинированный сигнал
+        combined_strength = (self.strength + other_signal.strength) / 2
+        combined_confidence = min(self.confidence + other_signal.confidence, 1.0)
+        
+        # Выбираем более сильный тип сигнала
+        if self.strength >= other_signal.strength:
+            signal_type = self.signal_type
+        else:
+            signal_type = other_signal.signal_type
+        
+        # Метаданные комбинирования
+        combined_metadata = {
+            "combined_from": [self.signal_id, other_signal.signal_id],
+            "sources": [self.source.value, other_signal.source.value],
+            "original_scores": [self.score, other_signal.score]
+        }
+        
+        return TradingSignal(
+            symbol=self.symbol,
+            timestamp=min(self.timestamp, other_signal.timestamp),
+            signal_type=signal_type,
+            source=SignalSource.COMBINED,
+            strength=combined_strength,
+            confidence=combined_confidence,
+            price=self.price or other_signal.price,
+            metadata=combined_metadata
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Конвертация в словарь для сериализации"""
+        return {
+            "signal_id": self.signal_id,
+            "symbol": self.symbol,
+            "timestamp": self.timestamp,
+            "signal_type": self.signal_type.value,
+            "source": self.source.value,
+            "strength": self.strength,
+            "confidence": self.confidence,
+            "price": self.price,
+            "metadata": self.metadata,
+            "created_at": self.created_at.isoformat(),
+            "score": self.score,
+            "is_actionable": self.is_actionable,
+            "is_strong": self.is_strong
+        }
+    
+    def to_json(self) -> str:
+        """Конвертация в JSON строку"""
+        return json.dumps(self.to_dict())
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'TradingSignal':
+        """Создание из словаря"""
+        signal = cls(
+            symbol=data["symbol"],
+            timestamp=data["timestamp"],
+            signal_type=SignalType(data["signal_type"]),
+            source=SignalSource(data["source"]),
+            strength=data["strength"],
+            confidence=data["confidence"],
+            price=data.get("price"),
+            metadata=data.get("metadata", {})
+        )
+        if "created_at" in data:
+            signal.created_at = datetime.fromisoformat(data["created_at"])
+        return signal
+    
+    @classmethod
+    def from_json(cls, json_str: str) -> 'TradingSignal':
+        """Создание из JSON строки"""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+    
+    def __str__(self) -> str:
+        return f"TradingSignal({self.signal_type.value}, {self.source.value}, score={self.score:.2f}, {self.symbol})"
+    
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, TradingSignal):
+            return False
+        return self.signal_id == other.signal_id
 ```
 
 ### 📄 `src\domain\factories\__init__.py`
@@ -5615,6 +9433,1358 @@ class OrderFactory:
 
 ```
 
+### 📄 `src\domain\repositories\__init__.py`
+
+```python
+# Domain repositories interfaces
+```
+
+### 📄 `src\domain\repositories\i_cache_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import Any, Optional, Dict, List, Union
+import asyncio
+
+
+class ICacheRepository(ABC):
+    """Интерфейс репозитория для общего кэширования данных"""
+    
+    @abstractmethod
+    async def set(
+        self, 
+        key: str, 
+        value: Any, 
+        ttl_seconds: Optional[int] = None
+    ) -> None:
+        """Установить значение в кэш с опциональным TTL"""
+        pass
+    
+    @abstractmethod
+    async def get(self, key: str, default: Any = None) -> Any:
+        """Получить значение из кэша"""
+        pass
+    
+    @abstractmethod
+    async def get_multi(self, keys: List[str]) -> Dict[str, Any]:
+        """Получить несколько значений из кэша"""
+        pass
+    
+    @abstractmethod
+    async def set_multi(
+        self, 
+        key_value_pairs: Dict[str, Any], 
+        ttl_seconds: Optional[int] = None
+    ) -> None:
+        """Установить несколько значений в кэш"""
+        pass
+    
+    @abstractmethod
+    async def delete(self, key: str) -> bool:
+        """Удалить значение из кэша"""
+        pass
+    
+    @abstractmethod
+    async def delete_multi(self, keys: List[str]) -> int:
+        """Удалить несколько значений из кэша (возвращает количество удаленных)"""
+        pass
+    
+    @abstractmethod
+    async def exists(self, key: str) -> bool:
+        """Проверить существование ключа в кэше"""
+        pass
+    
+    @abstractmethod
+    async def expire(self, key: str, ttl_seconds: int) -> bool:
+        """Установить TTL для существующего ключа"""
+        pass
+    
+    @abstractmethod
+    async def ttl(self, key: str) -> Optional[int]:
+        """Получить оставшееся время жизни ключа в секундах"""
+        pass
+    
+    @abstractmethod
+    async def increment(self, key: str, delta: Union[int, float] = 1) -> Union[int, float]:
+        """Увеличить числовое значение в кэше"""
+        pass
+    
+    @abstractmethod
+    async def decrement(self, key: str, delta: Union[int, float] = 1) -> Union[int, float]:
+        """Уменьшить числовое значение в кэше"""
+        pass
+    
+    @abstractmethod
+    async def append_to_list(self, key: str, value: Any, max_length: Optional[int] = None) -> int:
+        """Добавить элемент в список в кэше"""
+        pass
+    
+    @abstractmethod
+    async def get_list(self, key: str, start: int = 0, end: int = -1) -> List[Any]:
+        """Получить элементы списка из кэша"""
+        pass
+    
+    @abstractmethod
+    async def list_length(self, key: str) -> int:
+        """Получить длину списка в кэше"""
+        pass
+    
+    @abstractmethod
+    async def add_to_set(self, key: str, value: Any) -> bool:
+        """Добавить элемент в множество в кэше"""
+        pass
+    
+    @abstractmethod
+    async def is_in_set(self, key: str, value: Any) -> bool:
+        """Проверить наличие элемента в множестве"""
+        pass
+    
+    @abstractmethod
+    async def get_set_members(self, key: str) -> List[Any]:
+        """Получить все элементы множества"""
+        pass
+    
+    @abstractmethod
+    async def remove_from_set(self, key: str, value: Any) -> bool:
+        """Удалить элемент из множества"""
+        pass
+    
+    @abstractmethod
+    async def hash_set(self, key: str, field: str, value: Any) -> None:
+        """Установить поле хэша"""
+        pass
+    
+    @abstractmethod
+    async def hash_get(self, key: str, field: str, default: Any = None) -> Any:
+        """Получить поле хэша"""
+        pass
+    
+    @abstractmethod
+    async def hash_get_all(self, key: str) -> Dict[str, Any]:
+        """Получить все поля хэша"""
+        pass
+    
+    @abstractmethod
+    async def hash_delete(self, key: str, field: str) -> bool:
+        """Удалить поле хэша"""
+        pass
+    
+    @abstractmethod
+    async def clear_namespace(self, namespace: str) -> int:
+        """Очистить все ключи с определенным префиксом"""
+        pass
+    
+    @abstractmethod
+    async def get_keys_pattern(self, pattern: str) -> List[str]:
+        """Получить ключи по паттерну"""
+        pass
+    
+    @abstractmethod
+    async def clear_all(self) -> None:
+        """Очистить весь кэш"""
+        pass
+    
+    @abstractmethod
+    async def get_cache_info(self) -> Dict[str, Any]:
+        """Получить информацию о кэше (размер, статистика)"""
+        pass
+    
+    @abstractmethod
+    async def cleanup_expired(self) -> int:
+        """Очистить просроченные ключи (возвращает количество удаленных)"""
+        pass
+    
+    # Специализированные методы для индикаторов и сигналов
+    
+    async def cache_indicator(
+        self, 
+        symbol: str, 
+        indicator_name: str, 
+        value: float,
+        ttl_seconds: int = 300
+    ) -> None:
+        """Кэшировать значение индикатора"""
+        key = f"indicator:{symbol}:{indicator_name}"
+        await self.set(key, value, ttl_seconds)
+    
+    async def get_cached_indicator(
+        self, 
+        symbol: str, 
+        indicator_name: str
+    ) -> Optional[float]:
+        """Получить кэшированное значение индикатора"""
+        key = f"indicator:{symbol}:{indicator_name}"
+        return await self.get(key)
+    
+    async def cache_signal(
+        self, 
+        symbol: str, 
+        signal_type: str, 
+        signal_data: Dict[str, Any],
+        ttl_seconds: int = 60
+    ) -> None:
+        """Кэшировать торговый сигнал"""
+        key = f"signal:{symbol}:{signal_type}"
+        await self.set(key, signal_data, ttl_seconds)
+    
+    async def get_cached_signal(
+        self, 
+        symbol: str, 
+        signal_type: str
+    ) -> Optional[Dict[str, Any]]:
+        """Получить кэшированный торговый сигнал"""
+        key = f"signal:{symbol}:{signal_type}"
+        return await self.get(key)
+    
+    async def cache_orderbook_metrics(
+        self, 
+        symbol: str, 
+        metrics: Dict[str, Any],
+        ttl_seconds: int = 30
+    ) -> None:
+        """Кэшировать метрики стакана заявок"""
+        key = f"orderbook_metrics:{symbol}"
+        await self.set(key, metrics, ttl_seconds)
+    
+    async def get_cached_orderbook_metrics(
+        self, 
+        symbol: str
+    ) -> Optional[Dict[str, Any]]:
+        """Получить кэшированные метрики стакана заявок"""
+        key = f"orderbook_metrics:{symbol}"
+        return await self.get(key)
+```
+
+### 📄 `src\domain\repositories\i_configuration_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any, Union
+from src.domain.entities.configuration import Configuration, ConfigCategory, ConfigType
+
+
+class IConfigurationRepository(ABC):
+    """Интерфейс репозитория для управления динамической конфигурацией"""
+    
+    @abstractmethod
+    async def save(self, config: Configuration) -> None:
+        """Сохранить конфигурацию"""
+        pass
+    
+    @abstractmethod
+    async def save_batch(self, configs: List[Configuration]) -> None:
+        """Сохранить пакет конфигураций"""
+        pass
+    
+    @abstractmethod
+    async def get_by_key(self, key: str, category: ConfigCategory) -> Optional[Configuration]:
+        """Получить конфигурацию по ключу и категории"""
+        pass
+    
+    @abstractmethod
+    async def get_by_full_key(self, full_key: str) -> Optional[Configuration]:
+        """Получить конфигурацию по полному ключу (category.key)"""
+        pass
+    
+    @abstractmethod
+    async def get_by_category(self, category: ConfigCategory) -> List[Configuration]:
+        """Получить все конфигурации категории"""
+        pass
+    
+    @abstractmethod
+    async def get_all(self, include_secrets: bool = False) -> List[Configuration]:
+        """Получить все конфигурации"""
+        pass
+    
+    @abstractmethod
+    async def get_by_tags(self, tags: List[str]) -> List[Configuration]:
+        """Получить конфигурации по тегам"""
+        pass
+    
+    @abstractmethod
+    async def get_required_configs(self) -> List[Configuration]:
+        """Получить обязательные конфигурации"""
+        pass
+    
+    @abstractmethod
+    async def get_modified_configs(self) -> List[Configuration]:
+        """Получить измененные конфигурации (отличающиеся от default)"""
+        pass
+    
+    @abstractmethod
+    async def update_value(
+        self, 
+        key: str, 
+        category: ConfigCategory, 
+        new_value: Any
+    ) -> Optional[Configuration]:
+        """Обновить значение конфигурации"""
+        pass
+    
+    @abstractmethod
+    async def delete(self, key: str, category: ConfigCategory) -> bool:
+        """Удалить конфигурацию"""
+        pass
+    
+    @abstractmethod
+    async def reset_to_default(self, key: str, category: ConfigCategory) -> Optional[Configuration]:
+        """Сбросить конфигурацию к значению по умолчанию"""
+        pass
+    
+    @abstractmethod
+    async def reset_category_to_default(self, category: ConfigCategory) -> int:
+        """Сбросить всю категорию к значениям по умолчанию"""
+        pass
+    
+    @abstractmethod
+    async def validate_all(self) -> Dict[str, List[str]]:
+        """Валидировать все конфигурации (возвращает ошибки по ключам)"""
+        pass
+    
+    @abstractmethod
+    async def get_config_value(
+        self, 
+        key: str, 
+        category: ConfigCategory,
+        default: Any = None
+    ) -> Any:
+        """Получить только значение конфигурации"""
+        pass
+    
+    @abstractmethod
+    async def set_config_value(
+        self, 
+        key: str, 
+        category: ConfigCategory,
+        value: Any,
+        description: Optional[str] = None,
+        config_type: ConfigType = ConfigType.STRING
+    ) -> Configuration:
+        """Установить значение конфигурации (создать или обновить)"""
+        pass
+    
+    @abstractmethod
+    async def get_secrets(self) -> List[Configuration]:
+        """Получить секретные конфигурации"""
+        pass
+    
+    @abstractmethod
+    async def export_to_dict(
+        self, 
+        category: Optional[ConfigCategory] = None,
+        include_secrets: bool = False
+    ) -> Dict[str, Any]:
+        """Экспортировать конфигурации в словарь"""
+        pass
+    
+    @abstractmethod
+    async def import_from_dict(
+        self, 
+        config_dict: Dict[str, Any],
+        category: Optional[ConfigCategory] = None,
+        overwrite_existing: bool = True
+    ) -> int:
+        """Импортировать конфигурации из словаря (возвращает количество импортированных)"""
+        pass
+    
+    @abstractmethod
+    async def backup_configs(self, backup_name: str) -> str:
+        """Создать резервную копию конфигураций"""
+        pass
+    
+    @abstractmethod
+    async def restore_configs(self, backup_name: str) -> int:
+        """Восстановить конфигурации из резервной копии"""
+        pass
+    
+    @abstractmethod
+    async def count_by_category(self, category: ConfigCategory) -> int:
+        """Подсчитать количество конфигураций в категории"""
+        pass
+    
+    @abstractmethod
+    async def get_all_categories(self) -> List[ConfigCategory]:
+        """Получить все используемые категории"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_deals_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional
+from datetime import datetime
+
+from src.domain.entities.deal import Deal
+
+
+class IDealsRepository(ABC):
+    """Интерфейс для репозитория сделок"""
+
+    @abstractmethod
+    async def save_deal(self, deal: Deal) -> bool:
+        """Сохранить сделку"""
+        pass
+
+    @abstractmethod
+    async def get_deal(self, deal_id: str) -> Optional[Deal]:
+        """Получить сделку по ID"""
+        pass
+
+    @abstractmethod
+    async def get_all_deals(self) -> List[Deal]:
+        """Получить все сделки"""
+        pass
+
+    @abstractmethod
+    async def get_active_deals(self) -> List[Deal]:
+        """Получить активные сделки"""
+        pass
+
+    @abstractmethod
+    async def get_completed_deals(self) -> List[Deal]:
+        """Получить завершенные сделки"""
+        pass
+
+    @abstractmethod
+    async def update_deal(self, deal: Deal) -> bool:
+        """Обновить сделку"""
+        pass
+
+    @abstractmethod
+    async def delete_deal(self, deal_id: str) -> bool:
+        """Удалить сделку"""
+        pass
+
+    @abstractmethod
+    async def get_deals_by_symbol(self, symbol: str) -> List[Deal]:
+        """Получить сделки по символу"""
+        pass
+
+    @abstractmethod
+    async def get_deals_in_period(self, start_time: datetime, end_time: datetime) -> List[Deal]:
+        """Получить сделки за период"""
+        pass
+
+    @abstractmethod
+    async def count_active_deals(self) -> int:
+        """Подсчитать количество активных сделок"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_indicator_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any
+from src.domain.entities.indicator_data import IndicatorData, IndicatorType, IndicatorLevel
+
+
+class IIndicatorRepository(ABC):
+    """Интерфейс репозитория для сохранения и извлечения данных индикаторов"""
+    
+    @abstractmethod
+    async def save(self, indicator: IndicatorData) -> None:
+        """Сохранить данные индикатора"""
+        pass
+    
+    @abstractmethod
+    async def save_batch(self, indicators: List[IndicatorData]) -> None:
+        """Сохранить пакет индикаторов"""
+        pass
+    
+    @abstractmethod
+    async def get_by_symbol_and_type(
+        self, 
+        symbol: str, 
+        indicator_type: IndicatorType,
+        period: Optional[int] = None,
+        limit: int = 100
+    ) -> List[IndicatorData]:
+        """Получить индикаторы по символу и типу"""
+        pass
+    
+    @abstractmethod
+    async def get_latest(
+        self, 
+        symbol: str, 
+        indicator_type: IndicatorType,
+        period: Optional[int] = None
+    ) -> Optional[IndicatorData]:
+        """Получить последний индикатор по символу и типу"""
+        pass
+    
+    @abstractmethod
+    async def get_by_level(
+        self, 
+        symbol: str, 
+        level: IndicatorLevel,
+        limit: int = 100
+    ) -> List[IndicatorData]:
+        """Получить индикаторы по уровню сложности"""
+        pass
+    
+    @abstractmethod
+    async def get_by_time_range(
+        self, 
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int,
+        indicator_type: Optional[IndicatorType] = None
+    ) -> List[IndicatorData]:
+        """Получить индикаторы за период времени"""
+        pass
+    
+    @abstractmethod
+    async def delete_old(self, symbol: str, older_than_timestamp: int) -> int:
+        """Удалить старые индикаторы (возвращает количество удаленных)"""
+        pass
+    
+    @abstractmethod
+    async def get_available_indicators(self, symbol: str) -> Dict[str, List[int]]:
+        """Получить доступные типы индикаторов и их периоды для символа"""
+        pass
+    
+    @abstractmethod
+    async def count_by_symbol(self, symbol: str) -> int:
+        """Подсчитать количество индикаторов для символа"""
+        pass
+    
+    @abstractmethod
+    async def get_all_symbols(self) -> List[str]:
+        """Получить все символы, для которых есть индикаторы"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_order_book_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any
+from src.domain.entities.order_book import OrderBook
+
+
+class IOrderBookRepository(ABC):
+    """Интерфейс репозитория для сохранения и извлечения данных стакана заявок"""
+    
+    @abstractmethod
+    async def save(self, order_book: OrderBook) -> None:
+        """Сохранить данные стакана"""
+        pass
+    
+    @abstractmethod
+    async def get_latest(self, symbol: str) -> Optional[OrderBook]:
+        """Получить последний стакан для символа"""
+        pass
+    
+    @abstractmethod
+    async def get_by_symbol(self, symbol: str, limit: int = 100) -> List[OrderBook]:
+        """Получить историю стаканов для символа"""
+        pass
+    
+    @abstractmethod
+    async def get_by_time_range(
+        self, 
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int
+    ) -> List[OrderBook]:
+        """Получить стаканы за период времени"""
+        pass
+    
+    @abstractmethod
+    async def get_spread_history(
+        self, 
+        symbol: str, 
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Получить историю спредов"""
+        pass
+    
+    @abstractmethod
+    async def get_volume_imbalance_history(
+        self, 
+        symbol: str, 
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Получить историю дисбаланса объемов"""
+        pass
+    
+    @abstractmethod
+    async def delete_old(self, symbol: str, older_than_timestamp: int) -> int:
+        """Удалить старые стаканы (возвращает количество удаленных)"""
+        pass
+    
+    @abstractmethod
+    async def get_average_spread(
+        self, 
+        symbol: str, 
+        time_window_ms: int = 300000  # 5 минут
+    ) -> Optional[float]:
+        """Получить средний спред за период"""
+        pass
+    
+    @abstractmethod
+    async def get_liquidity_metrics(
+        self, 
+        symbol: str,
+        time_window_ms: int = 300000
+    ) -> Dict[str, float]:
+        """Получить метрики ликвидности за период"""
+        pass
+    
+    @abstractmethod
+    async def count_by_symbol(self, symbol: str) -> int:
+        """Подсчитать количество записей стакана для символа"""
+        pass
+    
+    @abstractmethod
+    async def get_all_symbols(self) -> List[str]:
+        """Получить все символы, для которых есть данные стакана"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_orders_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+
+from src.domain.entities.order import Order
+
+
+class IOrdersRepository(ABC):
+    """
+    🚀 CCXT COMPLIANT Orders Repository Interface
+    
+    Интерфейс для репозитория ордеров с полной поддержкой CCXT структур данных.
+    Поддерживает как CCXT ID (exchange order ID), так и локальные AutoTrade ID.
+    """
+
+    # ===== CORE CRUD OPERATIONS =====
+
+    @abstractmethod
+    async def save_order(self, order: Order) -> bool:
+        """Сохранить ордер (создать или обновить)"""
+        pass
+
+    @abstractmethod
+    async def get_order(self, order_id: str) -> Optional[Order]:
+        """Получить ордер по CCXT ID (exchange order ID)"""
+        pass
+
+    @abstractmethod
+    async def get_order_by_local_id(self, local_order_id: int) -> Optional[Order]:
+        """Получить ордер по локальному AutoTrade ID"""
+        pass
+
+    @abstractmethod
+    async def update_order(self, order: Order) -> bool:
+        """Обновить существующий ордер"""
+        pass
+
+    @abstractmethod
+    async def delete_order(self, order_id: str) -> bool:
+        """Удалить ордер (мягкое удаление)"""
+        pass
+
+    # ===== QUERY OPERATIONS =====
+
+    @abstractmethod
+    async def get_all_orders(self) -> List[Order]:
+        """Получить все ордера"""
+        pass
+
+    @abstractmethod
+    async def get_active_orders(self) -> List[Order]:
+        """Получить активные ордера (CCXT статусы: open, pending, partial)"""
+        pass
+
+    @abstractmethod
+    async def get_filled_orders(self) -> List[Order]:
+        """Получить исполненные ордера (CCXT статус: closed)"""
+        pass
+
+    @abstractmethod
+    async def get_orders_by_symbol(self, symbol: str) -> List[Order]:
+        """Получить ордера по торговой паре"""
+        pass
+
+    @abstractmethod
+    async def get_orders_by_deal_id(self, deal_id: str) -> List[Order]:
+        """Получить ордера по ID сделки"""
+        pass
+
+    @abstractmethod
+    async def get_orders_in_period(self, start_time: datetime, end_time: datetime) -> List[Order]:
+        """Получить ордера за период"""
+        pass
+
+    @abstractmethod
+    async def count_active_orders(self) -> int:
+        """Подсчитать количество активных ордеров"""
+        pass
+
+    @abstractmethod
+    async def count_orders_by_status(self, status: str) -> int:
+        """Подсчитать ордера по статусу"""
+        pass
+
+    # ===== ADVANCED QUERY OPERATIONS =====
+
+    @abstractmethod
+    async def get_orders_by_side_and_symbol(self, side: str, symbol: str) -> List[Order]:
+        """Получить ордера по стороне и символу"""
+        pass
+
+    @abstractmethod
+    async def get_recent_orders(self, limit: int = 100) -> List[Order]:
+        """Получить последние ордера"""
+        pass
+
+    @abstractmethod
+    async def get_orders_with_errors(self) -> List[Order]:
+        """Получить ордера с ошибками"""
+        pass
+
+    # ===== BULK OPERATIONS =====
+
+    @abstractmethod
+    async def update_orders_batch(self, orders: List[Order]) -> int:
+        """Массовое обновление ордеров"""
+        pass
+
+    # ===== UTILITY METHODS =====
+
+    @abstractmethod
+    async def cleanup_old_orders(self, days_to_keep: int = 30) -> int:
+        """Очистка старых ордеров"""
+        pass
+
+    @abstractmethod
+    async def get_order_statistics(self) -> Dict[str, Any]:
+        """Получить статистику по ордерам"""
+        pass
+
+    @abstractmethod
+    async def health_check(self) -> Dict[str, Any]:
+        """Проверка здоровья репозитория"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_state_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any
+
+from src.domain.entities.application_state import (
+    ApplicationStateInfo, SystemSnapshot, RecoveryInfo, 
+    StateTransition, TradingSessionState
+)
+
+
+class IStateRepository(ABC):
+    """
+    Интерфейс репозитория для управления состоянием приложения
+    """
+    
+    @abstractmethod
+    async def save_application_state(self, state_info: ApplicationStateInfo) -> bool:
+        """Сохранить текущее состояние приложения"""
+        pass
+    
+    @abstractmethod
+    async def load_application_state(self) -> Optional[ApplicationStateInfo]:
+        """Загрузить последнее состояние приложения"""
+        pass
+    
+    @abstractmethod
+    async def save_system_snapshot(self, snapshot: SystemSnapshot) -> bool:
+        """Сохранить снимок системы"""
+        pass
+    
+    @abstractmethod
+    async def load_system_snapshot(self, snapshot_id: Optional[str] = None) -> Optional[SystemSnapshot]:
+        """Загрузить снимок системы (последний или по ID)"""
+        pass
+    
+    @abstractmethod
+    async def get_system_snapshots(
+        self, 
+        limit: int = 10,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> List[SystemSnapshot]:
+        """Получить список снимков системы"""
+        pass
+    
+    @abstractmethod
+    async def save_recovery_info(self, recovery_info: RecoveryInfo) -> bool:
+        """Сохранить информацию для восстановления"""
+        pass
+    
+    @abstractmethod
+    async def get_recovery_info(self, snapshot_id: str) -> Optional[RecoveryInfo]:
+        """Получить информацию для восстановления"""
+        pass
+    
+    @abstractmethod
+    async def log_state_transition(self, transition: StateTransition) -> bool:
+        """Записать переход состояний"""
+        pass
+    
+    @abstractmethod
+    async def get_state_transitions(
+        self,
+        limit: int = 50,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> List[StateTransition]:
+        """Получить историю переходов состояний"""
+        pass
+    
+    @abstractmethod
+    async def save_trading_session_state(self, session_state: TradingSessionState) -> bool:
+        """Сохранить состояние торговой сессии"""
+        pass
+    
+    @abstractmethod
+    async def load_trading_session_state(self, session_id: str) -> Optional[TradingSessionState]:
+        """Загрузить состояние торговой сессии"""
+        pass
+    
+    @abstractmethod
+    async def get_active_trading_sessions(self) -> List[TradingSessionState]:
+        """Получить активные торговые сессии"""
+        pass
+    
+    @abstractmethod
+    async def cleanup_old_snapshots(self, days_to_keep: int = 30) -> int:
+        """Очистить старые снимки"""
+        pass
+    
+    @abstractmethod
+    async def cleanup_old_transitions(self, days_to_keep: int = 90) -> int:
+        """Очистить старые переходы состояний"""
+        pass
+    
+    @abstractmethod
+    async def get_recovery_candidates(self) -> List[RecoveryInfo]:
+        """Получить кандидатов для восстановления (отсортированных по приоритету)"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_statistics_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any, Union
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
+
+
+class IStatisticsRepository(ABC):
+    """Интерфейс репозитория для сохранения и извлечения статистических данных"""
+    
+    @abstractmethod
+    async def save(self, statistic: Statistics) -> None:
+        """Сохранить статистику"""
+        pass
+    
+    @abstractmethod
+    async def save_batch(self, statistics: List[Statistics]) -> None:
+        """Сохранить пакет статистик"""
+        pass
+    
+    @abstractmethod
+    async def get_by_metric_name(
+        self, 
+        metric_name: str,
+        category: Optional[StatisticCategory] = None,
+        limit: int = 100
+    ) -> List[Statistics]:
+        """Получить статистику по имени метрики"""
+        pass
+    
+    @abstractmethod
+    async def get_latest(
+        self, 
+        metric_name: str,
+        category: StatisticCategory,
+        symbol: Optional[str] = None
+    ) -> Optional[Statistics]:
+        """Получить последнюю статистику по метрике"""
+        pass
+    
+    @abstractmethod
+    async def get_by_category(
+        self, 
+        category: StatisticCategory,
+        limit: int = 100
+    ) -> List[Statistics]:
+        """Получить статистику по категории"""
+        pass
+    
+    @abstractmethod
+    async def get_by_type(
+        self, 
+        metric_type: StatisticType,
+        limit: int = 100
+    ) -> List[Statistics]:
+        """Получить статистику по типу"""
+        pass
+    
+    @abstractmethod
+    async def get_by_symbol(
+        self, 
+        symbol: str,
+        category: Optional[StatisticCategory] = None,
+        limit: int = 100
+    ) -> List[Statistics]:
+        """Получить статистику по символу"""
+        pass
+    
+    @abstractmethod
+    async def get_by_tags(
+        self, 
+        tags: Dict[str, str],
+        category: Optional[StatisticCategory] = None,
+        limit: int = 100
+    ) -> List[Statistics]:
+        """Получить статистику по тегам"""
+        pass
+    
+    @abstractmethod
+    async def get_by_time_range(
+        self, 
+        start_timestamp: int,
+        end_timestamp: int,
+        category: Optional[StatisticCategory] = None,
+        metric_name: Optional[str] = None
+    ) -> List[Statistics]:
+        """Получить статистику за период времени"""
+        pass
+    
+    @abstractmethod
+    async def increment_counter(
+        self, 
+        metric_name: str,
+        category: StatisticCategory,
+        delta: Union[int, float] = 1,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None
+    ) -> Statistics:
+        """Увеличить счетчик (создать или обновить)"""
+        pass
+    
+    @abstractmethod
+    async def update_gauge(
+        self, 
+        metric_name: str,
+        category: StatisticCategory,
+        value: Union[int, float],
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None
+    ) -> Statistics:
+        """Обновить датчик (создать или обновить)"""
+        pass
+    
+    @abstractmethod
+    async def record_timing(
+        self, 
+        metric_name: str,
+        category: StatisticCategory,
+        duration_ms: float,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None
+    ) -> Statistics:
+        """Записать время выполнения"""
+        pass
+    
+    @abstractmethod
+    async def get_aggregated_stats(
+        self, 
+        metric_name: str,
+        category: StatisticCategory,
+        time_window_ms: int = 3600000,  # 1 час
+        aggregation: str = "avg"  # avg, sum, min, max, count
+    ) -> Optional[float]:
+        """Получить агрегированную статистику за период"""
+        pass
+    
+    @abstractmethod
+    async def get_performance_summary(
+        self, 
+        time_window_ms: int = 86400000  # 24 часа
+    ) -> Dict[str, Any]:
+        """Получить сводку производительности за период"""
+        pass
+    
+    @abstractmethod
+    async def get_stale_metrics(
+        self, 
+        max_age_seconds: float = 300
+    ) -> List[Statistics]:
+        """Получить устаревшие метрики"""
+        pass
+    
+    @abstractmethod
+    async def delete_old(
+        self, 
+        older_than_timestamp: int,
+        category: Optional[StatisticCategory] = None
+    ) -> int:
+        """Удалить старую статистику (возвращает количество удаленных)"""
+        pass
+    
+    @abstractmethod
+    async def get_all_metric_names(
+        self, 
+        category: Optional[StatisticCategory] = None
+    ) -> List[str]:
+        """Получить все имена метрик"""
+        pass
+    
+    @abstractmethod
+    async def get_all_symbols(self) -> List[str]:
+        """Получить все символы, для которых есть статистика"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_stream_data_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any, Union
+import json
+
+
+class IStreamDataRepository(ABC):
+    """
+    Интерфейс репозитория для высокочастотных потоковых данных (тикеры, стаканы)
+    Работает с JSON-массивами напрямую для оптимизации производительности
+    """
+    
+    @abstractmethod
+    async def append_ticker_data(
+        self, 
+        symbol: str, 
+        ticker_data: Dict[str, Any],
+        max_history_size: int = 1000
+    ) -> None:
+        """Добавить данные тикера в JSON-массив"""
+        pass
+    
+    @abstractmethod
+    async def get_ticker_history(
+        self, 
+        symbol: str, 
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Получить историю тикеров как список словарей"""
+        pass
+    
+    @abstractmethod
+    async def get_latest_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """Получить последний тикер"""
+        pass
+    
+    @abstractmethod
+    async def get_price_history(
+        self, 
+        symbol: str, 
+        limit: int = 200
+    ) -> List[float]:
+        """Получить только историю цен для вычисления индикаторов"""
+        pass
+    
+    @abstractmethod
+    async def append_orderbook_snapshot(
+        self, 
+        symbol: str, 
+        orderbook_data: Dict[str, Any],
+        max_history_size: int = 100
+    ) -> None:
+        """Добавить снимок стакана заявок"""
+        pass
+    
+    @abstractmethod
+    async def get_orderbook_history(
+        self, 
+        symbol: str, 
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """Получить историю стаканов"""
+        pass
+    
+    @abstractmethod
+    async def get_latest_orderbook(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """Получить последний стакан заявок"""
+        pass
+    
+    @abstractmethod
+    async def calculate_sma(
+        self, 
+        symbol: str, 
+        period: int
+    ) -> Optional[float]:
+        """Вычислить SMA напрямую из JSON-данных"""
+        pass
+    
+    @abstractmethod
+    async def calculate_price_change(
+        self, 
+        symbol: str, 
+        periods: int = 1
+    ) -> Optional[Dict[str, float]]:
+        """Вычислить изменение цены за N периодов"""
+        pass
+    
+    @abstractmethod
+    async def get_volatility(
+        self, 
+        symbol: str, 
+        periods: int = 20
+    ) -> Optional[float]:
+        """Вычислить волатильность за N периодов"""
+        pass
+    
+    @abstractmethod
+    async def cleanup_old_data(
+        self, 
+        symbol: str, 
+        keep_ticker_count: int = 1000,
+        keep_orderbook_count: int = 100
+    ) -> Dict[str, int]:
+        """Очистить старые данные, оставить только последние N записей"""
+        pass
+    
+    @abstractmethod
+    async def get_data_stats(self, symbol: str) -> Dict[str, Any]:
+        """Получить статистику данных (количество записей, размер, etc.)"""
+        pass
+    
+    @abstractmethod
+    async def bulk_append_tickers(
+        self, 
+        symbol: str, 
+        ticker_batch: List[Dict[str, Any]],
+        max_history_size: int = 1000
+    ) -> None:
+        """Добавить пакет тикеров за один раз"""
+        pass
+    
+    @abstractmethod
+    async def get_ticker_subset(
+        self, 
+        symbol: str, 
+        start_index: int, 
+        count: int
+    ) -> List[Dict[str, Any]]:
+        """Получить подмножество тикеров по индексам"""
+        pass
+    
+    @abstractmethod
+    async def get_tickers_by_time_range(
+        self, 
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int
+    ) -> List[Dict[str, Any]]:
+        """Получить тикеры за временной интервал"""
+        pass
+    
+    @abstractmethod
+    async def compress_old_data(
+        self, 
+        symbol: str, 
+        older_than_timestamp: int
+    ) -> int:
+        """Сжать старые данные (агрегировать минутные данные в часовые)"""
+        pass
+    
+    @abstractmethod
+    async def export_to_json(
+        self, 
+        symbol: str, 
+        file_path: str,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> bool:
+        """Экспортировать данные в JSON файл"""
+        pass
+    
+    @abstractmethod
+    async def import_from_json(
+        self, 
+        symbol: str, 
+        file_path: str,
+        append: bool = True
+    ) -> int:
+        """Импортировать данные из JSON файла"""
+        pass
+    
+    @abstractmethod
+    async def get_all_symbols(self) -> List[str]:
+        """Получить все символы, для которых есть данные"""
+        pass
+    
+    @abstractmethod
+    async def delete_symbol_data(self, symbol: str) -> bool:
+        """Удалить все данные для символа"""
+        pass
+    
+    # Методы для работы с индикаторными буферами
+    
+    @abstractmethod
+    async def update_indicator_buffer(
+        self, 
+        symbol: str, 
+        indicator_name: str,
+        value: float,
+        max_buffer_size: int = 100
+    ) -> None:
+        """Обновить буфер индикатора"""
+        pass
+    
+    @abstractmethod
+    async def get_indicator_buffer(
+        self, 
+        symbol: str, 
+        indicator_name: str,
+        limit: int = 50
+    ) -> List[float]:
+        """Получить буфер индикатора"""
+        pass
+    
+    @abstractmethod
+    async def clear_indicator_buffers(self, symbol: str) -> int:
+        """Очистить все буферы индикаторов для символа"""
+        pass
+```
+
+### 📄 `src\domain\repositories\i_trading_signal_repository.py`
+
+```python
+from abc import ABC, abstractmethod
+from typing import List, Optional, Dict, Any
+from src.domain.entities.trading_signal import TradingSignal, SignalType, SignalSource
+
+
+class ITradingSignalRepository(ABC):
+    """Интерфейс репозитория для сохранения и извлечения торговых сигналов"""
+    
+    @abstractmethod
+    async def save(self, signal: TradingSignal) -> None:
+        """Сохранить торговый сигнал"""
+        pass
+    
+    @abstractmethod
+    async def save_batch(self, signals: List[TradingSignal]) -> None:
+        """Сохранить пакет сигналов"""
+        pass
+    
+    @abstractmethod
+    async def get_by_id(self, signal_id: str) -> Optional[TradingSignal]:
+        """Получить сигнал по ID"""
+        pass
+    
+    @abstractmethod
+    async def get_by_symbol(self, symbol: str, limit: int = 100) -> List[TradingSignal]:
+        """Получить сигналы по символу"""
+        pass
+    
+    @abstractmethod
+    async def get_latest(self, symbol: str) -> Optional[TradingSignal]:
+        """Получить последний сигнал для символа"""
+        pass
+    
+    @abstractmethod
+    async def get_by_type(
+        self, 
+        symbol: str, 
+        signal_type: SignalType,
+        limit: int = 100
+    ) -> List[TradingSignal]:
+        """Получить сигналы по типу"""
+        pass
+    
+    @abstractmethod
+    async def get_by_source(
+        self, 
+        symbol: str, 
+        source: SignalSource,
+        limit: int = 100
+    ) -> List[TradingSignal]:
+        """Получить сигналы по источнику"""
+        pass
+    
+    @abstractmethod
+    async def get_actionable_signals(
+        self, 
+        symbol: str,
+        min_confidence: float = 0.6,
+        min_strength: float = 0.3,
+        limit: int = 50
+    ) -> List[TradingSignal]:
+        """Получить сигналы, по которым можно действовать"""
+        pass
+    
+    @abstractmethod
+    async def get_by_time_range(
+        self, 
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int,
+        signal_type: Optional[SignalType] = None
+    ) -> List[TradingSignal]:
+        """Получить сигналы за период времени"""
+        pass
+    
+    @abstractmethod
+    async def get_conflicting_signals(
+        self, 
+        symbol: str,
+        time_window_ms: int = 60000  # 1 минута
+    ) -> List[List[TradingSignal]]:
+        """Найти конфликтующие сигналы в временном окне"""
+        pass
+    
+    @abstractmethod
+    async def get_combined_signals(
+        self, 
+        symbol: str,
+        limit: int = 50
+    ) -> List[TradingSignal]:
+        """Получить комбинированные сигналы"""
+        pass
+    
+    @abstractmethod
+    async def get_signal_statistics(
+        self, 
+        symbol: str,
+        time_window_ms: int = 86400000  # 24 часа
+    ) -> Dict[str, Any]:
+        """Получить статистику сигналов за период"""
+        pass
+    
+    @abstractmethod
+    async def delete_old(self, symbol: str, older_than_timestamp: int) -> int:
+        """Удалить старые сигналы (возвращает количество удаленных)"""
+        pass
+    
+    @abstractmethod
+    async def count_by_symbol(self, symbol: str) -> int:
+        """Подсчитать количество сигналов для символа"""
+        pass
+    
+    @abstractmethod
+    async def get_all_symbols(self) -> List[str]:
+        """Получить все символы, для которых есть сигналы"""
+        pass
+```
+
 ### 📄 `src\domain\services\__init__.py`
 
 ```python
@@ -5636,7 +10806,7 @@ import logging
 from typing import List
 
 from domain.services.deals.deal_service import DealService
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.entities.deal import Deal
 from domain.entities.order import Order
 
@@ -5649,7 +10819,7 @@ class DealCompletionMonitor:
     логирует их статус и закрывает сделку в случае полного исполнения.
     """
 
-    def __init__(self, deal_service: DealService, order_service: OrderService, check_interval_seconds: int = 30):
+    def __init__(self, deal_service: DealService, order_service: UnifiedOrderService, check_interval_seconds: int = 30):
         self.deal_service = deal_service
         self.order_service = order_service
         self.check_interval_seconds = check_interval_seconds
@@ -5729,9 +10899,9 @@ class DealCompletionMonitor:
 from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-from infrastructure.repositories.deals_repository import DealsRepository
-from domain.services.orders.order_service import OrderService
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.infrastructure.repositories.deals_repository import DealsRepository
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from typing import List, Optional
 import logging
 
@@ -5743,10 +10913,10 @@ class DealService:
     Сервис для управления сделками:
     - Создание сделок через DealFactory,
     - Обновление и управление статусами сделок,
-    - Взаимодействие с OrderService для управления ордерами.
+    - Взаимодействие с UnifiedOrderService для управления ордерами.
     """
 
-    def __init__(self, deals_repo: DealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
+    def __init__(self, deals_repo: DealsRepository, order_service: UnifiedOrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
         self.deals_repo = deals_repo
         self.order_service = order_service
         self.deal_factory = deal_factory
@@ -5879,155 +11049,917 @@ class DealService:
 
 ```
 
-### 📄 `src\domain\services\indicators\cached_indicator_service.py`
+### 📄 `src\domain\services\indicators\indicator_calculation_service.py`
 
 ```python
-import time
-from typing import Dict, List
+import logging
+from typing import Dict, List, Optional, Any
 import numpy as np
 import talib
 from talib import MA_Type
-import logging
+
+from src.domain.entities.indicator_data import IndicatorData, IndicatorType, IndicatorLevel
+from src.domain.repositories.i_stream_data_repository import IStreamDataRepository
+from src.domain.repositories.i_indicator_repository import IIndicatorRepository
+from src.domain.repositories.i_cache_repository import ICacheRepository
 
 logger = logging.getLogger(__name__)
 
-class CachedIndicatorService:
-    def __init__(self):
-        # Кеши разных уровней
-        self.fast_cache = {}      # Каждый тик
-        self.medium_cache = {}    # Каждые 10 тиков
-        self.heavy_cache = {}     # Каждые 50 тиков
 
-        # Счетчики обновлений
-        self.last_medium_update = 0
-        self.last_heavy_update = 0
-        self.tick_count = 0
-
-        # Буферы для инкрементальных вычислений
-        self.sma_7_buffer = []
-        self.sma_25_buffer = []
-        self.price_sum_7 = 0
-        self.price_sum_25 = 0
-
-    def update_fast_indicators(self, price: float) -> Dict:
-        """Быстрые индикаторы каждый тик (без TALIB)"""
-
-        if not isinstance(price, (int, float)) or np.isnan(price):
-            return self.fast_cache  # Вернуть предыдущие значения
-
-        self.tick_count += 1
-
-        # SMA-7 инкрементально
-        self.sma_7_buffer.append(price)
-        self.price_sum_7 += price
-
-        if len(self.sma_7_buffer) > 7:
-            removed = self.sma_7_buffer.pop(0)
-            self.price_sum_7 -= removed
-
-        sma_7 = self.price_sum_7 / len(self.sma_7_buffer) if self.sma_7_buffer else 0
-
-        # SMA-25 инкрементально
-        self.sma_25_buffer.append(price)
-        self.price_sum_25 += price
-
-        if len(self.sma_25_buffer) > 25:
-            removed = self.sma_25_buffer.pop(0)
-            self.price_sum_25 -= removed
-
-        sma_25 = self.price_sum_25 / len(self.sma_25_buffer) if len(self.sma_25_buffer) >= 25 else 0
-
-        self.fast_cache = {
-            "price": price,
-            "sma_7": round(sma_7, 8),
-            "sma_25": round(sma_25, 8) if sma_25 > 0 else 0,
-            "timestamp": int(time.time() * 1000)
+class IndicatorCalculationService:
+    """
+    Сервис для вычисления технических индикаторов.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за вычисление индикаторов.
+    """
+    
+    def __init__(
+        self,
+        stream_repository: IStreamDataRepository,
+        indicator_repository: IIndicatorRepository,
+        cache_repository: Optional[ICacheRepository] = None
+    ):
+        self.stream_repository = stream_repository
+        self.indicator_repository = indicator_repository
+        self.cache_repository = cache_repository
+        
+        # Настройки обновления
+        self.medium_update_interval = 10  # тиков
+        self.heavy_update_interval = 50   # тиков
+        
+        # Счетчики для управления частотой обновлений
+        self._tick_counters: Dict[str, int] = {}
+        self._last_medium_update: Dict[str, int] = {}
+        self._last_heavy_update: Dict[str, int] = {}
+        
+        self._stats = {
+            "fast_calculations": 0,
+            "medium_calculations": 0,
+            "heavy_calculations": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "errors": 0
         }
-
-        return self.fast_cache
-
-    def should_update_medium(self) -> bool:
-        return self.tick_count - self.last_medium_update >= 10
-
-    def should_update_heavy(self) -> bool:
-        return self.tick_count - self.last_heavy_update >= 50
-
-    def update_medium_indicators(self, price_history: List[float]) -> Dict:
-        """Средние индикаторы каждые 10 тиков"""
-        if len(price_history) < 30:
-            return {}
-
-        closes = np.array(price_history[-30:])  # Только последние 30
-
+    
+    async def calculate_fast_indicators(self, symbol: str, current_price: float) -> Dict[str, float]:
+        """
+        Вычислить быстрые индикаторы (SMA 7, SMA 25)
+        Вызывается при каждом тике
+        """
         try:
-            rsi_5 = talib.RSI(closes, timeperiod=5)
-            rsi_15 = talib.RSI(closes, timeperiod=15)
-
-            self.medium_cache = {
-                "rsi_5": round(float(rsi_5[-1]), 8) if len(rsi_5) > 0 and not np.isnan(rsi_5[-1]) else 0,
-                "rsi_15": round(float(rsi_15[-1]), 8) if len(rsi_15) > 0 and not np.isnan(rsi_15[-1]) else 0,
-            }
-
-            self.last_medium_update = self.tick_count
-            logger.info(
-                f"🔄 Обновлен средний кеш на тике {self.tick_count}"
-            )
-
+            self._tick_counters[symbol] = self._tick_counters.get(symbol, 0) + 1
+            indicators = {}
+            
+            # SMA 7
+            sma_7 = await self._calculate_sma_incremental(symbol, 7, current_price)
+            if sma_7 is not None:
+                indicators['sma_7'] = sma_7
+                await self._save_indicator(symbol, IndicatorType.SMA, sma_7, 7, IndicatorLevel.FAST)
+            
+            # SMA 25
+            sma_25 = await self._calculate_sma_incremental(symbol, 25, current_price)
+            if sma_25 is not None:
+                indicators['sma_25'] = sma_25
+                await self._save_indicator(symbol, IndicatorType.SMA, sma_25, 25, IndicatorLevel.FAST)
+            
+            self._stats["fast_calculations"] += 1
+            return indicators
+            
         except Exception as e:
-            logger.warning(f"⚠️ Ошибка в medium_indicators: {e}")
-
-        return self.medium_cache
-
-    def update_heavy_indicators(self, price_history: List[float]) -> Dict:
-        """Тяжелые индикаторы каждые 50 тиков"""
-        if len(price_history) < 50:
+            logger.error(f"Error calculating fast indicators for {symbol}: {e}")
+            self._stats["errors"] += 1
             return {}
-
-        closes = np.array(price_history[-100:])  # Только последние 100
-
+    
+    async def should_update_medium_indicators(self, symbol: str) -> bool:
+        """Проверить нужно ли обновлять средние индикаторы"""
+        tick_count = self._tick_counters.get(symbol, 0)
+        last_update = self._last_medium_update.get(symbol, 0)
+        return tick_count - last_update >= self.medium_update_interval
+    
+    async def calculate_medium_indicators(self, symbol: str) -> Dict[str, float]:
+        """
+        Вычислить средние индикаторы (RSI 5, RSI 15)
+        Вызывается каждые 10 тиков
+        """
         try:
+            if not await self.should_update_medium_indicators(symbol):
+                return {}
+            
+            # Получаем историю цен
+            prices = await self.stream_repository.get_price_history(symbol, 30)
+            if len(prices) < 15:
+                return {}
+            
+            prices_array = np.array(prices[-30:])
+            indicators = {}
+            
+            # RSI 5
+            rsi_5 = talib.RSI(prices_array, timeperiod=5)
+            if len(rsi_5) > 0 and not np.isnan(rsi_5[-1]):
+                indicators['rsi_5'] = round(float(rsi_5[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.RSI, indicators['rsi_5'], 5, IndicatorLevel.MEDIUM)
+            
+            # RSI 15
+            rsi_15 = talib.RSI(prices_array, timeperiod=15)
+            if len(rsi_15) > 0 and not np.isnan(rsi_15[-1]):
+                indicators['rsi_15'] = round(float(rsi_15[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.RSI, indicators['rsi_15'], 15, IndicatorLevel.MEDIUM)
+            
+            # Обновляем счетчик
+            self._last_medium_update[symbol] = self._tick_counters.get(symbol, 0)
+            self._stats["medium_calculations"] += 1
+            
+            return indicators
+            
+        except Exception as e:
+            logger.error(f"Error calculating medium indicators for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return {}
+    
+    async def should_update_heavy_indicators(self, symbol: str) -> bool:
+        """Проверить нужно ли обновлять тяжелые индикаторы"""
+        tick_count = self._tick_counters.get(symbol, 0)
+        last_update = self._last_heavy_update.get(symbol, 0)
+        return tick_count - last_update >= self.heavy_update_interval
+    
+    async def calculate_heavy_indicators(self, symbol: str) -> Dict[str, float]:
+        """
+        Вычислить тяжелые индикаторы (MACD, SMA 75, Bollinger Bands)
+        Вызывается каждые 50 тиков
+        """
+        try:
+            if not await self.should_update_heavy_indicators(symbol):
+                return {}
+            
+            # Получаем историю цен
+            prices = await self.stream_repository.get_price_history(symbol, 100)
+            if len(prices) < 50:
+                return {}
+            
+            prices_array = np.array(prices[-100:])
+            indicators = {}
+            
             # MACD
-            macd, macdsignal, macdhist = talib.MACD(closes, fastperiod=12, slowperiod=26, signalperiod=9)
-
-            # SMA-99
-            sma_75 = talib.MA(closes, timeperiod=75, matype=MA_Type.SMA)
-
+            macd, macdsignal, macdhist = talib.MACD(prices_array, fastperiod=12, slowperiod=26, signalperiod=9)
+            if len(macd) > 0 and not np.isnan(macd[-1]):
+                indicators['macd'] = round(float(macd[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.MACD, indicators['macd'], None, IndicatorLevel.HEAVY)
+                
+            if len(macdsignal) > 0 and not np.isnan(macdsignal[-1]):
+                indicators['macd_signal'] = round(float(macdsignal[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.MACD_SIGNAL, indicators['macd_signal'], None, IndicatorLevel.HEAVY)
+                
+            if len(macdhist) > 0 and not np.isnan(macdhist[-1]):
+                indicators['macd_histogram'] = round(float(macdhist[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.MACD_HISTOGRAM, indicators['macd_histogram'], None, IndicatorLevel.HEAVY)
+            
+            # SMA 75
+            sma_75 = talib.MA(prices_array, timeperiod=75, matype=MA_Type.SMA)
+            if len(sma_75) > 0 and not np.isnan(sma_75[-1]):
+                indicators['sma_75'] = round(float(sma_75[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.SMA, indicators['sma_75'], 75, IndicatorLevel.HEAVY)
+            
             # Bollinger Bands
-            upperband, middleband, lowerband = talib.BBANDS(closes, timeperiod=20, nbdevup=2, nbdevdn=2)
-
-            self.heavy_cache = {
-                "macd": round(float(macd[-1]), 8) if len(macd) > 0 and not np.isnan(macd[-1]) else 0,
-                "signal": round(float(macdsignal[-1]), 8) if len(macdsignal) > 0 and not np.isnan(macdsignal[-1]) else 0,
-                "histogram": round(float(macdhist[-1]), 8) if len(macdhist) > 0 and not np.isnan(macdhist[-1]) else 0,
-                "sma_99": round(float(sma_75[-1]), 8) if len(sma_75) > 0 and not np.isnan(sma_75[-1]) else 0,
-                "bb_upper": round(float(upperband[-1]), 8) if len(upperband) > 0 and not np.isnan(upperband[-1]) else 0,
-                "bb_middle": round(float(middleband[-1]), 8) if len(middleband) > 0 and not np.isnan(middleband[-1]) else 0,
-                "bb_lower": round(float(lowerband[-1]), 8) if len(lowerband) > 0 and not np.isnan(lowerband[-1]) else 0,
-            }
-
-            self.last_heavy_update = self.tick_count
-            logger.info(
-                f"🔥 Обновлен тяжелый кеш на тике {self.tick_count}"
-            )
-
+            upperband, middleband, lowerband = talib.BBANDS(prices_array, timeperiod=20, nbdevup=2, nbdevdn=2)
+            
+            if len(upperband) > 0 and not np.isnan(upperband[-1]):
+                indicators['bb_upper'] = round(float(upperband[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.BOLLINGER_UPPER, indicators['bb_upper'], 20, IndicatorLevel.HEAVY)
+                
+            if len(middleband) > 0 and not np.isnan(middleband[-1]):
+                indicators['bb_middle'] = round(float(middleband[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.BOLLINGER_MIDDLE, indicators['bb_middle'], 20, IndicatorLevel.HEAVY)
+                
+            if len(lowerband) > 0 and not np.isnan(lowerband[-1]):
+                indicators['bb_lower'] = round(float(lowerband[-1]), 8)
+                await self._save_indicator(symbol, IndicatorType.BOLLINGER_LOWER, indicators['bb_lower'], 20, IndicatorLevel.HEAVY)
+            
+            # Обновляем счетчик
+            self._last_heavy_update[symbol] = self._tick_counters.get(symbol, 0)
+            self._stats["heavy_calculations"] += 1
+            
+            return indicators
+            
         except Exception as e:
-            logger.warning(f"⚠️ Ошибка в heavy_indicators: {e}")
-
-        return self.heavy_cache
-
-    def get_all_cached_signals(self) -> Dict:
-        """Возвращает все кешированные сигналы"""
+            logger.error(f"Error calculating heavy indicators for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return {}
+    
+    async def get_all_cached_indicators(self, symbol: str) -> Dict[str, float]:
+        """Получить все кэшированные индикаторы для символа"""
+        try:
+            result = {}
+            
+            # Если есть кэш-репозиторий, пробуем получить из кэша
+            if self.cache_repository:
+                # Получаем индикаторы из кэша
+                indicator_names = ['sma_7', 'sma_25', 'rsi_5', 'rsi_15', 'macd', 'macd_signal', 'macd_histogram', 'sma_75', 'bb_upper', 'bb_middle', 'bb_lower']
+                
+                for indicator_name in indicator_names:
+                    cached_value = await self.cache_repository.get_cached_indicator(symbol, indicator_name)
+                    if cached_value is not None:
+                        result[indicator_name] = cached_value
+                        self._stats["cache_hits"] += 1
+                    else:
+                        self._stats["cache_misses"] += 1
+            
+            # Если кэша нет или он пуст, получаем из репозитория индикаторов
+            if not result:
+                # Получаем последние индикаторы для каждого типа
+                indicator_types = [
+                    (IndicatorType.SMA, 7), (IndicatorType.SMA, 25), (IndicatorType.SMA, 75),
+                    (IndicatorType.RSI, 5), (IndicatorType.RSI, 15),
+                    (IndicatorType.MACD, None), (IndicatorType.MACD_SIGNAL, None), (IndicatorType.MACD_HISTOGRAM, None),
+                    (IndicatorType.BOLLINGER_UPPER, 20), (IndicatorType.BOLLINGER_MIDDLE, 20), (IndicatorType.BOLLINGER_LOWER, 20)
+                ]
+                
+                for indicator_type, period in indicator_types:
+                    latest = await self.indicator_repository.get_latest(symbol, indicator_type, period)
+                    if latest:
+                        result[latest.indicator_name] = latest.value
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting cached indicators for {symbol}: {e}")
+            return {}
+    
+    async def _calculate_sma_incremental(self, symbol: str, period: int, current_price: float) -> Optional[float]:
+        """Инкрементальное вычисление SMA"""
+        try:
+            # Используем буфер индикаторов в StreamDataRepository
+            buffer_name = f"sma_{period}_buffer"
+            
+            # Обновляем буфер
+            await self.stream_repository.update_indicator_buffer(symbol, buffer_name, current_price, period)
+            
+            # Получаем буфер для вычисления
+            buffer = await self.stream_repository.get_indicator_buffer(symbol, buffer_name, period)
+            
+            if len(buffer) >= period:
+                return sum(buffer[-period:]) / period
+            elif len(buffer) > 0:
+                return sum(buffer) / len(buffer)
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error calculating incremental SMA {period} for {symbol}: {e}")
+            return None
+    
+    async def _save_indicator(
+        self, 
+        symbol: str, 
+        indicator_type: IndicatorType, 
+        value: float, 
+        period: Optional[int], 
+        level: IndicatorLevel
+    ) -> None:
+        """Сохранить вычисленный индикатор"""
+        try:
+            import time
+            
+            indicator = IndicatorData(
+                symbol=symbol,
+                timestamp=int(time.time() * 1000),
+                indicator_type=indicator_type,
+                value=value,
+                period=period,
+                level=level
+            )
+            
+            # Сохраняем в репозиторий
+            await self.indicator_repository.save(indicator)
+            
+            # Кэшируем если есть кэш-репозиторий
+            if self.cache_repository:
+                await self.cache_repository.cache_indicator(
+                    symbol, indicator.indicator_name, value, 300
+                )
+                
+        except Exception as e:
+            logger.error(f"Error saving indicator {indicator_type.value} for {symbol}: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Получить статистику сервиса"""
         return {
-            **self.fast_cache,
-            **self.medium_cache,
-            **self.heavy_cache
+            **self._stats,
+            "symbols_processed": len(self._tick_counters),
+            "tick_counters": self._tick_counters.copy()
         }
+    
+    def reset_stats(self) -> None:
+        """Сбросить статистику"""
+        self._stats = {
+            "fast_calculations": 0,
+            "medium_calculations": 0,
+            "heavy_calculations": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+            "errors": 0
+        }
+        self._tick_counters.clear()
+        self._last_medium_update.clear()
+        self._last_heavy_update.clear()
 ```
 
 ### 📄 `src\domain\services\market_data\__init__.py`
 
 ```python
 
+```
+
+### 📄 `src\domain\services\market_data\ccxt_market_service.py`
+
+```python
+# domain/services/market_data/ccxt_market_service.py
+import asyncio
+import logging
+import time
+from typing import Dict, List, Optional, Any, Tuple
+from datetime import datetime, timezone
+
+from src.domain.entities.ccxt_currency_pair import CCXTCurrencyPair, create_ccxt_currency_pair_from_market
+from src.infrastructure.connectors.ccxt_exchange_connector import CCXTExchangeConnector
+
+logger = logging.getLogger(__name__)
+
+
+class CCXTMarketService:
+    """
+    🚀 CCXT Market Data Service
+    
+    Сервис для работы с рыночными данными через CCXT.
+    Управляет торговыми парами, загружает market data, предоставляет unified интерфейс.
+    
+    Основные возможности:
+    - Загрузка и кэширование CCXT markets
+    - Создание CCXTCurrencyPair из market data
+    - Автоматическое обновление market information
+    - Валидация торговых пар
+    - Поиск и фильтрация рынков
+    """
+
+    def __init__(
+        self,
+        exchange_connector: CCXTExchangeConnector,
+        auto_update_enabled: bool = True,
+        update_interval_seconds: int = 3600,  # 1 час
+        cache_ttl_seconds: int = 1800         # 30 минут
+    ):
+        self.exchange_connector = exchange_connector
+        self.auto_update_enabled = auto_update_enabled
+        self.update_interval_seconds = update_interval_seconds
+        self.cache_ttl_seconds = cache_ttl_seconds
+        
+        # Кэши
+        self._markets_cache: Dict[str, Dict[str, Any]] = {}
+        self._currency_pairs_cache: Dict[str, CCXTCurrencyPair] = {}
+        self._cache_timestamp: float = 0
+        
+        # Статистика
+        self.stats = {
+            'markets_loaded': 0,
+            'currency_pairs_created': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'update_operations': 0,
+            'last_update': None
+        }
+        
+        # Автообновление
+        self._update_task: Optional[asyncio.Task] = None
+
+    # ===== CORE MARKET OPERATIONS =====
+
+    async def load_markets(self, reload: bool = False) -> Dict[str, Dict[str, Any]]:
+        """
+        Загрузка рынков с биржи через CCXT
+        """
+        try:
+            # Проверяем кэш
+            if not reload and self._is_cache_fresh():
+                self.stats['cache_hits'] += 1
+                return self._markets_cache
+
+            logger.info("Loading markets from exchange...")
+            
+            # Загружаем с биржи
+            markets = await self.exchange_connector.load_markets(reload)
+            
+            # Обновляем кэш
+            self._markets_cache = markets
+            self._cache_timestamp = time.time()
+            
+            # Обновляем статистику
+            self.stats['markets_loaded'] = len(markets)
+            self.stats['update_operations'] += 1
+            self.stats['last_update'] = datetime.now(timezone.utc).isoformat()
+            self.stats['cache_misses'] += 1
+            
+            logger.info(f"✅ Loaded {len(markets)} markets from {self.exchange_connector.exchange_name}")
+            
+            return markets
+
+        except Exception as e:
+            logger.error(f"Failed to load markets: {e}")
+            raise
+
+    async def get_market_info(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """
+        Получение информации о конкретном рынке
+        """
+        try:
+            markets = await self.load_markets()
+            return markets.get(symbol)
+
+        except Exception as e:
+            logger.error(f"Failed to get market info for {symbol}: {e}")
+            return None
+
+    async def create_currency_pair(
+        self,
+        symbol: str,
+        **autotrade_params
+    ) -> Optional[CCXTCurrencyPair]:
+        """
+        Создание CCXTCurrencyPair с загрузкой market data
+        """
+        try:
+            # Проверяем кэш currency pairs
+            if symbol in self._currency_pairs_cache:
+                cached_pair = self._currency_pairs_cache[symbol]
+                if cached_pair.is_market_data_fresh():
+                    self.stats['cache_hits'] += 1
+                    return cached_pair
+
+            # Получаем market data
+            market_data = await self.get_market_info(symbol)
+            if not market_data:
+                logger.error(f"Market data not found for symbol: {symbol}")
+                return None
+
+            # Создаем currency pair
+            currency_pair = create_ccxt_currency_pair_from_market(
+                market_data,
+                **autotrade_params
+            )
+
+            # Кэшируем
+            self._currency_pairs_cache[symbol] = currency_pair
+            
+            # Обновляем статистику
+            self.stats['currency_pairs_created'] += 1
+            self.stats['cache_misses'] += 1
+
+            logger.info(f"✅ Created CCXTCurrencyPair for {symbol}")
+            return currency_pair
+
+        except Exception as e:
+            logger.error(f"Failed to create currency pair for {symbol}: {e}")
+            return None
+
+    async def update_currency_pair_market_data(self, currency_pair: CCXTCurrencyPair) -> bool:
+        """
+        Обновление market data для currency pair
+        """
+        try:
+            market_data = await self.get_market_info(currency_pair.symbol)
+            if not market_data:
+                return False
+
+            success = currency_pair.update_from_ccxt_market(market_data)
+            
+            if success:
+                # Обновляем кэш
+                self._currency_pairs_cache[currency_pair.symbol] = currency_pair
+                logger.debug(f"Updated market data for {currency_pair.symbol}")
+
+            return success
+
+        except Exception as e:
+            logger.error(f"Failed to update market data for {currency_pair.symbol}: {e}")
+            return False
+
+    # ===== SEARCH AND FILTER METHODS =====
+
+    async def find_markets_by_base(self, base_currency: str) -> List[Dict[str, Any]]:
+        """
+        Поиск рынков по базовой валюте
+        """
+        try:
+            markets = await self.load_markets()
+            
+            matching_markets = []
+            for market_data in markets.values():
+                if market_data.get('base', '').upper() == base_currency.upper():
+                    matching_markets.append(market_data)
+            
+            logger.debug(f"Found {len(matching_markets)} markets for base currency {base_currency}")
+            return matching_markets
+
+        except Exception as e:
+            logger.error(f"Failed to find markets by base {base_currency}: {e}")
+            return []
+
+    async def find_markets_by_quote(self, quote_currency: str) -> List[Dict[str, Any]]:
+        """
+        Поиск рынков по котируемой валюте
+        """
+        try:
+            markets = await self.load_markets()
+            
+            matching_markets = []
+            for market_data in markets.values():
+                if market_data.get('quote', '').upper() == quote_currency.upper():
+                    matching_markets.append(market_data)
+            
+            logger.debug(f"Found {len(matching_markets)} markets for quote currency {quote_currency}")
+            return matching_markets
+
+        except Exception as e:
+            logger.error(f"Failed to find markets by quote {quote_currency}: {e}")
+            return []
+
+    async def get_active_spot_markets(self) -> List[Dict[str, Any]]:
+        """
+        Получение активных спот рынков
+        """
+        try:
+            markets = await self.load_markets()
+            
+            active_spot_markets = []
+            for market_data in markets.values():
+                if (market_data.get('active', False) and 
+                    market_data.get('spot', False) and
+                    market_data.get('type') == 'spot'):
+                    active_spot_markets.append(market_data)
+            
+            logger.debug(f"Found {len(active_spot_markets)} active spot markets")
+            return active_spot_markets
+
+        except Exception as e:
+            logger.error(f"Failed to get active spot markets: {e}")
+            return []
+
+    async def search_markets(
+        self,
+        query: str,
+        active_only: bool = True,
+        spot_only: bool = True,
+        limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Поиск рынков по запросу
+        """
+        try:
+            markets = await self.load_markets()
+            
+            matching_markets = []
+            query_upper = query.upper()
+            
+            for market_data in markets.values():
+                # Фильтрация по активности
+                if active_only and not market_data.get('active', False):
+                    continue
+                
+                # Фильтрация по типу (спот)
+                if spot_only and not market_data.get('spot', False):
+                    continue
+                
+                # Поиск по символу, базовой или котируемой валюте
+                symbol = market_data.get('symbol', '').upper()
+                base = market_data.get('base', '').upper()
+                quote = market_data.get('quote', '').upper()
+                
+                if (query_upper in symbol or 
+                    query_upper in base or 
+                    query_upper in quote):
+                    matching_markets.append(market_data)
+                
+                # Ограничение количества результатов
+                if limit and len(matching_markets) >= limit:
+                    break
+            
+            logger.debug(f"Found {len(matching_markets)} markets matching query '{query}'")
+            return matching_markets
+
+        except Exception as e:
+            logger.error(f"Failed to search markets with query '{query}': {e}")
+            return []
+
+    # ===== CURRENCY PAIR MANAGEMENT =====
+
+    async def create_currency_pairs_batch(
+        self,
+        symbols: List[str],
+        **common_autotrade_params
+    ) -> Dict[str, Optional[CCXTCurrencyPair]]:
+        """
+        Массовое создание currency pairs
+        """
+        results = {}
+        
+        try:
+            # Предзагружаем markets для оптимизации
+            await self.load_markets()
+            
+            # Создаем currency pairs
+            for symbol in symbols:
+                try:
+                    currency_pair = await self.create_currency_pair(
+                        symbol,
+                        **common_autotrade_params
+                    )
+                    results[symbol] = currency_pair
+                    
+                except Exception as e:
+                    logger.error(f"Failed to create currency pair for {symbol}: {e}")
+                    results[symbol] = None
+            
+            success_count = sum(1 for pair in results.values() if pair is not None)
+            logger.info(f"Created {success_count}/{len(symbols)} currency pairs")
+            
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to create currency pairs batch: {e}")
+            return {symbol: None for symbol in symbols}
+
+    async def update_all_currency_pairs(self) -> int:
+        """
+        Обновление market data для всех кэшированных currency pairs
+        """
+        updated_count = 0
+        
+        try:
+            # Предзагружаем markets
+            await self.load_markets()
+            
+            # Обновляем каждую currency pair
+            for currency_pair in self._currency_pairs_cache.values():
+                if await self.update_currency_pair_market_data(currency_pair):
+                    updated_count += 1
+            
+            logger.info(f"Updated market data for {updated_count} currency pairs")
+            return updated_count
+
+        except Exception as e:
+            logger.error(f"Failed to update currency pairs: {e}")
+            return 0
+
+    def get_cached_currency_pairs(self) -> Dict[str, CCXTCurrencyPair]:
+        """
+        Получение всех кэшированных currency pairs
+        """
+        return self._currency_pairs_cache.copy()
+
+    def remove_currency_pair_from_cache(self, symbol: str) -> bool:
+        """
+        Удаление currency pair из кэша
+        """
+        if symbol in self._currency_pairs_cache:
+            del self._currency_pairs_cache[symbol]
+            logger.debug(f"Removed {symbol} from currency pairs cache")
+            return True
+        return False
+
+    def clear_currency_pairs_cache(self):
+        """
+        Очистка кэша currency pairs
+        """
+        cleared_count = len(self._currency_pairs_cache)
+        self._currency_pairs_cache.clear()
+        logger.info(f"Cleared {cleared_count} currency pairs from cache")
+
+    # ===== VALIDATION METHODS =====
+
+    async def validate_symbol(self, symbol: str) -> Tuple[bool, str]:
+        """
+        Валидация символа торговой пары
+        """
+        try:
+            market_data = await self.get_market_info(symbol)
+            
+            if not market_data:
+                return False, f"Symbol {symbol} not found on exchange"
+            
+            if not market_data.get('active', False):
+                return False, f"Symbol {symbol} is not active"
+            
+            if not market_data.get('spot', False):
+                return False, f"Symbol {symbol} does not support spot trading"
+            
+            return True, "Valid"
+
+        except Exception as e:
+            return False, f"Validation error: {str(e)}"
+
+    async def validate_trading_requirements(
+        self,
+        symbol: str,
+        min_amount: Optional[float] = None,
+        min_cost: Optional[float] = None
+    ) -> Tuple[bool, List[str]]:
+        """
+        Валидация торговых требований
+        """
+        errors = []
+        
+        try:
+            market_data = await self.get_market_info(symbol)
+            
+            if not market_data:
+                errors.append(f"Market data not found for {symbol}")
+                return False, errors
+            
+            limits = market_data.get('limits', {})
+            
+            # Проверка минимального количества
+            if min_amount is not None:
+                amount_limits = limits.get('amount', {})
+                market_min_amount = amount_limits.get('min')
+                
+                if market_min_amount and min_amount < market_min_amount:
+                    errors.append(f"Minimum amount {min_amount} below market minimum {market_min_amount}")
+            
+            # Проверка минимальной стоимости
+            if min_cost is not None:
+                cost_limits = limits.get('cost', {})
+                market_min_cost = cost_limits.get('min')
+                
+                if market_min_cost and min_cost < market_min_cost:
+                    errors.append(f"Minimum cost {min_cost} below market minimum {market_min_cost}")
+            
+            return len(errors) == 0, errors
+
+        except Exception as e:
+            errors.append(f"Validation error: {str(e)}")
+            return False, errors
+
+    # ===== AUTO UPDATE METHODS =====
+
+    async def start_auto_update(self):
+        """
+        Запуск автоматического обновления market data
+        """
+        if not self.auto_update_enabled:
+            logger.warning("Auto update disabled")
+            return
+
+        if self._update_task and not self._update_task.done():
+            logger.warning("Auto update already running")
+            return
+
+        logger.info(f"Starting auto market update with interval {self.update_interval_seconds}s")
+        self._update_task = asyncio.create_task(self._auto_update_loop())
+
+    async def stop_auto_update(self):
+        """
+        Остановка автоматического обновления
+        """
+        if self._update_task and not self._update_task.done():
+            self._update_task.cancel()
+            try:
+                await self._update_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("Auto market update stopped")
+
+    async def _auto_update_loop(self):
+        """
+        Цикл автоматического обновления
+        """
+        try:
+            while True:
+                try:
+                    # Обновляем markets
+                    await self.load_markets(reload=True)
+                    
+                    # Обновляем currency pairs
+                    await self.update_all_currency_pairs()
+                    
+                    await asyncio.sleep(self.update_interval_seconds)
+                    
+                except Exception as e:
+                    logger.error(f"Error in auto update loop: {e}")
+                    await asyncio.sleep(60)  # Короткая пауза при ошибке
+                    
+        except asyncio.CancelledError:
+            logger.info("Auto update loop cancelled")
+
+    # ===== HELPER METHODS =====
+
+    def _is_cache_fresh(self) -> bool:
+        """
+        Проверка актуальности кэша markets
+        """
+        if not self._markets_cache:
+            return False
+        
+        age_seconds = time.time() - self._cache_timestamp
+        return age_seconds < self.cache_ttl_seconds
+
+    def get_cache_info(self) -> Dict[str, Any]:
+        """
+        Информация о состоянии кэша
+        """
+        cache_age = time.time() - self._cache_timestamp if self._cache_timestamp else 0
+        
+        return {
+            'markets_cached': len(self._markets_cache),
+            'currency_pairs_cached': len(self._currency_pairs_cache),
+            'cache_age_seconds': cache_age,
+            'cache_fresh': self._is_cache_fresh(),
+            'cache_ttl_seconds': self.cache_ttl_seconds,
+            'last_update': self.stats['last_update']
+        }
+
+    # ===== STATISTICS AND MONITORING =====
+
+    def get_service_statistics(self) -> Dict[str, Any]:
+        """
+        Получение статистики сервиса
+        """
+        return {
+            'stats': self.stats.copy(),
+            'cache_info': self.get_cache_info(),
+            'settings': {
+                'auto_update_enabled': self.auto_update_enabled,
+                'update_interval_seconds': self.update_interval_seconds,
+                'cache_ttl_seconds': self.cache_ttl_seconds
+            },
+            'auto_update_running': self._update_task and not self._update_task.done() if self._update_task else False
+        }
+
+    def reset_statistics(self):
+        """
+        Сброс статистики
+        """
+        self.stats = {
+            'markets_loaded': 0,
+            'currency_pairs_created': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'update_operations': 0,
+            'last_update': None
+        }
+        logger.info("Market service statistics reset")
+
+    # ===== CONFIGURATION =====
+
+    def configure_service(
+        self,
+        auto_update_enabled: Optional[bool] = None,
+        update_interval_seconds: Optional[int] = None,
+        cache_ttl_seconds: Optional[int] = None
+    ):
+        """
+        Настройка сервиса
+        """
+        if auto_update_enabled is not None:
+            self.auto_update_enabled = auto_update_enabled
+            
+        if update_interval_seconds is not None:
+            self.update_interval_seconds = update_interval_seconds
+            
+        if cache_ttl_seconds is not None:
+            self.cache_ttl_seconds = cache_ttl_seconds
+
+        logger.info(f"Market service configured: auto_update={self.auto_update_enabled}")
+
+    # ===== CLEANUP =====
+
+    async def close(self):
+        """
+        Закрытие сервиса и освобождение ресурсов
+        """
+        await self.stop_auto_update()
+        self.clear_currency_pairs_cache()
+        self._markets_cache.clear()
+        logger.info("CCXT Market Service closed")
+
+    def __repr__(self):
+        return (f"CCXTMarketService("
+                f"exchange={self.exchange_connector.exchange_name}, "
+                f"markets={len(self._markets_cache)}, "
+                f"pairs={len(self._currency_pairs_cache)}, "
+                f"auto_update={'ON' if self.auto_update_enabled else 'OFF'})")
+
+
+# ===== FACTORY FUNCTION =====
+
+def create_ccxt_market_service(
+    exchange_connector: CCXTExchangeConnector,
+    **kwargs
+) -> CCXTMarketService:
+    """
+    Factory function для создания CCXT Market Service
+    """
+    return CCXTMarketService(
+        exchange_connector=exchange_connector,
+        **kwargs
+    )
 ```
 
 ### 📄 `src\domain\services\market_data\market_analysis_service.py`
@@ -6542,144 +12474,820 @@ class OrderBookService:
 
 ```
 
-### 📄 `src\domain\services\market_data\ticker_service.py`
+### 📄 `src\domain\services\market_data\refactored_ticker_service.py`
 
 ```python
-import math
+import logging
+from typing import Dict, Any, Optional
 from decimal import Decimal, ROUND_DOWN, ROUND_UP, ROUND_HALF_UP
-from typing import Dict, List, Optional
 
-from domain.entities.currency_pair import CurrencyPair
-from domain.entities.ticker import Ticker
-from domain.services.indicators.cached_indicator_service import CachedIndicatorService
-from domain.services.utils.decimal_rounding_service import DecimalRoundingService
-from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+from src.domain.entities.currency_pair import CurrencyPair
+from src.domain.services.market_data.ticker_processor import TickerProcessor
+from src.domain.services.indicators.indicator_calculation_service import IndicatorCalculationService
+from src.domain.services.signals.signal_generation_service import SignalGenerationService
+from src.domain.services.utils.decimal_rounding_service import DecimalRoundingService
+
+logger = logging.getLogger(__name__)
 
 
-class TickerService:
-    def __init__(self, repository: InMemoryTickerRepository):
-        self.repository = repository
-        self.cached_indicators = CachedIndicatorService()
-        self.price_history_cache = []
-        self.volatility_window = 20
-
-    async def process_ticker(self, data: Dict):
-        ticker = Ticker(data)
-        current_price = float(data.get('close', 0))
-        self.price_history_cache.append(current_price)
-        if len(self.price_history_cache) > 200:
-            self.price_history_cache.pop(0)
-
-        self.cached_indicators.update_fast_indicators(current_price)
-
-        if self.cached_indicators.should_update_medium():
-            self.cached_indicators.update_medium_indicators(self.price_history_cache)
-
-        if self.cached_indicators.should_update_heavy():
-            self.cached_indicators.update_heavy_indicators(self.price_history_cache)
+class RefactoredTickerService:
+    """
+    Рефакторенный TickerService, соблюдающий принцип единственной ответственности (SRP).
+    
+    Теперь этот сервис ТОЛЬКО координирует работу специализированных сервисов:
+    - TickerProcessor: обработка и валидация тикеров
+    - IndicatorCalculationService: вычисление индикаторов
+    - SignalGenerationService: генерация торговых сигналов
+    
+    Больше НЕ содержит кэшей, буферов или бизнес-логики вычислений.
+    """
+    
+    def __init__(
+        self,
+        ticker_processor: TickerProcessor,
+        indicator_service: IndicatorCalculationService,
+        signal_service: SignalGenerationService
+    ):
+        self.ticker_processor = ticker_processor
+        self.indicator_service = indicator_service
+        self.signal_service = signal_service
         
-        all_signals = self.cached_indicators.get_all_cached_signals()
-        ticker.update_signals(all_signals)
-        self.repository.save(ticker)
-
-    async def get_signal(self) -> str:
-        if len(self.repository.tickers) < 50:
+        self._stats = {
+            "tickers_processed": 0,
+            "indicators_calculated": 0,
+            "signals_generated": 0,
+            "errors": 0
+        }
+    
+    async def process_ticker(self, symbol: str, ticker_data: Dict[str, Any]) -> bool:
+        """
+        Координирует полную обработку тикера:
+        1. Обработка и сохранение тикера
+        2. Вычисление индикаторов
+        3. Генерация сигналов
+        """
+        try:
+            # 1. Обработка тикера
+            if not await self.ticker_processor.process_ticker(symbol, ticker_data):
+                logger.warning(f"Failed to process ticker for {symbol}")
+                return False
+            
+            current_price = float(ticker_data.get('close', 0))
+            if current_price <= 0:
+                logger.warning(f"Invalid price in ticker for {symbol}: {current_price}")
+                return False
+            
+            # 2. Вычисление индикаторов
+            all_indicators = {}
+            
+            # Быстрые индикаторы (каждый тик)
+            fast_indicators = await self.indicator_service.calculate_fast_indicators(symbol, current_price)
+            all_indicators.update(fast_indicators)
+            
+            # Средние индикаторы (каждые 10 тиков)
+            if await self.indicator_service.should_update_medium_indicators(symbol):
+                medium_indicators = await self.indicator_service.calculate_medium_indicators(symbol)
+                all_indicators.update(medium_indicators)
+            
+            # Тяжелые индикаторы (каждые 50 тиков)
+            if await self.indicator_service.should_update_heavy_indicators(symbol):
+                heavy_indicators = await self.indicator_service.calculate_heavy_indicators(symbol)
+                all_indicators.update(heavy_indicators)
+            
+            # Получаем все кэшированные индикаторы для полноты
+            cached_indicators = await self.indicator_service.get_all_cached_indicators(symbol)
+            all_indicators.update(cached_indicators)
+            
+            # 3. Генерация сигналов
+            if all_indicators:
+                combined_signal = await self.signal_service.generate_combined_signal(
+                    symbol, all_indicators, current_price
+                )
+                
+                if combined_signal:
+                    self._stats["signals_generated"] += 1
+            
+            self._stats["tickers_processed"] += 1
+            if all_indicators:
+                self._stats["indicators_calculated"] += 1
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in process_ticker for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return False
+    
+    async def get_signal(self, symbol: str) -> str:
+        """
+        Получить текущий торговый сигнал для символа.
+        Делегирует выполнение SignalGenerationService.
+        """
+        try:
+            return await self.signal_service.get_current_signal(symbol)
+        except Exception as e:
+            logger.error(f"Error getting signal for {symbol}: {e}")
             return "HOLD"
-        last_ticker = self.repository.tickers[-1]
-        if not last_ticker.signals:
-            return "HOLD"
-
-        macd = last_ticker.signals.get('macd', 0)
-        signal = last_ticker.signals.get('signal', 0)
-        hist = last_ticker.signals.get('histogram', 0)
-        sma_7 = last_ticker.signals.get('sma_7', 0)
-        sma_25 = last_ticker.signals.get('sma_25', 0)
-
-        if macd > signal and hist > 0 and sma_7 > sma_25:
-            return "BUY"
-        else:
-            return "HOLD"
-
+    
+    async def get_latest_price(self, symbol: str) -> Optional[float]:
+        """
+        Получить последнюю цену для символа.
+        Делегирует выполнение TickerProcessor.
+        """
+        try:
+            return await self.ticker_processor.get_latest_price(symbol)
+        except Exception as e:
+            logger.error(f"Error getting latest price for {symbol}: {e}")
+            return None
+    
+    async def get_all_indicators(self, symbol: str) -> Dict[str, float]:
+        """
+        Получить все доступные индикаторы для символа.
+        Делегирует выполнение IndicatorCalculationService.
+        """
+        try:
+            return await self.indicator_service.get_all_cached_indicators(symbol)
+        except Exception as e:
+            logger.error(f"Error getting indicators for {symbol}: {e}")
+            return {}
+    
     def calculate_strategy(
-            self,
-            buy_price: float,
-            budget: float,
-            currency_pair: CurrencyPair,
-            profit_percent: float
+        self,
+        buy_price: float,
+        budget: float,
+        currency_pair: CurrencyPair,
+        profit_percent: float
     ):
         """
-        Рассчитывает сделку, используя `DecimalRoundingService` и данные о
-        лимитах и точности из объекта `currency_pair`.
-        """
-        # 1. Получаем правила с биржи (из объекта currency_pair)
-        # Получаем шаг цены и количества (tick size / step size)
-        price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
-        amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
-
-        # ВЫЧИСЛЯЕМ КОЛИЧЕСТВО ЗНАКОВ ПОСЛЕ ЗАПЯТОЙ ИЗ ШАГА
-        # Это ключевое исправление: мы не используем 0.01 как количество знаков, а вычисляем его.
-        price_precision = int(price_step.normalize().as_tuple().exponent * -1)
-        amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
-
-        min_notional = Decimal(str(currency_pair.limits.get('cost', {}).get('min', 10.0)))
-
-        # 2. Конвертируем все в Decimal для точности
-        buy_price_dec = Decimal(str(buy_price))
-        budget_dec = Decimal(str(budget))
-        # Используем комиссии тейкера, так как мы исполняем ордера по рынку
-        buy_fee_rate = Decimal(str(currency_pair.taker_fee))
-        sell_fee_rate = Decimal(str(currency_pair.taker_fee))
-        profit_dec = Decimal(str(profit_percent))
-
-        # 3. Проверка на минимальную сумму ордера
-        if budget_dec < min_notional:
-            return {"comment": f"❌ Бюджет ({budget_dec}) меньше минимально допустимого ({min_notional})"}
-
-        # 4. Расчеты с использованием DecimalRoundingService
-        # Сколько монет мы можем купить на наш бюджет
-        coins_to_buy_raw = budget_dec / buy_price_dec
-        # КРИТИЧЕСКИ ВАЖНО: округляем ВВЕРХ чтобы не потерять монеты из-за комиссий!
-        coins_to_buy = DecimalRoundingService.ceil_to_precision(coins_to_buy_raw, amount_precision)
-
-        # Комиссия вычитается из ПОЛУЧЕННОГО количества монет
-        coins_after_buy_fee = coins_to_buy * (1 - buy_fee_rate)
-
-        # Цена продажи, которая покрывает обе комиссии и дает желаемую прибыль
-        # (Цена покупки * (1 + %профита)) / (1 - %комиссии_продажи)
-        sell_price_raw = buy_price_dec * (1 + profit_dec) / (1 - sell_fee_rate)
-        sell_price = DecimalRoundingService.round_to_precision(sell_price_raw, price_precision)
+        Рассчитывает сделку, используя DecimalRoundingService и данные о
+        лимитах и точности из объекта currency_pair.
         
-        # Что останется для продажи после уплаты комиссии (которая берется в том же активе)
-        coins_to_sell = DecimalRoundingService.floor_to_precision(
-            coins_after_buy_fee,
-            amount_precision
-        )
-
-        # 5. Финальные проверки
-        total_cost = coins_to_buy * buy_price_dec
-        if total_cost < min_notional:
-             return {"comment": f"❌ Итоговая сумма ордера ({total_cost:.2f}) меньше минимально допустимой ({min_notional})"}
-
-        final_revenue = coins_to_sell * sell_price
-        net_profit = final_revenue - total_cost
-
-        # 10) Возвращаем результат
-        return (
-            buy_price_dec,
-            coins_to_buy,
-            sell_price,
-            coins_to_sell,
-            {
-                "comment": "✅ Сделка возможна.",
-                "net_profit": f"{net_profit:.4f} USDT"
+        ПРИМЕЧАНИЕ: Этот метод оставлен для обратной совместимости,
+        но в будущем должен быть вынесен в отдельный TradingCalculationService.
+        """
+        try:
+            # 1. Получаем правила с биржи (из объекта currency_pair)
+            price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
+            amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
+            
+            # Вычисляем количество знаков после запятой из шага
+            price_precision = int(price_step.normalize().as_tuple().exponent * -1)
+            amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
+            
+            min_notional = Decimal(str(currency_pair.limits.get('cost', {}).get('min', 10.0)))
+            
+            # 2. Конвертируем все в Decimal для точности
+            buy_price_dec = Decimal(str(buy_price))
+            budget_dec = Decimal(str(budget))
+            buy_fee_rate = Decimal(str(currency_pair.taker_fee))
+            sell_fee_rate = Decimal(str(currency_pair.taker_fee))
+            profit_dec = Decimal(str(profit_percent))
+            
+            # 3. Проверка на минимальную сумму ордера
+            if budget_dec < min_notional:
+                return {"comment": f"❌ Бюджет ({budget_dec}) меньше минимально допустимого ({min_notional})"}
+            
+            # 4. Расчеты с использованием DecimalRoundingService
+            coins_to_buy_raw = budget_dec / buy_price_dec
+            coins_to_buy = DecimalRoundingService.ceil_to_precision(coins_to_buy_raw, amount_precision)
+            
+            # Комиссия вычитается из полученного количества монет
+            coins_after_buy_fee = coins_to_buy * (1 - buy_fee_rate)
+            
+            # Цена продажи, которая покрывает обе комиссии и дает желаемую прибыль
+            sell_price_raw = buy_price_dec * (1 + profit_dec) / (1 - sell_fee_rate)
+            sell_price = DecimalRoundingService.round_to_precision(sell_price_raw, price_precision)
+            
+            # Что останется для продажи после уплаты комиссии
+            coins_to_sell = DecimalRoundingService.floor_to_precision(
+                coins_after_buy_fee,
+                amount_precision
+            )
+            
+            # 5. Финальные проверки
+            total_cost = coins_to_buy * buy_price_dec
+            if total_cost < min_notional:
+                return {"comment": f"❌ Итоговая сумма ордера ({total_cost:.2f}) меньше минимально допустимой ({min_notional})"}
+            
+            final_revenue = coins_to_sell * sell_price
+            net_profit = final_revenue - total_cost
+            
+            return (
+                buy_price_dec,
+                coins_to_buy,
+                sell_price,
+                coins_to_sell,
+                {
+                    "comment": "✅ Сделка возможна.",
+                    "net_profit": f"{net_profit:.4f} USDT"
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"Error calculating strategy: {e}")
+            return {"comment": f"❌ Ошибка расчета стратегии: {e}"}
+    
+    def get_comprehensive_stats(self) -> Dict[str, Any]:
+        """Получить объединенную статистику всех сервисов"""
+        try:
+            return {
+                "coordinator_stats": self._stats.copy(),
+                "ticker_processor_stats": self.ticker_processor.get_processing_stats(),
+                "indicator_service_stats": self.indicator_service.get_stats(),
+                "signal_service_stats": self.signal_service.get_stats()
             }
-        )
+        except Exception as e:
+            logger.error(f"Error getting comprehensive stats: {e}")
+            return {"error": str(e)}
+    
+    def reset_all_stats(self) -> None:
+        """Сбросить статистику всех сервисов"""
+        try:
+            self._stats = {
+                "tickers_processed": 0,
+                "indicators_calculated": 0,
+                "signals_generated": 0,
+                "errors": 0
+            }
+            self.ticker_processor.reset_stats()
+            self.indicator_service.reset_stats()
+            self.signal_service.reset_stats()
+            
+        except Exception as e:
+            logger.error(f"Error resetting stats: {e}")
+    
+    async def health_check(self) -> Dict[str, Any]:
+        """Проверка состояния всех компонентов"""
+        health = {
+            "status": "healthy",
+            "components": {},
+            "timestamp": int(__import__('time').time() * 1000)
+        }
+        
+        try:
+            # Проверяем каждый компонент
+            components = [
+                ("ticker_processor", self.ticker_processor),
+                ("indicator_service", self.indicator_service),
+                ("signal_service", self.signal_service)
+            ]
+            
+            for name, component in components:
+                try:
+                    # Простая проверка - попытка получить статистику
+                    if hasattr(component, 'get_stats'):
+                        stats = component.get_stats()
+                        health["components"][name] = {
+                            "status": "healthy",
+                            "stats": stats
+                        }
+                    else:
+                        health["components"][name] = {"status": "healthy"}
+                        
+                except Exception as e:
+                    health["components"][name] = {
+                        "status": "unhealthy",
+                        "error": str(e)
+                    }
+                    health["status"] = "degraded"
+            
+        except Exception as e:
+            health["status"] = "unhealthy"
+            health["error"] = str(e)
+        
+        return health
+```
+
+### 📄 `src\domain\services\market_data\ticker_processor.py`
+
+```python
+import logging
+from typing import Dict, Any, Optional
+from src.domain.repositories.i_stream_data_repository import IStreamDataRepository
+
+logger = logging.getLogger(__name__)
+
+
+class TickerProcessor:
+    """
+    Сервис для обработки и валидации тикеров.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за получение и первичную обработку данных тикеров.
+    """
+    
+    def __init__(self, stream_repository: IStreamDataRepository):
+        self.stream_repository = stream_repository
+        self._stats = {
+            "processed_tickers": 0,
+            "invalid_tickers": 0,
+            "validation_errors": 0
+        }
+    
+    async def process_ticker(self, symbol: str, ticker_data: Dict[str, Any]) -> bool:
+        """
+        Обработать и сохранить данные тикера после валидации
+        
+        Args:
+            symbol: Торговая пара
+            ticker_data: Сырые данные тикера
+            
+        Returns:
+            bool: True если тикер успешно обработан, False если ошибка
+        """
+        try:
+            # 1. Валидация данных тикера
+            if not self._validate_ticker_data(ticker_data):
+                self._stats["invalid_tickers"] += 1
+                return False
+            
+            # 2. Нормализация данных
+            normalized_data = self._normalize_ticker_data(ticker_data)
+            
+            # 3. Сохранение в потоковый репозиторий
+            await self.stream_repository.append_ticker_data(symbol, normalized_data)
+            
+            self._stats["processed_tickers"] += 1
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error processing ticker for {symbol}: {e}")
+            self._stats["validation_errors"] += 1
+            return False
+    
+    def _validate_ticker_data(self, ticker_data: Dict[str, Any]) -> bool:
+        """Валидация данных тикера"""
+        required_fields = ['close', 'timestamp']
+        
+        # Проверка обязательных полей
+        for field in required_fields:
+            if field not in ticker_data:
+                logger.warning(f"Missing required field '{field}' in ticker data")
+                return False
+        
+        # Проверка типов данных
+        try:
+            price = float(ticker_data['close'])
+            timestamp = int(ticker_data['timestamp'])
+            
+            # Проверка разумности значений
+            if price <= 0:
+                logger.warning(f"Invalid price value: {price}")
+                return False
+                
+            if timestamp <= 0:
+                logger.warning(f"Invalid timestamp value: {timestamp}")
+                return False
+                
+        except (ValueError, TypeError) as e:
+            logger.warning(f"Invalid data types in ticker: {e}")
+            return False
+        
+        return True
+    
+    def _normalize_ticker_data(self, ticker_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Нормализация данных тикера"""
+        normalized = {
+            'timestamp': int(ticker_data['timestamp']),
+            'close': float(ticker_data['close']),
+        }
+        
+        # Добавляем дополнительные поля если они есть
+        optional_fields = ['open', 'high', 'low', 'volume', 'quoteVolume']
+        for field in optional_fields:
+            if field in ticker_data:
+                try:
+                    normalized[field] = float(ticker_data[field])
+                except (ValueError, TypeError):
+                    logger.debug(f"Could not convert {field} to float: {ticker_data[field]}")
+        
+        return normalized
+    
+    async def get_latest_price(self, symbol: str) -> Optional[float]:
+        """Получить последнюю цену для символа"""
+        try:
+            latest_ticker = await self.stream_repository.get_latest_ticker(symbol)
+            if latest_ticker and 'close' in latest_ticker:
+                return float(latest_ticker['close'])
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting latest price for {symbol}: {e}")
+            return None
+    
+    async def get_ticker_count(self, symbol: str) -> int:
+        """Получить количество обработанных тикеров для символа"""
+        try:
+            stats = await self.stream_repository.get_data_stats(symbol)
+            return stats.get('ticker_count', 0)
+            
+        except Exception as e:
+            logger.error(f"Error getting ticker count for {symbol}: {e}")
+            return 0
+    
+    def get_processing_stats(self) -> Dict[str, int]:
+        """Получить статистику обработки"""
+        return self._stats.copy()
+    
+    def reset_stats(self) -> None:
+        """Сбросить статистику"""
+        self._stats = {
+            "processed_tickers": 0,
+            "invalid_tickers": 0,
+            "validation_errors": 0
+        }
 ```
 
 ### 📄 `src\domain\services\orders\__init__.py`
 
 ```python
 
+```
+
+### 📄 `src\domain\services\orders\balance_service.py`
+
+```python
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.domain.entities.order import Order
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
+
+logger = logging.getLogger(__name__)
+
+
+class BalanceService:
+    """
+    Сервис для проверки и управления балансами.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за проверку балансов перед размещением ордеров.
+    """
+    
+    def __init__(
+        self,
+        exchange_connector: CcxtExchangeConnector,
+        statistics_repo: Optional[IStatisticsRepository] = None,
+        initial_balance: Optional[Dict[str, Dict[str, float]]] = None
+    ):
+        self.exchange_connector = exchange_connector
+        self.statistics_repo = statistics_repo
+        
+        # Кэш балансов для избежания частых запросов к API
+        self._balance_cache: Dict[str, Dict[str, float]] = initial_balance or {}
+        self._cache_timestamp = self._get_current_timestamp() if initial_balance else 0
+        self._cache_ttl = 30  # секунд
+        
+        self._stats = {
+            'balance_checks': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'insufficient_balance_count': 0,
+            'errors': 0
+        }
+    
+    async def check_sufficient_balance(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float
+    ) -> Tuple[bool, str, float]:
+        """
+        Проверка достаточности баланса для размещения ордера
+        
+        Args:
+            symbol: Торговая пара (например, BTCUSDT)
+            side: Сторона ордера (BUY/SELL)
+            amount: Количество
+            price: Цена
+            
+        Returns:
+            Tuple[has_sufficient_balance, currency, available_balance]
+        """
+        try:
+            self._stats['balance_checks'] += 1
+            
+            # Определяем нужную валюту
+            base_currency, quote_currency = self._parse_symbol(symbol)
+            
+            if side == Order.SIDE_BUY:
+                # Для покупки нужна квотируемая валюта (например, USDT для BTCUSDT)
+                required_currency = quote_currency
+                required_amount = amount * price
+            else:
+                # Для продажи нужна базовая валюта (например, BTC для BTCUSDT)
+                required_currency = base_currency
+                required_amount = amount
+            
+            # Получаем баланс
+            balance_info = await self._get_balance(required_currency)
+            available_balance = balance_info.get('free', 0.0)
+            if not isinstance(available_balance, (float, int)):
+                raise TypeError(f"available_balance is not a float/int, it is {type(available_balance)}. balance_info was: {balance_info}")
+            if not isinstance(available_balance, (float, int)):
+                raise TypeError(f"available_balance is not a float/int, it is {type(available_balance)}. balance_info was: {balance_info}")
+            
+            # Проверяем достаточность
+            is_sufficient = available_balance >= required_amount
+            
+            if not is_sufficient:
+                self._stats['insufficient_balance_count'] += 1
+                logger.warning(
+                    f"💰 Insufficient balance for {side} {amount} {symbol} @ {price}: "
+                    f"need {required_amount:.6f} {required_currency}, "
+                    f"have {available_balance:.6f}"
+                )
+            
+            # Обновляем статистику
+            await self._update_balance_statistics(is_sufficient, symbol, side, required_currency)
+            
+            return is_sufficient, required_currency, available_balance
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking balance for {side} {symbol}: {e}")
+            self._stats['errors'] += 1
+            return False, "ERROR", 0.0
+    
+    async def get_account_balance(self, force_refresh: bool = False) -> Dict[str, Dict[str, float]]:
+        """
+        Получение полного баланса аккаунта
+        
+        Args:
+            force_refresh: Принудительное обновление кэша
+            
+        Returns:
+            Словарь балансов по валютам
+        """
+        try:
+            # Проверяем кэш
+            if not force_refresh and self._is_cache_valid():
+                self._stats['cache_hits'] += 1
+                return self._balance_cache.copy()
+            
+            # Запрашиваем баланс с биржи
+            self._stats['cache_misses'] += 1
+            balance = await self.exchange_connector.fetch_balance()
+            
+            # Обновляем кэш
+            self._balance_cache = balance.copy()
+            self._cache_timestamp = self._get_current_timestamp()
+            
+            logger.debug(f"💰 Retrieved account balance: {len(balance)} currencies")
+            
+            # Обновляем статистику
+            await self._update_balance_refresh_statistics(len(balance))
+            
+            return balance
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting account balance: {e}")
+            self._stats['errors'] += 1
+            return {}
+    
+    async def get_currency_balance(self, currency: str, force_refresh: bool = False) -> Dict[str, float]:
+        """
+        Получение баланса конкретной валюты
+        
+        Args:
+            currency: Код валюты (например, BTC, USDT)
+            force_refresh: Принудительное обновление кэша
+            
+        Returns:
+            Словарь с балансом валюты {free, used, total}
+        """
+        try:
+            full_balance = await self.get_account_balance(force_refresh)
+            
+            currency_balance = full_balance.get(currency, {
+                'free': 0.0,
+                'used': 0.0,
+                'total': 0.0
+            })
+            
+            return currency_balance
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting balance for {currency}: {e}")
+            return {'free': 0.0, 'used': 0.0, 'total': 0.0}
+    
+    async def get_required_balance_for_order(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float
+    ) -> Tuple[str, float]:
+        """
+        Рассчитать требуемый баланс для ордера
+        
+        Args:
+            symbol: Торговая пара
+            side: Сторона ордера
+            amount: Количество
+            price: Цена
+            
+        Returns:
+            Tuple[currency, required_amount]
+        """
+        try:
+            base_currency, quote_currency = self._parse_symbol(symbol)
+            
+            if side == Order.SIDE_BUY:
+                return quote_currency, amount * price
+            else:
+                return base_currency, amount
+                
+        except Exception as e:
+            logger.error(f"❌ Error calculating required balance: {e}")
+            return "ERROR", 0.0
+    
+    async def check_multiple_orders_balance(
+        self,
+        orders: List[Tuple[str, str, float, float]]  # (symbol, side, amount, price)
+    ) -> Dict[str, Tuple[bool, float, float]]:
+        """
+        Проверка баланса для нескольких ордеров
+        
+        Args:
+            orders: Список ордеров для проверки
+            
+        Returns:
+            Словарь {currency: (is_sufficient, required_total, available)}
+        """
+        try:
+            # Группируем требования по валютам
+            currency_requirements: Dict[str, float] = {}
+            
+            for symbol, side, amount, price in orders:
+                currency, required_amount = await self.get_required_balance_for_order(
+                    symbol, side, amount, price
+                )
+                
+                if currency in currency_requirements:
+                    currency_requirements[currency] += required_amount
+                else:
+                    currency_requirements[currency] = required_amount
+            
+            # Проверяем баланс для каждой валюты
+            result = {}
+            full_balance = await self.get_account_balance()
+            
+            for currency, required_total in currency_requirements.items():
+                available = full_balance.get(currency, {}).get('free', 0.0)
+                is_sufficient = available >= required_total
+                result[currency] = (is_sufficient, required_total, available)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking multiple orders balance: {e}")
+            return {}
+    
+    async def _get_balance(self, currency: str) -> Dict[str, float]:
+        """Получение баланса конкретной валюты с использованием кэша"""
+        # Проверяем кэш
+        if not self._is_cache_valid():
+            # Обновляем весь баланс, если кэш невалиден
+            await self.get_account_balance(force_refresh=True)
+        else:
+            self._stats['cache_hits'] += 1
+
+        # Теперь, когда кэш актуален, извлекаем данные для конкретной валюты
+        free = self._balance_cache.get('free', {}).get(currency, 0.0)
+        used = self._balance_cache.get('used', {}).get(currency, 0.0)
+        total = self._balance_cache.get('total', {}).get(currency, 0.0)
+
+        return {
+            'free': free,
+            'used': used,
+            'total': total
+        }
+    
+    def _parse_symbol(self, symbol: str) -> Tuple[str, str]:
+        """
+        Парсинг торговой пары на базовую и квотируемую валюты
+        
+        Args:
+            symbol: Торговая пара (BTCUSDT, BTC/USDT, BTC-USDT)
+            
+        Returns:
+            Tuple[base_currency, quote_currency]
+        """
+        # Обрабатываем различные форматы символов
+        if '/' in symbol:
+            parts = symbol.split('/')
+        elif '-' in symbol:
+            parts = symbol.split('-')
+        else:
+            # Для символов вида BTCUSDT пытаемся угадать разделение
+            # Обычно последние 3-4 символа - это квотируемая валюта
+            if symbol.endswith('USDT'):
+                parts = [symbol[:-4], 'USDT']
+            elif symbol.endswith('BTC') or symbol.endswith('ETH'):
+                parts = [symbol[:-3], symbol[-3:]]
+            elif symbol.endswith('USD'):
+                parts = [symbol[:-3], 'USD']
+            else:
+                # Fallback - делим пополам
+                mid = len(symbol) // 2
+                parts = [symbol[:mid], symbol[mid:]]
+        
+        if len(parts) != 2:
+            raise ValueError(f"Cannot parse symbol: {symbol}")
+        
+        return parts[0].upper(), parts[1].upper()
+    
+    def _is_cache_valid(self) -> bool:
+        """Проверка валидности кэша балансов"""
+        if not self._balance_cache:
+            return False
+        
+        current_time = self._get_current_timestamp()
+        return (current_time - self._cache_timestamp) < self._cache_ttl
+    
+    def _get_current_timestamp(self) -> int:
+        """Получение текущего времени в секундах"""
+        import time
+        return int(time.time())
+    
+    def clear_cache(self) -> None:
+        """Очистка кэша балансов"""
+        self._balance_cache.clear()
+        self._cache_timestamp = 0
+        logger.debug("💰 Balance cache cleared")
+    
+    async def _update_balance_statistics(
+        self,
+        is_sufficient: bool,
+        symbol: str,
+        side: str,
+        currency: str
+    ) -> None:
+        """Обновление статистики проверки балансов"""
+        if not self.statistics_repo:
+            return
+        
+        try:
+            await self.statistics_repo.increment_counter(
+                "balance_checks_total",
+                StatisticCategory.TRADING,
+                tags={
+                    "symbol": symbol,
+                    "side": side.lower(),
+                    "currency": currency,
+                    "result": "sufficient" if is_sufficient else "insufficient"
+                }
+            )
+            
+            if not is_sufficient:
+                await self.statistics_repo.increment_counter(
+                    "insufficient_balance_count",
+                    StatisticCategory.TRADING,
+                    tags={"currency": currency}
+                )
+                
+        except Exception as e:
+            logger.error(f"Error updating balance statistics: {e}")
+    
+    async def _update_balance_refresh_statistics(self, currencies_count: int) -> None:
+        """Обновление статистики обновления балансов"""
+        if not self.statistics_repo:
+            return
+        
+        try:
+            await self.statistics_repo.increment_counter(
+                "balance_refresh_count",
+                StatisticCategory.TRADING
+            )
+            
+            await self.statistics_repo.update_gauge(
+                "account_currencies_count",
+                StatisticCategory.TRADING,
+                currencies_count
+            )
+            
+        except Exception as e:
+            logger.error(f"Error updating balance refresh statistics: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Получение статистики сервиса"""
+        return {
+            **self._stats,
+            'cache_size': len(self._balance_cache),
+            'cache_age_seconds': self._get_current_timestamp() - self._cache_timestamp,
+            'cache_valid': self._is_cache_valid()
+        }
+    
+    def reset_stats(self) -> None:
+        """Сброс статистики"""
+        self._stats = {
+            'balance_checks': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'insufficient_balance_count': 0,
+            'errors': 0
+        }
 ```
 
 ### 📄 `src\domain\services\orders\buy_order_monitor.py`
@@ -6691,9 +13299,9 @@ import logging
 import time
 from typing import List, Optional
 from domain.entities.order import Order
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 logger = logging.getLogger(__name__)
 
@@ -6710,7 +13318,7 @@ class BuyOrderMonitor:
 
     def __init__(
         self,
-        order_service: OrderService,
+        order_service: UnifiedOrderService,
         deal_service: DealService, # ❗️ ДОБАВЛЕНО
         exchange_connector: CcxtExchangeConnector,
         max_age_minutes: float = 15.0,
@@ -6793,6 +13401,9 @@ class BuyOrderMonitor:
             ticker = await self.exchange.fetch_ticker(order.symbol)
             current_price = float(ticker['last'])
             
+            if order.price <= 0:
+                return False # Не можем вычислить отклонение, если цена ордера 0
+
             # Для BUY: если рынок ушел выше нашей цены
             price_deviation = ((current_price - order.price) / order.price) * 100
             
@@ -6813,10 +13424,12 @@ class BuyOrderMonitor:
             logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id} для сделки {order.deal_id}")
 
             # 1. Отменяем старый BUY ордер
-            cancel_success = await self.order_service.cancel_order(order)
-            if not cancel_success:
+            cancelled_order = await self.order_service.cancel_order(order)
+            if not cancelled_order or not cancelled_order.is_closed():
                 logger.error(f"❌ Не удалось отменить BUY ордер {order.order_id}")
                 return
+            # Обновляем ссылку на ордер, чтобы дальнейшие операции использовали актуальный статус
+            order = cancelled_order
             self.stats['orders_cancelled'] += 1
             logger.info(f"✅ BUY ордер {order.order_id} отменен")
 
@@ -6922,6 +13535,1328 @@ class BuyOrderMonitor:
 
 ```
 
+### 📄 `src\domain\services\orders\ccxt_order_execution_service.py`
+
+```python
+# domain/services/orders/ccxt_order_execution_service.py
+import asyncio
+import logging
+import time
+from typing import Optional, Dict, List, Any, Tuple
+from dataclasses import dataclass
+from datetime import datetime, timezone
+
+from src.domain.entities.order import Order, OrderExecutionResult
+from src.domain.entities.deal import Deal
+from src.domain.entities.currency_pair import CurrencyPair
+from src.infrastructure.connectors.ccxt_exchange_connector import CCXTExchangeConnector
+from src.domain.repositories.i_orders_repository import IOrdersRepository
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CCXTTradingContext:
+    """CCXT-совместимый контекст для выполнения торговых операций"""
+    currency_pair: CurrencyPair
+    current_price: float
+    budget: float
+    strategy_result: Any
+    deal: Optional[Deal] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class CCXTExecutionReport:
+    """CCXT-совместимый отчет о выполнении торговой операции"""
+    success: bool
+    deal_id: Optional[str] = None  # UUID string
+    buy_order: Optional[Order] = None
+    sell_order: Optional[Order] = None
+    total_cost: float = 0.0
+    expected_profit: float = 0.0
+    fees: float = 0.0
+    execution_time_ms: float = 0.0
+    error_message: Optional[str] = None
+    warnings: List[str] = None
+    ccxt_data: Optional[Dict[str, Any]] = None  # Полные CCXT данные
+
+
+class CCXTOrderExecutionService:
+    """
+    🚀 CCXT COMPLIANT Order Execution Service
+    
+    Полностью совместимый с CCXT сервис выполнения торговых операций:
+    - Использует CCXT Unified API для всех операций
+    - Возвращает данные в стандартном CCXT формате
+    - Поддерживает полную трассировку ордеров
+    - Интегрируется с CCXT-совместимым репозиторием
+    """
+
+    def __init__(
+        self,
+        exchange_connector: CCXTExchangeConnector,
+        orders_repository: IOrdersRepository,
+        deal_service: Optional[Any] = None  # DealService инжектируется опционально
+    ):
+        self.exchange_connector = exchange_connector
+        self.orders_repository = orders_repository
+        self.deal_service = deal_service
+        
+        # Статистика
+        self.execution_stats = {
+            'total_executions': 0,
+            'successful_executions': 0,
+            'failed_executions': 0,
+            'total_volume': 0.0,
+            'total_fees': 0.0,
+            'average_execution_time_ms': 0.0,
+            'ccxt_compliance_score': 100.0
+        }
+        
+        # Настройки выполнения
+        self.max_execution_time_sec = 30.0
+        self.enable_risk_checks = True
+        self.enable_balance_checks = True
+        self.enable_slippage_protection = True
+        self.enable_ccxt_validation = True
+
+    # ===== MAIN EXECUTION METHODS =====
+
+    async def execute_ccxt_order(
+        self,
+        symbol: str,
+        type: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None,
+        params: Optional[Dict[str, Any]] = None,
+        deal_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        🎯 ГЛАВНЫЙ метод выполнения CCXT-совместимого ордера
+        
+        Args:
+            symbol: Торговая пара в CCXT формате (BTC/USDT)
+            type: Тип ордера CCXT (limit, market, stop, etc.)
+            side: Сторона CCXT (buy, sell)
+            amount: Количество в базовой валюте
+            price: Цена (для лимитных ордеров)
+            params: CCXT параметры
+            deal_id: ID сделки для связки
+            
+        Returns:
+            OrderExecutionResult с CCXT данными
+        """
+        start_time = time.time()
+        execution_id = f"ccxt_exec_{int(start_time * 1000)}"
+        
+        logger.info(f"🚀 [{execution_id}] Starting CCXT order execution: {side.upper()} {amount} {symbol}")
+        
+        try:
+            # 1. Валидация входных параметров
+            validation_result = await self._validate_ccxt_order_params(
+                symbol, type, side, amount, price, params
+            )
+            if not validation_result.success:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"CCXT validation failed: {validation_result.error_message}"
+                )
+
+            # 2. Pre-execution проверки
+            pre_check_result = await self._perform_ccxt_pre_checks(
+                symbol, side, amount, price
+            )
+            if not pre_check_result[0]:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Pre-execution checks failed: {pre_check_result[1]}"
+                )
+
+            # 3. Создание локального Order объекта
+            local_order = self._create_local_order(
+                symbol, type, side, amount, price, params, deal_id
+            )
+
+            # 4. Сохранение в статусе PENDING
+            await self.orders_repository.save_order(local_order)
+            logger.debug(f"Order {local_order.local_order_id} saved in PENDING status")
+
+            # 5. Размещение на бирже через CCXT
+            ccxt_result = await self.exchange_connector.create_order(
+                symbol=symbol,
+                type=type,
+                side=side,
+                amount=amount,
+                price=price,
+                params=params or {}
+            )
+
+            # 6. Обновление локального ордера данными с биржи
+            local_order.update_from_ccxt_response(ccxt_result)
+            local_order.mark_as_placed_on_exchange(
+                ccxt_result['id'],
+                ccxt_result.get('timestamp')
+            )
+
+            # 7. Сохранение обновленного ордера
+            await self.orders_repository.update_order(local_order)
+
+            # 8. Обновление статистики
+            execution_time = (time.time() - start_time) * 1000
+            self._update_execution_stats(True, amount * (price or 0), 0, execution_time)
+
+            logger.info(f"✅ [{execution_id}] CCXT order executed successfully: {ccxt_result['id']}")
+
+            return OrderExecutionResult(
+                success=True,
+                order=local_order,
+                exchange_response=ccxt_result
+            )
+
+        except Exception as e:
+            # Обработка ошибок с сохранением в Order
+            execution_time = (time.time() - start_time) * 1000
+            self._update_execution_stats(False, 0.0, 0.0, execution_time)
+
+            # Обновляем локальный ордер если он был создан
+            if 'local_order' in locals():
+                local_order.mark_as_failed(str(e))
+                await self.orders_repository.update_order(local_order)
+
+            logger.error(f"❌ [{execution_id}] CCXT order execution failed: {e}")
+            
+            return OrderExecutionResult(
+                success=False,
+                order=locals().get('local_order'),
+                error_message=str(e)
+            )
+
+    async def execute_trading_strategy(
+        self,
+        currency_pair: CurrencyPair,
+        strategy_result: Any,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> CCXTExecutionReport:
+        """
+        🎯 Выполнение торговой стратегии с CCXT compliance
+        """
+        start_time = time.time()
+        execution_id = f"ccxt_strategy_{int(start_time * 1000)}"
+        
+        logger.info(f"🚀 [{execution_id}] Starting CCXT strategy execution for {currency_pair.symbol}")
+        
+        try:
+            # 1. Валидация и парсинг стратегии
+            strategy_data = self._parse_strategy_result(strategy_result)
+            if not strategy_data:
+                return CCXTExecutionReport(
+                    success=False,
+                    error_message="Failed to parse strategy result"
+                )
+
+            # 2. Создание контекста
+            context = CCXTTradingContext(
+                currency_pair=currency_pair,
+                current_price=strategy_data['buy_price'],
+                budget=currency_pair.deal_quota,
+                strategy_result=strategy_result,
+                metadata=metadata or {}
+            )
+
+            # 3. Создание сделки (если deal_service доступен)
+            deal = None
+            if self.deal_service:
+                deal = self.deal_service.create_new_deal(currency_pair)
+                context.deal = deal
+                logger.info(f"✅ [{execution_id}] Deal {deal.deal_id} created")
+
+            # 4. Выполнение BUY ордера
+            buy_result = await self.execute_ccxt_order(
+                symbol=currency_pair.symbol,
+                type='limit',
+                side='buy',
+                amount=strategy_data['buy_amount'],
+                price=strategy_data['buy_price'],
+                deal_id=str(deal.deal_id) if deal else None
+            )
+
+            if not buy_result.success:
+                return CCXTExecutionReport(
+                    success=False,
+                    deal_id=str(deal.deal_id) if deal else None,
+                    error_message=f"BUY order failed: {buy_result.error_message}"
+                )
+
+            buy_order = buy_result.order
+            logger.info(f"✅ [{execution_id}] BUY order placed: {buy_order.id}")
+
+            # 5. Создание локального SELL ордера (PENDING)
+            sell_order = self._create_local_order(
+                symbol=currency_pair.symbol,
+                type='limit',
+                side='sell',
+                amount=strategy_data['sell_amount'],
+                price=strategy_data['sell_price'],
+                params={'timeInForce': 'GTC'},
+                deal_id=str(deal.deal_id) if deal else None
+            )
+            
+            # Сохраняем SELL ордер в PENDING статусе
+            await self.orders_repository.save_order(sell_order)
+            logger.info(f"✅ [{execution_id}] Local SELL order created: {sell_order.local_order_id}")
+
+            # 6. Связывание ордеров со сделкой
+            if deal and self.deal_service:
+                deal.attach_orders(buy_order, sell_order)
+                self.deal_service.save_deal(deal)
+
+            # 7. Расчет финансовых показателей
+            total_cost = buy_order.amount * buy_order.price
+            expected_profit = (sell_order.amount * sell_order.price) - total_cost
+
+            # 8. Обновление статистики
+            execution_time = (time.time() - start_time) * 1000
+            self._update_execution_stats(True, total_cost, 0, execution_time)
+
+            # 9. Формирование отчета
+            report = CCXTExecutionReport(
+                success=True,
+                deal_id=str(deal.deal_id) if deal else None,
+                buy_order=buy_order,
+                sell_order=sell_order,
+                total_cost=total_cost,
+                expected_profit=expected_profit,
+                execution_time_ms=execution_time,
+                ccxt_data={
+                    'buy_ccxt_response': buy_result.exchange_response,
+                    'strategy_data': strategy_data
+                }
+            )
+
+            logger.info(f"🎉 [{execution_id}] CCXT strategy executed successfully!")
+            logger.info(f"   💰 Cost: {total_cost:.4f} USDT")
+            logger.info(f"   📈 Expected profit: {expected_profit:.4f} USDT")
+            logger.info(f"   ⏱️ Execution time: {execution_time:.1f}ms")
+
+            return report
+
+        except Exception as e:
+            execution_time = (time.time() - start_time) * 1000
+            self._update_execution_stats(False, 0.0, 0.0, execution_time)
+
+            logger.error(f"❌ [{execution_id}] CCXT strategy execution failed: {e}")
+            return CCXTExecutionReport(
+                success=False,
+                error_message=f"Unexpected error: {str(e)}",
+                execution_time_ms=execution_time
+            )
+
+    # ===== ORDER MANAGEMENT METHODS =====
+
+    async def cancel_ccxt_order(self, order: Order) -> bool:
+        """
+        Отмена CCXT ордера
+        """
+        try:
+            if not order.id:
+                logger.warning(f"Cannot cancel order without exchange ID: local_id={order.local_order_id}")
+                return False
+
+            # Отменяем на бирже
+            ccxt_result = await self.exchange_connector.cancel_order(order.id, order.symbol)
+            
+            # Обновляем локальный ордер
+            order.update_from_ccxt_response(ccxt_result)
+            order.cancel_order("Cancelled by user")
+            
+            # Сохраняем изменения
+            await self.orders_repository.update_order(order)
+            
+            logger.info(f"✅ CCXT order cancelled: {order.id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Failed to cancel CCXT order {order.id}: {e}")
+            return False
+
+    async def sync_order_with_exchange(self, order: Order) -> Order:
+        """
+        Синхронизация ордера с биржей
+        """
+        try:
+            if not order.id:
+                logger.warning(f"Cannot sync order without exchange ID: local_id={order.local_order_id}")
+                return order
+
+            # Получаем актуальные данные с биржи
+            ccxt_order = await self.exchange_connector.fetch_order(order.id, order.symbol)
+            
+            # Обновляем локальный ордер
+            order.update_from_ccxt_response(ccxt_order)
+            
+            # Сохраняем изменения
+            await self.orders_repository.update_order(order)
+            
+            logger.debug(f"Synced order {order.id} with exchange")
+            return order
+
+        except Exception as e:
+            logger.error(f"Failed to sync order {order.id}: {e}")
+            return order
+
+    async def sync_all_active_orders(self) -> List[Order]:
+        """
+        Синхронизация всех активных ордеров с биржей
+        """
+        try:
+            active_orders = await self.orders_repository.get_active_orders()
+            synced_orders = []
+
+            for order in active_orders:
+                synced_order = await self.sync_order_with_exchange(order)
+                synced_orders.append(synced_order)
+
+            logger.info(f"Synced {len(synced_orders)} active orders with exchange")
+            return synced_orders
+
+        except Exception as e:
+            logger.error(f"Failed to sync active orders: {e}")
+            return []
+
+    # ===== VALIDATION METHODS =====
+
+    async def _validate_ccxt_order_params(
+        self,
+        symbol: str,
+        type: str,
+        side: str,
+        amount: float,
+        price: Optional[float],
+        params: Optional[Dict[str, Any]]
+    ) -> OrderExecutionResult:
+        """
+        Валидация параметров CCXT ордера
+        """
+        try:
+            # Проверка обязательных параметров
+            if not symbol:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message="Symbol is required"
+                )
+
+            if type not in ['limit', 'market', 'stop', 'stop_limit']:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Invalid order type: {type}"
+                )
+
+            if side not in ['buy', 'sell']:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Invalid order side: {side}"
+                )
+
+            if amount <= 0:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message="Amount must be positive"
+                )
+
+            if type == 'limit' and (not price or price <= 0):
+                return OrderExecutionResult(
+                    success=False,
+                    error_message="Price is required for limit orders"
+                )
+
+            # Проверка рыночных лимитов
+            market_info = await self.exchange_connector.get_market_info(symbol)
+            
+            min_amount = market_info['limits']['amount']['min']
+            if amount < min_amount:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Amount {amount} below minimum {min_amount}"
+                )
+
+            if price and type == 'limit':
+                min_price = market_info['limits']['price']['min']
+                max_price = market_info['limits']['price']['max']
+                
+                if price < min_price or price > max_price:
+                    return OrderExecutionResult(
+                        success=False,
+                        error_message=f"Price {price} outside allowed range [{min_price}, {max_price}]"
+                    )
+
+            return OrderExecutionResult(success=True)
+
+        except Exception as e:
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Validation error: {str(e)}"
+            )
+
+    async def _perform_ccxt_pre_checks(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: Optional[float]
+    ) -> Tuple[bool, str]:
+        """
+        Предварительные проверки перед размещением CCXT ордера
+        """
+        try:
+            # 1. Проверка баланса
+            if self.enable_balance_checks:
+                has_balance, currency, available = await self.exchange_connector.check_sufficient_balance(
+                    symbol, side, amount, price
+                )
+                
+                if not has_balance:
+                    required = amount * (price or 0) if side == 'buy' else amount
+                    return False, f"Insufficient {currency} balance: need {required:.8f}, have {available:.8f}"
+
+            # 2. Проверка статуса биржи
+            exchange_status = await self.exchange_connector.get_exchange_status()
+            if exchange_status.get('status') != 'ok':
+                return False, f"Exchange not available: {exchange_status.get('error', 'Unknown error')}"
+
+            # 3. Проверка разумности цены (если указана)
+            if price and self.enable_slippage_protection:
+                ticker = await self.exchange_connector.fetch_ticker(symbol)
+                market_price = ticker['last']
+                
+                price_diff = abs(price - market_price) / market_price
+                if price_diff > 0.10:  # 10% отклонение
+                    logger.warning(f"Price differs from market by {price_diff*100:.1f}%")
+
+            return True, "All checks passed"
+
+        except Exception as e:
+            return False, f"Pre-check error: {str(e)}"
+
+    # ===== HELPER METHODS =====
+
+    def _create_local_order(
+        self,
+        symbol: str,
+        type: str,
+        side: str,
+        amount: float,
+        price: Optional[float],
+        params: Optional[Dict[str, Any]],
+        deal_id: Optional[str]
+    ) -> Order:
+        """
+        Создание локального Order объекта
+        """
+        current_time = int(time.time() * 1000)
+        
+        return Order(
+            # CCXT поля
+            id=None,  # Будет установлен после размещения
+            clientOrderId=f"autotrade_{current_time}_{deal_id or 'standalone'}",
+            datetime=datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            timestamp=current_time,
+            status=Order.STATUS_PENDING,
+            symbol=symbol,
+            type=type,
+            timeInForce=params.get('timeInForce', Order.TIF_GTC) if params else Order.TIF_GTC,
+            side=side,
+            price=price,
+            amount=amount,
+            filled=0.0,
+            remaining=amount,
+            trades=[],
+            fee={'cost': 0.0, 'currency': None, 'rate': None},
+            info={},
+            
+            # AutoTrade поля
+            deal_id=int(deal_id) if deal_id and deal_id.isdigit() else None,
+            created_at=current_time,
+            last_update=current_time,
+            metadata=params or {}
+        )
+
+    def _parse_strategy_result(self, strategy_result: Any) -> Optional[Dict[str, Any]]:
+        """
+        Парсинг результата стратегии
+        """
+        try:
+            if isinstance(strategy_result, dict) and "comment" in strategy_result:
+                logger.warning(f"Strategy error: {strategy_result['comment']}")
+                return None
+
+            if isinstance(strategy_result, (tuple, list)) and len(strategy_result) >= 5:
+                buy_price, buy_amount, sell_price, sell_amount, info_dict = strategy_result[:5]
+                
+                return {
+                    'buy_price': float(buy_price),
+                    'buy_amount': float(buy_amount),
+                    'sell_price': float(sell_price),
+                    'sell_amount': float(sell_amount),
+                    'info': info_dict if isinstance(info_dict, dict) else {}
+                }
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error parsing strategy result: {e}")
+            return None
+
+    def _update_execution_stats(
+        self,
+        success: bool,
+        volume: float,
+        fees: float,
+        execution_time_ms: float
+    ):
+        """
+        Обновление статистики выполнения
+        """
+        self.execution_stats['total_executions'] += 1
+        
+        if success:
+            self.execution_stats['successful_executions'] += 1
+            self.execution_stats['total_volume'] += volume
+            self.execution_stats['total_fees'] += fees
+        else:
+            self.execution_stats['failed_executions'] += 1
+
+        # Обновляем среднее время выполнения
+        total_time = (self.execution_stats['average_execution_time_ms'] * 
+                     (self.execution_stats['total_executions'] - 1) + execution_time_ms)
+        self.execution_stats['average_execution_time_ms'] = total_time / self.execution_stats['total_executions']
+
+        # Обновляем CCXT compliance score
+        if self.execution_stats['total_executions'] > 0:
+            success_rate = self.execution_stats['successful_executions'] / self.execution_stats['total_executions']
+            self.execution_stats['ccxt_compliance_score'] = success_rate * 100
+
+    # ===== MONITORING AND STATISTICS =====
+
+    async def get_execution_report(self) -> Dict[str, Any]:
+        """
+        Получение детального отчета о выполнении
+        """
+        try:
+            # Статистика ордеров
+            total_orders = await self.orders_repository.count_active_orders()
+            order_stats = await self.orders_repository.get_order_statistics()
+            
+            # Статистика подключения
+            health_check = await self.orders_repository.health_check()
+            exchange_info = self.exchange_connector.get_exchange_info()
+            
+            return {
+                'execution_stats': self.execution_stats,
+                'orders_stats': {
+                    'total_active': total_orders,
+                    'by_status_side': order_stats
+                },
+                'system_health': {
+                    'repository': health_check,
+                    'exchange': exchange_info
+                },
+                'settings': {
+                    'max_execution_time_sec': self.max_execution_time_sec,
+                    'enable_risk_checks': self.enable_risk_checks,
+                    'enable_balance_checks': self.enable_balance_checks,
+                    'enable_slippage_protection': self.enable_slippage_protection,
+                    'enable_ccxt_validation': self.enable_ccxt_validation
+                },
+                'timestamp': datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to generate execution report: {e}")
+            return {'error': str(e), 'timestamp': datetime.now(timezone.utc).isoformat()}
+
+    def reset_statistics(self):
+        """
+        Сброс статистики
+        """
+        self.execution_stats = {
+            'total_executions': 0,
+            'successful_executions': 0,
+            'failed_executions': 0,
+            'total_volume': 0.0,
+            'total_fees': 0.0,
+            'average_execution_time_ms': 0.0,
+            'ccxt_compliance_score': 100.0
+        }
+        logger.info("Execution statistics reset")
+
+    # ===== EMERGENCY OPERATIONS =====
+
+    async def emergency_cancel_all_orders(self, symbol: Optional[str] = None) -> int:
+        """
+        Экстренная отмена всех ордеров
+        """
+        logger.warning("🚨 EMERGENCY: Cancelling all orders")
+        
+        try:
+            # Получаем активные ордера
+            active_orders = await self.orders_repository.get_active_orders()
+            
+            if symbol:
+                active_orders = [order for order in active_orders if order.symbol == symbol]
+            
+            cancelled_count = 0
+            
+            for order in active_orders:
+                try:
+                    if await self.cancel_ccxt_order(order):
+                        cancelled_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to cancel order {order.id}: {e}")
+            
+            logger.warning(f"🚨 Emergency cancellation completed: {cancelled_count} orders cancelled")
+            return cancelled_count
+
+        except Exception as e:
+            logger.error(f"Emergency cancellation failed: {e}")
+            return 0
+
+    # ===== CONFIGURATION =====
+
+    def configure_execution_settings(
+        self,
+        max_execution_time_sec: Optional[float] = None,
+        enable_risk_checks: Optional[bool] = None,
+        enable_balance_checks: Optional[bool] = None,
+        enable_slippage_protection: Optional[bool] = None,
+        enable_ccxt_validation: Optional[bool] = None
+    ):
+        """
+        Настройка параметров выполнения
+        """
+        if max_execution_time_sec is not None:
+            self.max_execution_time_sec = max_execution_time_sec
+        if enable_risk_checks is not None:
+            self.enable_risk_checks = enable_risk_checks
+        if enable_balance_checks is not None:
+            self.enable_balance_checks = enable_balance_checks
+        if enable_slippage_protection is not None:
+            self.enable_slippage_protection = enable_slippage_protection
+        if enable_ccxt_validation is not None:
+            self.enable_ccxt_validation = enable_ccxt_validation
+
+        logger.info("⚙️ CCXT execution settings updated")
+
+    def __repr__(self):
+        return (f"CCXTOrderExecutionService("
+                f"exchange={self.exchange_connector.exchange_name}, "
+                f"executions={self.execution_stats['total_executions']}, "
+                f"success_rate={self.execution_stats.get('ccxt_compliance_score', 0):.1f}%)")
+
+
+# ===== FACTORY FUNCTION =====
+
+def create_ccxt_order_execution_service(
+    exchange_connector: CCXTExchangeConnector,
+    orders_repository: IOrdersRepository,
+    deal_service: Optional[Any] = None
+) -> CCXTOrderExecutionService:
+    """
+    Factory function для создания CCXT Order Execution Service
+    """
+    return CCXTOrderExecutionService(
+        exchange_connector=exchange_connector,
+        orders_repository=orders_repository,
+        deal_service=deal_service
+    )
+```
+
+### 📄 `src\domain\services\orders\ccxt_unified_order_service.py`
+
+```python
+# domain/services/orders/ccxt_unified_order_service.py
+import logging
+from typing import Optional, Dict, List, Any, Tuple
+import asyncio
+
+from src.domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
+from src.domain.repositories.i_orders_repository import IOrdersRepository
+from src.infrastructure.connectors.ccxt_exchange_connector import CCXTExchangeConnector
+
+# Импорт CCXT-совместимых сервисов
+from src.domain.services.orders.ccxt_order_execution_service import CCXTOrderExecutionService
+
+logger = logging.getLogger(__name__)
+
+
+class CCXTUnifiedOrderService:
+    """
+    🚀 CCXT COMPLIANT Unified Order Service
+    
+    Унифицированный сервис для управления ордерами с полной поддержкой CCXT.
+    Координирует работу CCXT-совместимых сервисов и обеспечивает единый интерфейс
+    для всех операций с ордерами.
+    
+    Основные возможности:
+    - Создание и размещение CCXT-совместимых ордеров
+    - Синхронизация с биржей через CCXT Unified API
+    - Управление жизненным циклом ордеров
+    - Мониторинг и статистика
+    - Валидация и риск-менеджмент
+    """
+
+    def __init__(
+        self,
+        orders_repository: IOrdersRepository,
+        exchange_connector: CCXTExchangeConnector,
+        execution_service: Optional[CCXTOrderExecutionService] = None,
+        deal_service: Optional[Any] = None,
+        statistics_repository: Optional[Any] = None
+    ):
+        self.orders_repository = orders_repository
+        self.exchange_connector = exchange_connector
+        self.deal_service = deal_service
+        self.statistics_repository = statistics_repository
+        
+        # Создаем execution service если не предоставлен
+        self.execution_service = execution_service or CCXTOrderExecutionService(
+            exchange_connector=exchange_connector,
+            orders_repository=orders_repository,
+            deal_service=deal_service
+        )
+        
+        # Статистика сервиса
+        self.service_stats = {
+            'orders_created': 0,
+            'orders_placed': 0,
+            'orders_cancelled': 0,
+            'orders_filled': 0,
+            'total_volume': 0.0,
+            'sync_operations': 0
+        }
+        
+        # Настройки
+        self.auto_sync_enabled = True
+        self.sync_interval_seconds = 30
+        self._sync_task: Optional[asyncio.Task] = None
+
+    # ===== CORE ORDER OPERATIONS =====
+
+    async def create_ccxt_order(
+        self,
+        symbol: str,
+        type: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None,
+        params: Optional[Dict[str, Any]] = None,
+        deal_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        Создание и размещение CCXT-совместимого ордера
+        """
+        try:
+            logger.info(f"Creating CCXT order: {side.upper()} {amount} {symbol}")
+            
+            # Делегируем выполнение execution service
+            result = await self.execution_service.execute_ccxt_order(
+                symbol=symbol,
+                type=type,
+                side=side,
+                amount=amount,
+                price=price,
+                params=params,
+                deal_id=deal_id
+            )
+            
+            if result.success:
+                self.service_stats['orders_created'] += 1
+                self.service_stats['orders_placed'] += 1
+                self.service_stats['total_volume'] += amount * (price or 0)
+                
+                logger.info(f"✅ CCXT order created successfully: {result.order.id}")
+            else:
+                logger.error(f"❌ CCXT order creation failed: {result.error_message}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error in create_ccxt_order: {e}")
+            return OrderExecutionResult(
+                success=False,
+                error_message=str(e)
+            )
+
+    async def create_limit_order(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        deal_id: Optional[str] = None,
+        params: Optional[Dict[str, Any]] = None
+    ) -> OrderExecutionResult:
+        """
+        Создание лимитного ордера
+        """
+        return await self.create_ccxt_order(
+            symbol=symbol,
+            type='limit',
+            side=side,
+            amount=amount,
+            price=price,
+            params=params,
+            deal_id=deal_id
+        )
+
+    async def create_market_order(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        deal_id: Optional[str] = None,
+        params: Optional[Dict[str, Any]] = None
+    ) -> OrderExecutionResult:
+        """
+        Создание маркет ордера
+        """
+        return await self.create_ccxt_order(
+            symbol=symbol,
+            type='market',
+            side=side,
+            amount=amount,
+            price=None,
+            params=params,
+            deal_id=deal_id
+        )
+
+    async def cancel_order(self, order: Order) -> bool:
+        """
+        Отмена ордера
+        """
+        try:
+            success = await self.execution_service.cancel_ccxt_order(order)
+            
+            if success:
+                self.service_stats['orders_cancelled'] += 1
+                logger.info(f"✅ Order cancelled: {order.id}")
+            else:
+                logger.error(f"❌ Failed to cancel order: {order.id}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order: {e}")
+            return False
+
+    async def cancel_order_by_id(self, order_id: str) -> bool:
+        """
+        Отмена ордера по ID
+        """
+        try:
+            order = await self.orders_repository.get_order(order_id)
+            if not order:
+                logger.warning(f"Order not found for cancellation: {order_id}")
+                return False
+            
+            return await self.cancel_order(order)
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order by ID {order_id}: {e}")
+            return False
+
+    # ===== ORDER RETRIEVAL METHODS =====
+
+    async def get_order(self, order_id: str) -> Optional[Order]:
+        """
+        Получение ордера по ID
+        """
+        return await self.orders_repository.get_order(order_id)
+
+    async def get_order_by_local_id(self, local_order_id: int) -> Optional[Order]:
+        """
+        Получение ордера по локальному ID
+        """
+        return await self.orders_repository.get_order_by_local_id(local_order_id)
+
+    async def get_active_orders(self, symbol: Optional[str] = None) -> List[Order]:
+        """
+        Получение активных ордеров
+        """
+        if symbol:
+            all_orders = await self.orders_repository.get_orders_by_symbol(symbol)
+            return [order for order in all_orders if order.status in ['open', 'pending', 'partial']]
+        else:
+            return await self.orders_repository.get_active_orders()
+
+    async def get_orders_by_deal_id(self, deal_id: str) -> List[Order]:
+        """
+        Получение ордеров по ID сделки
+        """
+        return await self.orders_repository.get_orders_by_deal_id(deal_id)
+
+    async def get_recent_orders(self, limit: int = 100) -> List[Order]:
+        """
+        Получение последних ордеров
+        """
+        return await self.orders_repository.get_recent_orders(limit)
+
+    # ===== SYNCHRONIZATION METHODS =====
+
+    async def sync_order_with_exchange(self, order: Order) -> Order:
+        """
+        Синхронизация ордера с биржей
+        """
+        try:
+            synced_order = await self.execution_service.sync_order_with_exchange(order)
+            self.service_stats['sync_operations'] += 1
+            
+            # Обновляем статистику по исполненным ордерам
+            if synced_order.is_fully_filled() and order.status != 'closed':
+                self.service_stats['orders_filled'] += 1
+            
+            return synced_order
+            
+        except Exception as e:
+            logger.error(f"Failed to sync order {order.id}: {e}")
+            return order
+
+    async def sync_all_active_orders(self) -> List[Order]:
+        """
+        Синхронизация всех активных ордеров
+        """
+        try:
+            synced_orders = await self.execution_service.sync_all_active_orders()
+            self.service_stats['sync_operations'] += len(synced_orders)
+            
+            logger.info(f"Synced {len(synced_orders)} active orders")
+            return synced_orders
+            
+        except Exception as e:
+            logger.error(f"Failed to sync all active orders: {e}")
+            return []
+
+    async def start_auto_sync(self):
+        """
+        Запуск автоматической синхронизации
+        """
+        if self._sync_task and not self._sync_task.done():
+            logger.warning("Auto sync already running")
+            return
+
+        if not self.auto_sync_enabled:
+            logger.warning("Auto sync disabled")
+            return
+
+        logger.info(f"Starting auto sync with interval {self.sync_interval_seconds}s")
+        self._sync_task = asyncio.create_task(self._auto_sync_loop())
+
+    async def stop_auto_sync(self):
+        """
+        Остановка автоматической синхронизации
+        """
+        if self._sync_task and not self._sync_task.done():
+            self._sync_task.cancel()
+            try:
+                await self._sync_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("Auto sync stopped")
+
+    async def _auto_sync_loop(self):
+        """
+        Цикл автоматической синхронизации
+        """
+        try:
+            while True:
+                try:
+                    await self.sync_all_active_orders()
+                    await asyncio.sleep(self.sync_interval_seconds)
+                except Exception as e:
+                    logger.error(f"Error in auto sync loop: {e}")
+                    await asyncio.sleep(self.sync_interval_seconds)
+                    
+        except asyncio.CancelledError:
+            logger.info("Auto sync loop cancelled")
+
+    # ===== BALANCE AND VALIDATION METHODS =====
+
+    async def check_sufficient_balance(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None
+    ) -> Tuple[bool, str, float]:
+        """
+        Проверка достаточности баланса
+        """
+        return await self.exchange_connector.check_sufficient_balance(
+            symbol, side, amount, price
+        )
+
+    async def validate_order_params(
+        self,
+        symbol: str,
+        type: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None
+    ) -> OrderValidationResult:
+        """
+        Валидация параметров ордера
+        """
+        try:
+            # Создаем временный ордер для валидации
+            temp_order = Order(
+                symbol=symbol,
+                type=type,
+                side=side,
+                amount=amount,
+                price=price
+            )
+            
+            # Используем CCXT валидацию
+            is_valid, errors = temp_order.validate_ccxt_compliance()
+            
+            if not is_valid:
+                return OrderValidationResult(
+                    is_valid=False,
+                    errors=errors
+                )
+
+            # Дополнительные проверки
+            market_info = await self.exchange_connector.get_market_info(symbol)
+            
+            # Проверяем лимиты
+            min_amount = market_info['limits']['amount']['min']
+            if amount < min_amount:
+                return OrderValidationResult(
+                    is_valid=False,
+                    errors=[f"Amount {amount} below minimum {min_amount}"]
+                )
+
+            return OrderValidationResult(is_valid=True)
+
+        except Exception as e:
+            return OrderValidationResult(
+                is_valid=False,
+                errors=[f"Validation error: {str(e)}"]
+            )
+
+    # ===== STATISTICS AND MONITORING =====
+
+    async def get_order_statistics(self) -> Dict[str, Any]:
+        """
+        Получение статистики ордеров
+        """
+        try:
+            # Статистика из репозитория
+            repo_stats = await self.orders_repository.get_order_statistics()
+            
+            # Статистика сервиса
+            service_stats = self.service_stats.copy()
+            
+            # Статистика исполнения
+            execution_stats = self.execution_service.execution_stats
+            
+            # Общее количество ордеров
+            total_orders = await self.orders_repository.count_active_orders()
+            
+            return {
+                'service_stats': service_stats,
+                'repository_stats': repo_stats,
+                'execution_stats': execution_stats,
+                'total_active_orders': total_orders,
+                'auto_sync_enabled': self.auto_sync_enabled,
+                'sync_interval_seconds': self.sync_interval_seconds
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get order statistics: {e}")
+            return {'error': str(e)}
+
+    async def get_service_health(self) -> Dict[str, Any]:
+        """
+        Проверка здоровья сервиса
+        """
+        try:
+            # Проверка репозитория
+            repo_health = await self.orders_repository.health_check()
+            
+            # Проверка exchange connector
+            exchange_info = self.exchange_connector.get_exchange_info()
+            
+            # Проверка автосинхронизации
+            auto_sync_status = {
+                'enabled': self.auto_sync_enabled,
+                'running': self._sync_task and not self._sync_task.done() if self._sync_task else False,
+                'interval_seconds': self.sync_interval_seconds
+            }
+            
+            return {
+                'status': 'healthy',
+                'repository_health': repo_health,
+                'exchange_info': exchange_info,
+                'auto_sync': auto_sync_status,
+                'service_stats': self.service_stats
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'unhealthy',
+                'error': str(e)
+            }
+
+    # ===== EMERGENCY OPERATIONS =====
+
+    async def emergency_cancel_all_orders(self, symbol: Optional[str] = None) -> int:
+        """
+        Экстренная отмена всех ордеров
+        """
+        logger.warning("🚨 EMERGENCY: Cancelling all orders through unified service")
+        
+        try:
+            cancelled_count = await self.execution_service.emergency_cancel_all_orders(symbol)
+            self.service_stats['orders_cancelled'] += cancelled_count
+            
+            return cancelled_count
+            
+        except Exception as e:
+            logger.error(f"Emergency cancellation failed: {e}")
+            return 0
+
+    # ===== CONFIGURATION =====
+
+    def configure_service(
+        self,
+        auto_sync_enabled: Optional[bool] = None,
+        sync_interval_seconds: Optional[int] = None
+    ):
+        """
+        Настройка сервиса
+        """
+        if auto_sync_enabled is not None:
+            self.auto_sync_enabled = auto_sync_enabled
+            
+        if sync_interval_seconds is not None:
+            self.sync_interval_seconds = sync_interval_seconds
+        
+        logger.info(f"Service configured: auto_sync={self.auto_sync_enabled}, interval={self.sync_interval_seconds}s")
+
+    def reset_statistics(self):
+        """
+        Сброс статистики
+        """
+        self.service_stats = {
+            'orders_created': 0,
+            'orders_placed': 0,
+            'orders_cancelled': 0,
+            'orders_filled': 0,
+            'total_volume': 0.0,
+            'sync_operations': 0
+        }
+        
+        # Сбрасываем статистику execution service
+        self.execution_service.reset_statistics()
+        
+        logger.info("Service statistics reset")
+
+    # ===== LEGACY COMPATIBILITY METHODS =====
+
+    async def create_and_place_buy_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: Optional[int] = None,
+        order_type: str = 'limit'
+    ) -> OrderExecutionResult:
+        """
+        LEGACY: Создание и размещение BUY ордера (для обратной совместимости)
+        """
+        return await self.create_ccxt_order(
+            symbol=symbol,
+            type=order_type.lower(),
+            side='buy',
+            amount=amount,
+            price=price,
+            deal_id=str(deal_id) if deal_id else None
+        )
+
+    async def create_local_sell_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: Optional[int] = None,
+        order_type: str = 'limit'
+    ) -> OrderExecutionResult:
+        """
+        LEGACY: Создание локального SELL ордера (для обратной совместимости)
+        """
+        # Создаем локальный ордер (не размещаем на бирже)
+        local_order = Order(
+            symbol=symbol,
+            type=order_type.lower(),
+            side='sell',
+            amount=amount,
+            price=price,
+            status=Order.STATUS_PENDING,
+            deal_id=deal_id
+        )
+        
+        # Сохраняем в репозитории
+        success = await self.orders_repository.save_order(local_order)
+        
+        if success:
+            self.service_stats['orders_created'] += 1
+            return OrderExecutionResult(
+                success=True,
+                order=local_order
+            )
+        else:
+            return OrderExecutionResult(
+                success=False,
+                error_message="Failed to save local SELL order"
+            )
+
+    # ===== CLEANUP =====
+
+    async def close(self):
+        """
+        Закрытие сервиса и освобождение ресурсов
+        """
+        await self.stop_auto_sync()
+        logger.info("CCXT Unified Order Service closed")
+
+    def __repr__(self):
+        return (f"CCXTUnifiedOrderService("
+                f"exchange={self.exchange_connector.exchange_name}, "
+                f"orders_created={self.service_stats['orders_created']}, "
+                f"auto_sync={'ON' if self.auto_sync_enabled else 'OFF'})")
+
+
+# ===== FACTORY FUNCTION =====
+
+def create_ccxt_unified_order_service(
+    orders_repository: IOrdersRepository,
+    exchange_connector: CCXTExchangeConnector,
+    deal_service: Optional[Any] = None,
+    statistics_repository: Optional[Any] = None
+) -> CCXTUnifiedOrderService:
+    """
+    Factory function для создания CCXT Unified Order Service
+    """
+    return CCXTUnifiedOrderService(
+        orders_repository=orders_repository,
+        exchange_connector=exchange_connector,
+        deal_service=deal_service,
+        statistics_repository=statistics_repository
+    )
+```
+
 ### 📄 `src\domain\services\orders\filled_buy_order_handler.py`
 
 ```python
@@ -6931,7 +14866,7 @@ import logging
 from typing import List
 
 from domain.entities.order import Order
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
 
 logger = logging.getLogger(__name__)
@@ -6942,7 +14877,7 @@ class FilledBuyOrderHandler:
     соответствующие им PENDING SELL ордера на биржу.
     """
 
-    def __init__(self, order_service: OrderService, deal_service: DealService):
+    def __init__(self, order_service: 'UnifiedOrderService', deal_service: DealService):
         self.order_service = order_service
         self.deal_service = deal_service
         self.processed_buy_orders = set()
@@ -7008,6 +14943,441 @@ class FilledBuyOrderHandler:
 
 ```
 
+### 📄 `src\domain\services\orders\order_cancellation_service.py`
+
+```python
+import asyncio
+import logging
+import time
+from typing import Dict, List, Optional, Any
+import ccxt
+
+from src.domain.entities.order import Order
+from src.infrastructure.repositories.orders_repository import OrdersRepository
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
+
+logger = logging.getLogger(__name__)
+
+
+class OrderCancellationService:
+    """
+    Сервис для отмены ордеров.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за отмену ордеров на бирже и локально.
+    """
+    
+    def __init__(
+        self,
+        orders_repo: OrdersRepository,
+        exchange_connector: CcxtExchangeConnector,
+        statistics_repo: Optional[IStatisticsRepository] = None
+    ):
+        self.orders_repo = orders_repo
+        self.exchange_connector = exchange_connector
+        self.statistics_repo = statistics_repo
+        
+        self._stats = {
+            'orders_cancelled': 0,
+            'orders_not_found': 0,
+            'local_cancellations': 0,
+            'failed_cancellations': 0,
+            'emergency_cancellations': 0
+        }
+    
+    async def cancel_order(self, order: Order, reason: str = "User request") -> Optional[Order]:
+        """
+        Отмена отдельного ордера
+        
+        Args:
+            order: Ордер для отмены
+            reason: Причина отмены
+            
+        Returns:
+            Обновленный ордер в случае успеха, иначе None
+        """
+        try:
+            if not order.is_open():
+                logger.warning(f"⚠️ Order {order.order_id} is not open ({order.status})")
+                return None
+            
+            logger.info(f"❌ Cancelling order {order.order_id}: {reason}")
+            
+            # Если нет exchange_id или коннектора - локальная отмена
+            if not self.exchange_connector or not order.exchange_id:
+                return await self._cancel_order_locally(order, reason)
+            
+            # Отмена на бирже
+            return await self._cancel_order_on_exchange(order, reason)
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order {order.order_id}: {e}")
+            await self._update_cancellation_statistics(False, order, "error")
+            return None
+    
+    async def _cancel_order_on_exchange(self, order: Order, reason: str) -> Optional[Order]:
+        """Отмена ордера на бирже"""
+        try:
+            logger.info(f"❌ Cancelling order {order.exchange_id} on exchange")
+            
+            # Реальная отмена на бирже
+            exchange_response = await self.exchange_connector.cancel_order(
+                order.exchange_id,
+                order.symbol
+            )
+            
+            # Обновляем статус ордера
+            order.cancel(reason)
+            if exchange_response:
+                order.update_from_exchange(exchange_response)
+            
+            self.orders_repo.save(order)
+            self._stats['orders_cancelled'] += 1
+            
+            logger.info(f"✅ Order {order.order_id} cancelled successfully")
+            await self._update_cancellation_statistics(True, order, "exchange")
+            
+            return order
+            
+        except ccxt.OrderNotFound:
+            # Ордер не найден на бирже - возможно, уже исполнен или отменен
+            logger.warning(f"⚠️ Order {order.order_id} not found on exchange. Marking as cancelled locally.")
+            
+            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
+            order.closed_at = int(time.time() * 1000)
+            self.orders_repo.save(order)
+            
+            self._stats['orders_not_found'] += 1
+            await self._update_cancellation_statistics(True, order, "not_found")
+            
+            return order  # Считаем успешным - цель достигнута
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order {order.order_id} on exchange: {e}")
+            
+            # Помечаем ордер как failed to cancel
+            order.status = Order.STATUS_FAILED
+            order.error_message = f"Cancellation failed: {str(e)}"
+            self.orders_repo.save(order)
+            
+            self._stats['failed_cancellations'] += 1
+            await self._update_cancellation_statistics(False, order, "failed")
+            
+            return None
+    
+    async def _cancel_order_locally(self, order: Order, reason: str) -> Optional[Order]:
+        """Локальная отмена ордера (без обращения к бирже)"""
+        try:
+            order.cancel(reason)
+            self.orders_repo.save(order)
+            
+            self._stats['local_cancellations'] += 1
+            logger.warning(f"⚠️ Order {order.order_id} cancelled locally: {reason}")
+            
+            await self._update_cancellation_statistics(True, order, "local")
+            return order
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order locally: {e}")
+            return None
+    
+    async def cancel_multiple_orders(
+        self,
+        orders: List[Order],
+        reason: str = "Batch cancellation"
+    ) -> Dict[int, Optional[Order]]: # Изменен тип возвращаемого значения
+        """
+        Отмена нескольких ордеров параллельно
+        
+        Args:
+            orders: Список ордеров для отмены
+            reason: Причина отмены
+            
+        Returns:
+            Словарь {order_id: updated_order_or_None}
+        """
+        if not orders:
+            return {}
+        
+        try:
+            logger.info(f"❌ Cancelling {len(orders)} orders: {reason}")
+            
+            # Создаем задачи для параллельной отмены
+            tasks = [
+                self.cancel_order(order, f"{reason} (batch)")
+                for order in orders
+            ]
+            
+            # Выполняем все отмены параллельно
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Обрабатываем результаты
+            result_dict = {}
+            for i, result in enumerate(results):
+                order_id = orders[i].order_id
+                if isinstance(result, Exception):
+                    logger.error(f"Error cancelling order {order_id}: {result}")
+                    result_dict[order_id] = None
+                else:
+                    result_dict[order_id] = result # result теперь Optional[Order]
+            
+            success_count = sum(1 for success in result_dict.values() if success is not None) # Проверяем на None
+            logger.info(f"❌ Batch cancellation completed: {success_count}/{len(orders)} successful")
+            
+            return result_dict
+            
+        except Exception as e:
+            logger.error(f"❌ Error in batch cancellation: {e}")
+            return {order.order_id: None for order in orders}
+    
+    async def cancel_orders_by_deal(self, deal_id: int, reason: str = "Deal cancellation") -> int:
+        """
+        Отмена всех ордеров связанных со сделкой
+        
+        Args:
+            deal_id: ID сделки
+            reason: Причина отмены
+            
+        Returns:
+            Количество отмененных ордеров
+        """
+        try:
+            # Получаем все ордера сделки
+            deal_orders = self.orders_repo.get_all_by_deal(deal_id)
+            open_orders = [order for order in deal_orders if order.is_open()]
+            
+            if not open_orders:
+                logger.info(f"No open orders found for deal {deal_id}")
+                return 0
+            
+            logger.info(f"❌ Cancelling {len(open_orders)} orders for deal {deal_id}")
+            
+            # Отменяем все ордера
+            results = await self.cancel_multiple_orders(open_orders, reason)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
+            
+            logger.info(f"❌ Deal {deal_id} cancellation: {cancelled_count}/{len(open_orders)} orders cancelled")
+            return cancelled_count
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling orders for deal {deal_id}: {e}")
+            return 0
+    
+    async def cancel_orders_by_symbol(
+        self,
+        symbol: str,
+        reason: str = "Symbol cancellation"
+    ) -> int:
+        """
+        Отмена всех открытых ордеров для торговой пары
+        
+        Args:
+            symbol: Торговая пара
+            reason: Причина отмены
+            
+        Returns:
+            Количество отмененных ордеров
+        """
+        try:
+            # Получаем все ордера для символа
+            all_orders = self.orders_repo.get_all()
+            symbol_orders = [
+                order for order in all_orders 
+                if order.symbol == symbol and order.is_open()
+            ]
+            
+            if not symbol_orders:
+                logger.info(f"No open orders found for symbol {symbol}")
+                return 0
+            
+            logger.info(f"❌ Cancelling {len(symbol_orders)} orders for symbol {symbol}")
+            
+            # Отменяем все ордера
+            results = await self.cancel_multiple_orders(symbol_orders, reason)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
+            
+            logger.info(f"❌ Symbol {symbol} cancellation: {cancelled_count}/{len(symbol_orders)} orders cancelled")
+            return cancelled_count
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling orders for symbol {symbol}: {e}")
+            return 0
+    
+    async def emergency_cancel_all_orders(
+        self,
+        symbol: Optional[str] = None,
+        reason: str = "Emergency cancellation"
+    ) -> int:
+        """
+        Экстренная отмена всех открытых ордеров
+        
+        Args:
+            symbol: Опциональный фильтр по торговой паре
+            reason: Причина отмены
+            
+        Returns:
+            Количество отмененных ордеров
+        """
+        try:
+            logger.warning(f"🚨 Emergency cancellation initiated: {reason}")
+            
+            # Получаем все открытые ордера
+            all_orders = self.orders_repo.get_all()
+            open_orders = [order for order in all_orders if order.is_open()]
+            
+            # Фильтруем по символу если указан
+            if symbol:
+                open_orders = [order for order in open_orders if order.symbol == symbol]
+            
+            if not open_orders:
+                logger.warning("🚨 No open orders found for emergency cancellation")
+                return 0
+            
+            logger.warning(f"🚨 Emergency cancelling {len(open_orders)} orders")
+            
+            # Отменяем все ордера
+            results = await self.cancel_multiple_orders(open_orders, f"🚨 {reason}")
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
+            
+            self._stats['emergency_cancellations'] += cancelled_count
+            
+            logger.warning(f"🚨 Emergency cancellation completed: {cancelled_count}/{len(open_orders)} orders cancelled")
+            
+            # Обновляем статистику
+            await self._update_emergency_statistics(cancelled_count, len(open_orders))
+            
+            return cancelled_count
+            
+        except Exception as e:
+            logger.error(f"❌ Error in emergency cancellation: {e}")
+            return 0
+    
+    async def cancel_stale_orders(
+        self,
+        max_age_hours: int = 24,
+        reason: str = "Stale order cleanup"
+    ) -> int:
+        """
+        Отмена устаревших ордеров
+        
+        Args:
+            max_age_hours: Максимальный возраст ордера в часах
+            reason: Причина отмены
+            
+        Returns:
+            Количество отмененных ордеров
+        """
+        try:
+            current_time = int(time.time() * 1000)
+            max_age_ms = max_age_hours * 60 * 60 * 1000
+            
+            all_orders = self.orders_repo.get_all()
+            stale_orders = []
+            
+            for order in all_orders:
+                if order.is_open() and order.created_at:
+                    age_ms = current_time - order.created_at
+                    if age_ms > max_age_ms:
+                        stale_orders.append(order)
+            
+            if not stale_orders:
+                logger.info(f"No stale orders found (older than {max_age_hours} hours)")
+                return 0
+            
+            logger.info(f"❌ Cancelling {len(stale_orders)} stale orders (older than {max_age_hours}h)")
+            
+            # Отменяем устаревшие ордера
+            results = await self.cancel_multiple_orders(stale_orders, reason)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
+            
+            logger.info(f"❌ Stale order cleanup: {cancelled_count}/{len(stale_orders)} orders cancelled")
+            return cancelled_count
+            
+        except Exception as e:
+            logger.error(f"❌ Error cancelling stale orders: {e}")
+            return 0
+    
+    async def _update_cancellation_statistics(
+        self,
+        success: bool,
+        order: Order,
+        cancellation_type: str
+    ) -> None:
+        """
+        Обновление статистики отмены ордеров
+        """
+        if not self.statistics_repo:
+            return
+        
+        try:
+            await self.statistics_repo.increment_counter(
+                f"order_cancellations_{cancellation_type}",
+                StatisticCategory.ORDERS,
+                tags={
+                    "symbol": order.symbol,
+                    "side": order.side.lower(),
+                    "success": str(success).lower()
+                }
+            )
+            
+            if success:
+                await self.statistics_repo.increment_counter(
+                    "order_cancellations_successful",
+                    StatisticCategory.ORDERS,
+                    tags={"symbol": order.symbol}
+                )
+            else:
+                await self.statistics_repo.increment_counter(
+                    "order_cancellations_failed",
+                    StatisticCategory.ORDERS,
+                    tags={"symbol": order.symbol}
+                )
+                
+        except Exception as e:
+            logger.error(f"Error updating cancellation statistics: {e}")
+    
+    async def _update_emergency_statistics(self, cancelled: int, total: int) -> None:
+        """
+        Обновление статистики экстренных отмен
+        """
+        if not self.statistics_repo:
+            return
+        
+        try:
+            await self.statistics_repo.increment_counter(
+                "emergency_cancellations_executed",
+                StatisticCategory.ORDERS
+            )
+            
+            await self.statistics_repo.update_gauge(
+                "emergency_cancellation_success_rate",
+                StatisticCategory.ORDERS,
+                (cancelled / total * 100) if total > 0 else 0
+            )
+            
+        except Exception as e:
+            logger.error(f"Error updating emergency statistics: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Получение статистики сервиса
+        """
+        return self._stats.copy()
+    
+    def reset_stats(self) -> None:
+        """
+        Сброс статистики
+        """
+        self._stats = {
+            'orders_cancelled': 0,
+            'orders_not_found': 0,
+            'local_cancellations': 0,
+            'failed_cancellations': 0,
+            'emergency_cancellations': 0
+        }
+```
+
 ### 📄 `src\domain\services\orders\order_execution_service.py`
 
 ```python
@@ -7021,9 +15391,9 @@ from datetime import datetime, timedelta
 from domain.entities.order import Order, OrderExecutionResult
 from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 logger = logging.getLogger(__name__)
 
@@ -7065,7 +15435,7 @@ class OrderExecutionService:
 
     def __init__(
         self,
-        order_service: OrderService,
+        order_service: 'UnifiedOrderService',
         deal_service: DealService,
         exchange_connector: CcxtExchangeConnector
     ):
@@ -7620,62 +15990,406 @@ class OrderExecutionService:
 
 ```
 
-### 📄 `src\domain\services\orders\order_service.py`
+### 📄 `src\domain\services\orders\order_monitoring_service.py`
 
 ```python
-# domain/services/order_service.py.new - РЕАЛЬНАЯ торговля с API
+import asyncio
+import logging
+import time
+from typing import Optional, Dict, List, Any
+import ccxt
+
+from src.domain.entities.order import Order
+from src.infrastructure.repositories.orders_repository import OrdersRepository
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
+
+logger = logging.getLogger(__name__)
+
+
+class OrderMonitoringService:
+    """
+    Сервис для мониторинга статусов ордеров.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за мониторинг и синхронизацию статусов ордеров.
+    """
+    
+    def __init__(
+        self,
+        orders_repo: OrdersRepository,
+        exchange_connector: CcxtExchangeConnector,
+        statistics_repo: Optional[IStatisticsRepository] = None,
+        currency_pair_symbol: Optional[str] = None
+    ):
+        self.orders_repo = orders_repo
+        self.exchange_connector = exchange_connector
+        self.statistics_repo = statistics_repo
+        self.currency_pair_symbol = currency_pair_symbol
+        
+        self._stats = {
+            'status_checks': 0,
+            'orders_updated': 0,
+            'orders_not_found': 0,
+            'sync_operations': 0,
+            'errors': 0
+        }
+    
+    async def check_order_status(self, order: Order) -> Optional[Order]:
+        """
+        Проверка статуса отдельного ордера на бирже
+        
+        Args:
+            order: Ордер для проверки
+            
+        Returns:
+            Обновленный ордер или None в случае ошибки
+        """
+        if not order.exchange_id or not self.exchange_connector:
+            return order
+        
+        try:
+            logger.debug(f"📊 Checking status for order {order.exchange_id}")
+            
+            # Реальный запрос к бирже
+            exchange_order = await self.exchange_connector.fetch_order(
+                order.exchange_id,
+                order.symbol
+            )
+            
+            # Обновляем локальный ордер данными с биржи
+            old_status = order.status
+            order.update_from_exchange(exchange_order)
+            
+            # Сохраняем обновления
+            self.orders_repo.save(order)
+            
+            # Логируем изменения статуса
+            if old_status != order.status:
+                logger.info(f"📊 Order {order.order_id} status changed: {old_status} → {order.status}")
+                self._stats['orders_updated'] += 1
+                
+                # Обновляем статистику
+                await self._update_monitoring_statistics(order, "status_changed")
+            
+            self._stats['status_checks'] += 1
+            return order
+            
+        except ccxt.OrderNotFound:
+            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange")
+            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
+            order.closed_at = int(time.time() * 1000)
+            self.orders_repo.save(order)
+            
+            self._stats['orders_not_found'] += 1
+            await self._update_monitoring_statistics(order, "not_found")
+            return order
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking order status {order.order_id}: {e}")
+            self._stats['errors'] += 1
+            await self._update_monitoring_statistics(order, "error")
+            return order
+    
+    async def check_multiple_orders(self, orders: List[Order]) -> List[Order]:
+        """
+        Проверка статусов нескольких ордеров параллельно
+        
+        Args:
+            orders: Список ордеров для проверки
+            
+        Returns:
+            Список обновленных ордеров
+        """
+        if not orders:
+            return []
+        
+        try:
+            logger.debug(f"📊 Checking status for {len(orders)} orders")
+            
+            # Создаем задачи для параллельной проверки
+            tasks = [self.check_order_status(order) for order in orders]
+            
+            # Выполняем все проверки параллельно
+            updated_orders = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Фильтруем результаты
+            result = []
+            for i, updated_order in enumerate(updated_orders):
+                if isinstance(updated_order, Exception):
+                    logger.error(f"Error updating order {orders[i].order_id}: {updated_order}")
+                    result.append(orders[i])  # Возвращаем оригинальный ордер
+                elif updated_order:
+                    result.append(updated_order)
+                else:
+                    result.append(orders[i])  # Fallback к оригинальному
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking multiple orders: {e}")
+            self._stats['errors'] += 1
+            return orders
+    
+    async def sync_orders_with_exchange(self) -> List[Order]:
+        """
+        Синхронизация всех открытых ордеров с биржей
+        
+        Returns:
+            Список обновленных ордеров
+        """
+        if not self.exchange_connector:
+            logger.warning("⚠️ No exchange connector for sync")
+            return []
+        
+        updated_orders = []
+        
+        try:
+            logger.info("🔄 Starting order synchronization with exchange")
+            
+            # Получаем все локальные открытые ордера
+            local_orders = self._get_open_orders()
+            
+            if not local_orders:
+                logger.info("🔄 No open orders to sync")
+                return []
+            
+            # Получаем открытые ордера с биржи
+            symbol_to_fetch = self._determine_sync_symbol(local_orders)
+            if not symbol_to_fetch:
+                logger.warning("⚠️ No symbol available to fetch open orders. Skipping sync.")
+                return []
+            
+            exchange_open_orders = await self.exchange_connector.fetch_open_orders(symbol=symbol_to_fetch)
+            exchange_open_orders_map = {order['id']: order for order in exchange_open_orders}
+            
+            # Синхронизируем каждый локальный ордер
+            for order in local_orders:
+                if not order.exchange_id:
+                    logger.warning(f"⚠️ Local order {order.order_id} has no exchange_id. Skipping sync.")
+                    continue
+                
+                try:
+                    if order.exchange_id in exchange_open_orders_map:
+                        # Ордер есть на бирже и открыт - обновляем статус
+                        exchange_data = exchange_open_orders_map[order.exchange_id]
+                        old_status = order.status
+                        order.update_from_exchange(exchange_data)
+                        self.orders_repo.save(order)
+                        updated_orders.append(order)
+                        
+                        if old_status != order.status:
+                            logger.info(f"🔄 Synced order {order.order_id} status: {old_status} → {order.status}")
+                    else:
+                        # Ордера нет среди открытых на бирже - запрашиваем полный статус
+                        await self._sync_closed_order(order, updated_orders)
+                        
+                except Exception as e:
+                    logger.error(f"❌ Error syncing order {order.order_id}: {e}")
+                    self._stats['errors'] += 1
+            
+            self._stats['sync_operations'] += 1
+            logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
+            
+            # Обновляем общую статистику
+            await self._update_sync_statistics(len(updated_orders), len(local_orders))
+            
+            return updated_orders
+            
+        except Exception as e:
+            logger.error(f"❌ Error syncing orders: {e}")
+            self._stats['errors'] += 1
+            return []
+    
+    async def _sync_closed_order(self, order: Order, updated_orders: List[Order]) -> None:
+        """Синхронизация закрытого ордера"""
+        try:
+            # Запрашиваем полный статус ордера
+            full_exchange_order = await self.exchange_connector.fetch_order(
+                order.exchange_id,
+                order.symbol
+            )
+            
+            old_status = order.status
+            order.update_from_exchange(full_exchange_order)
+            self.orders_repo.save(order)
+            updated_orders.append(order)
+            
+            logger.info(f"🔄 Synced closed order {order.order_id} status: {old_status} → {order.status}")
+            
+        except ccxt.OrderNotFound:
+            # Ордер не найден на бирже вообще
+            logger.warning(f"⚠️ Order {order.order_id} not found on exchange during sync")
+            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
+            order.closed_at = int(time.time() * 1000)
+            self.orders_repo.save(order)
+            updated_orders.append(order)
+            self._stats['orders_not_found'] += 1
+            
+        except Exception as e:
+            logger.error(f"❌ Error fetching closed order {order.order_id}: {e}")
+            self._stats['errors'] += 1
+    
+    def _get_open_orders(self) -> List[Order]:
+        """Получить все открытые ордера"""
+        all_orders = self.orders_repo.get_all()
+        return [order for order in all_orders if order.is_open() or order.is_partially_filled()]
+    
+    def _determine_sync_symbol(self, local_orders: List[Order]) -> Optional[str]:
+        """Определить символ для синхронизации"""
+        # Используем настроенный символ или первый из локальных ордеров
+        if self.currency_pair_symbol:
+            return self.currency_pair_symbol
+        
+        if local_orders:
+            return local_orders[0].symbol
+        
+        return None
+    
+    async def get_orders_by_status(self, status: str) -> List[Order]:
+        """Получить ордера по статусу"""
+        try:
+            all_orders = self.orders_repo.get_all()
+            return [order for order in all_orders if order.status == status]
+            
+        except Exception as e:
+            logger.error(f"Error getting orders by status {status}: {e}")
+            return []
+    
+    async def get_stale_orders(self, max_age_hours: int = 24) -> List[Order]:
+        """Получить устаревшие ордера (старше указанного времени)"""
+        try:
+            current_time = int(time.time() * 1000)
+            max_age_ms = max_age_hours * 60 * 60 * 1000
+            
+            all_orders = self.orders_repo.get_all()
+            stale_orders = []
+            
+            for order in all_orders:
+                if order.is_open() and order.created_at:
+                    age_ms = current_time - order.created_at
+                    if age_ms > max_age_ms:
+                        stale_orders.append(order)
+            
+            return stale_orders
+            
+        except Exception as e:
+            logger.error(f"Error getting stale orders: {e}")
+            return []
+    
+    async def _update_monitoring_statistics(self, order: Order, event_type: str) -> None:
+        """Обновление статистики мониторинга"""
+        if not self.statistics_repo:
+            return
+        
+        try:
+            await self.statistics_repo.increment_counter(
+                f"order_monitoring_{event_type}",
+                StatisticCategory.ORDERS,
+                tags={
+                    "symbol": order.symbol,
+                    "side": order.side.lower(),
+                    "order_type": order.order_type.lower()
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"Error updating monitoring statistics: {e}")
+    
+    async def _update_sync_statistics(self, updated_count: int, total_count: int) -> None:
+        """Обновление статистики синхронизации"""
+        if not self.statistics_repo:
+            return
+        
+        try:
+            await self.statistics_repo.increment_counter(
+                "orders_sync_operations",
+                StatisticCategory.ORDERS
+            )
+            
+            await self.statistics_repo.update_gauge(
+                "orders_sync_updated_count",
+                StatisticCategory.ORDERS,
+                updated_count
+            )
+            
+            await self.statistics_repo.update_gauge(
+                "orders_sync_total_count",
+                StatisticCategory.ORDERS,
+                total_count
+            )
+            
+        except Exception as e:
+            logger.error(f"Error updating sync statistics: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Получение статистики сервиса"""
+        return self._stats.copy()
+    
+    def reset_stats(self) -> None:
+        """Сброс статистики"""
+        self._stats = {
+            'status_checks': 0,
+            'orders_updated': 0,
+            'orders_not_found': 0,
+            'sync_operations': 0,
+            'errors': 0
+        }
+```
+
+### 📄 `src\domain\services\orders\order_placement_service.py`
+
+```python
 import asyncio
 import logging
 from typing import Optional, Dict, List, Any, Tuple
 from decimal import ROUND_DOWN, ROUND_UP
-from domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
-from domain.factories.order_factory import OrderFactory
-from domain.services.utils.decimal_rounding_service import DecimalRoundingService
-from infrastructure.repositories.orders_repository import OrdersRepository
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-import ccxt
+
+from src.domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
+from src.domain.factories.order_factory import OrderFactory
+from src.domain.services.utils.decimal_rounding_service import DecimalRoundingService
+from src.domain.services.orders.balance_service import BalanceService
+from src.infrastructure.repositories.orders_repository import OrdersRepository
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
 
 logger = logging.getLogger(__name__)
 
-class OrderService:
-    """
-    🚀 ПОЛНОЦЕННЫЙ сервис для реальной торговли на бирже:
-    - Создание и размещение ордеров на РЕАЛЬНОЙ бирже
-    - Отслеживание статусов ордеров через API
-    - Отмена и управление ордерами
-    - Проверка балансов и валидация
-    - Обработка ошибок и retry механизмы
-    """
 
+class OrderPlacementService:
+    """
+    Сервис для размещения ордеров на бирже.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за размещение ордеров на бирже.
+    """
+    
     def __init__(
         self,
+        balance_service: BalanceService,
         orders_repo: OrdersRepository,
         order_factory: OrderFactory,
-        exchange_connector: CcxtExchangeConnector = None,
-        currency_pair_symbol: str = None
+        exchange_connector: CcxtExchangeConnector,
+        statistics_repo: Optional[IStatisticsRepository] = None
     ):
+        self.balance_service = balance_service
         self.orders_repo = orders_repo
         self.order_factory = order_factory
         self.exchange_connector = exchange_connector
-        self.currency_pair_symbol = currency_pair_symbol
-
+        self.statistics_repo = statistics_repo
+        
         # Retry parameters
         self.max_retries = 3
-        self.retry_delay = 1.0  # seconds
-        self.retry_backoff = 2.0  # exponential backoff multiplier
-
-        # Statistics
-        self.stats = {
-            'orders_created': 0,
-            'orders_executed': 0,
+        self.retry_delay = 1.0
+        self.retry_backoff = 2.0
+        
+        self._stats = {
+            'orders_placed': 0,
             'orders_failed': 0,
-            'orders_cancelled': 0,
-            'total_fees': 0.0
+            'retry_attempts': 0
         }
-
-    # 🚀 ОСНОВНЫЕ МЕТОДЫ СОЗДАНИЯ И РАЗМЕЩЕНИЯ ОРДЕРОВ
-
-    async def create_and_place_buy_order(
+    
+    async def place_buy_order(
         self,
         symbol: str,
         amount: float,
@@ -7685,8 +16399,8 @@ class OrderService:
         client_order_id: Optional[str] = None
     ) -> OrderExecutionResult:
         """
-        🛒 РЕАЛЬНОЕ создание и размещение BUY ордера на бирже
-
+        Размещение BUY ордера на бирже
+        
         Args:
             symbol: Торговая пара (BTCUSDT)
             amount: Количество для покупки
@@ -7694,42 +16408,25 @@ class OrderService:
             deal_id: ID связанной сделки
             order_type: Тип ордера (LIMIT, MARKET)
             client_order_id: Клиентский ID ордера
-
+            
         Returns:
             OrderExecutionResult с информацией о результате
         """
         try:
             # Корректируем количество согласно правилам биржи
             amount = self.order_factory.adjust_amount_precision(symbol, amount, round_up=True)
-
-            # === ИСПРАВЛЕНИЕ v4: Корректируем цену согласно precision с биржи ===
+            
+            # Корректируем цену согласно precision с биржи
             market_info = await self.exchange_connector.get_symbol_info(symbol)
             price_precision = market_info.precision.get('price')
             if price_precision:
-                 price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_DOWN))
-            # =================================================================
-
-            logger.info(f"🛒 Creating BUY order: {amount} {symbol} @ {price}")
-
-            # 1. Валидация параметров
-            validation_result = await self._validate_order_params(
-                symbol, Order.SIDE_BUY, amount, price, order_type
-            )
-            if not validation_result.is_valid:
-                return OrderExecutionResult(
-                    success=False,
-                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
-                )
-
-            # 2. Проверка баланса
-            balance_check = await self._check_balance_for_order(symbol, Order.SIDE_BUY, amount, price)
-            if not balance_check[0]:
-                return OrderExecutionResult(
-                    success=False,
-                    error_message=f"Insufficient balance: need {amount * price:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
-                )
-
-            # 3. Создание ордера через фабрику
+                price = float(DecimalRoundingService.round_by_tick_size(
+                    price, str(price_precision), rounding_mode=ROUND_DOWN
+                ))
+            
+            logger.info(f"🛒 Placing BUY order: {amount} {symbol} @ {price}")
+            
+            # Создание ордера через фабрику
             order = self.order_factory.create_buy_order(
                 symbol=symbol,
                 amount=amount,
@@ -7738,42 +16435,27 @@ class OrderService:
                 order_type=order_type,
                 client_order_id=client_order_id
             )
-
-            # 4. Сохранение в репозиторий
+            
+            # Сохранение в репозиторий
             self.orders_repo.save(order)
-
-            # 5. РЕАЛЬНОЕ размещение на бирже
-            if self.exchange_connector:
-                execution_result = await self._execute_order_on_exchange(order)
-                if execution_result.success:
-                    self.stats['orders_executed'] += 1
-                    logger.info(f"✅ BUY order executed: {order.exchange_id}")
-                else:
-                    self.stats['orders_failed'] += 1
-                    logger.error(f"❌ BUY order failed: {execution_result.error_message}")
-
-                return execution_result
-            else:
-                # Fallback без коннектора
-                order.status = Order.STATUS_PENDING
-                self.orders_repo.save(order)
-                logger.warning(f"⚠️ BUY order created locally (no exchange connector)")
-
-                return OrderExecutionResult(
-                    success=True,
-                    order=order,
-                    error_message="Created locally - no exchange connector"
-                )
-
+            
+            # Размещение на бирже
+            execution_result = await self._execute_order_on_exchange(order)
+            
+            # Обновление статистики
+            await self._update_placement_statistics(execution_result.success, Order.SIDE_BUY)
+            
+            return execution_result
+            
         except Exception as e:
-            logger.error(f"❌ Error creating BUY order: {e}")
-            self.stats['orders_failed'] += 1
+            logger.error(f"❌ Error placing BUY order: {e}")
+            await self._update_placement_statistics(False, Order.SIDE_BUY)
             return OrderExecutionResult(
                 success=False,
                 error_message=f"Unexpected error: {str(e)}"
             )
-
-    async def create_and_place_sell_order(
+    
+    async def place_sell_order(
         self,
         symbol: str,
         amount: float,
@@ -7783,118 +16465,22 @@ class OrderService:
         client_order_id: Optional[str] = None
     ) -> OrderExecutionResult:
         """
-        🏷️ РЕАЛЬНОЕ создание и размещение SELL ордера на бирже
+        Размещение SELL ордера на бирже
         """
         try:
             # Корректируем количество согласно правилам биржи (округляем вниз)
             amount = self.order_factory.adjust_amount_precision(symbol, amount)
-
-            # === ИСПРАВЛЕНИЕ v4: Корректируем цену согласно precision с биржи ===
+            
+            # Корректируем цену согласно precision с биржи
             market_info = await self.exchange_connector.get_symbol_info(symbol)
             price_precision = market_info.precision.get('price')
             if price_precision:
-                 price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_UP))
-            # =================================================================
-
-            logger.info(f"🏷️ Creating SELL order: {amount} {symbol} @ {price}")
-
-            # 1. Валидация параметров
-            validation_result = await self._validate_order_params(
-                symbol, Order.SIDE_SELL, amount, price, order_type
-            )
-            if not validation_result.is_valid:
-                return OrderExecutionResult(
-                    success=False,
-                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
-                )
-
-            # 2. Проверка баланса
-            balance_check = await self._check_balance_for_order(symbol, Order.SIDE_SELL, amount, price)
-            if not balance_check[0]:
-                return OrderExecutionResult(
-                    success=False,
-                    error_message=f"Insufficient balance: need {amount:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
-                )
-
-            # 3. Создание ордера через фабрику
-            order = self.order_factory.create_sell_order(
-                symbol=symbol,
-                amount=amount,
-                price=price,
-                deal_id=deal_id,
-                order_type=order_type,
-                client_order_id=client_order_id
-            )
-
-            # 4. Сохранение в репозиторий
-            self.orders_repo.save(order)
-
-            # 5. РЕАЛЬНОЕ размещение на бирже
-            if self.exchange_connector:
-                execution_result = await self._execute_order_on_exchange(order)
-                if execution_result.success:
-                    self.stats['orders_executed'] += 1
-                    logger.info(f"✅ SELL order executed: {order.exchange_id}")
-                else:
-                    self.stats['orders_failed'] += 1
-                    logger.error(f"❌ SELL order failed: {execution_result.error_message}")
-
-                return execution_result
-
-                return execution_result
-            else:
-                # Fallback без коннектора
-                order.status = Order.STATUS_PENDING
-                self.orders_repo.save(order)
-                logger.warning(f"⚠️ SELL order created locally (no exchange connector)")
-
-                return OrderExecutionResult(
-                    success=True,
-                    order=order,
-                    error_message="Created locally - no exchange connector"
-                )
-
-        except Exception as e:
-            logger.error(f"❌ Error creating SELL order: {e}")
-            self.stats['orders_failed'] += 1
-            return OrderExecutionResult(
-                success=False,
-                error_message=f"Unexpected error: {str(e)}"
-            )
-
-    async def create_local_sell_order(
-        self,
-        symbol: str,
-        amount: float,
-        price: float,
-        deal_id: int,
-        order_type: str = Order.TYPE_LIMIT,
-        client_order_id: Optional[str] = None
-    ) -> OrderExecutionResult:
-        """
-        📝 Создание ЛОКАЛЬНОГО SELL ордера без размещения на бирже.
-        Ордер сохраняется в репозиторий со стату��ом PENDING.
-        """
-        try:
-            # Корректируем количество и цену
-            amount = self.order_factory.adjust_amount_precision(symbol, amount)
-            market_info = await self.exchange_connector.get_symbol_info(symbol)
-            price_precision = market_info.precision.get('price')
-            if price_precision:
-                price = float(DecimalRoundingService.round_by_tick_size(price, str(price_precision), rounding_mode=ROUND_UP))
-
-            logger.info(f"📝 Creating LOCAL SELL order: {amount} {symbol} @ {price}")
-
-            # Валидация параметров (локальная)
-            validation_result = await self._validate_order_params(
-                symbol, Order.SIDE_SELL, amount, price, order_type
-            )
-            if not validation_result.is_valid:
-                return OrderExecutionResult(
-                    success=False,
-                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
-                )
-
+                price = float(DecimalRoundingService.round_by_tick_size(
+                    price, str(price_precision), rounding_mode=ROUND_UP
+                ))
+            
+            logger.info(f"🏷️ Placing SELL order: {amount} {symbol} @ {price}")
+            
             # Создание ордера через фабрику
             order = self.order_factory.create_sell_order(
                 symbol=symbol,
@@ -7905,70 +16491,119 @@ class OrderService:
                 client_order_id=client_order_id
             )
             
-            # Устанавливаем статус PENDING, так как ордер не размещается
-            order.status = Order.STATUS_PENDING
+            # Сохранение в репозиторий
+            self.orders_repo.save(order)
+            
+            # Размещение на бирже
+            execution_result = await self._execute_order_on_exchange(order)
+            
+            # Обновление статистики
+            await self._update_placement_statistics(execution_result.success, Order.SIDE_SELL)
+            
+            return execution_result
+            
+        except Exception as e:
+            logger.error(f"❌ Error placing SELL order: {e}")
+            await self._update_placement_statistics(False, Order.SIDE_SELL)
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    async def place_market_order(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        deal_id: int,
+        client_order_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        Размещение маркет-ордера (для стоп-лосса и экстренных продаж)
+        """
+        try:
+            logger.info(f"🚨 Placing MARKET {side} order: {amount} {symbol}")
+            
+            # Корректируем количество
+            amount = self.order_factory.adjust_amount_precision(symbol, amount)
+            
+            # Создание маркет-ордера
+            if side.upper() == Order.SIDE_BUY:
+                order = self.order_factory.create_buy_order(
+                    symbol=symbol,
+                    amount=amount,
+                    price=0,  # Для маркет-ордера цена не важна
+                    deal_id=deal_id,
+                    order_type=Order.TYPE_MARKET,
+                    client_order_id=client_order_id
+                )
+            else:
+                order = self.order_factory.create_sell_order(
+                    symbol=symbol,
+                    amount=amount,
+                    price=0,  # Для маркет-ордера цена не важна
+                    deal_id=deal_id,
+                    order_type=Order.TYPE_MARKET,
+                    client_order_id=client_order_id
+                )
             
             # Сохранение в репозиторий
             self.orders_repo.save(order)
-            self.stats['orders_created'] += 1
             
-            logger.info(f"✅ LOCAL SELL order {order.order_id} created and saved with status PENDING.")
-
-            return OrderExecutionResult(
-                success=True,
-                order=order,
-                error_message="Created locally with PENDING status"
-            )
-
+            # Размещение на бирже
+            execution_result = await self._execute_order_on_exchange(order)
+            
+            # Обновление статистики
+            await self._update_placement_statistics(execution_result.success, side.upper())
+            
+            return execution_result
+            
         except Exception as e:
-            logger.error(f"❌ Error creating LOCAL SELL order: {e}")
-            self.stats['orders_failed'] += 1
+            logger.error(f"❌ Error placing MARKET order: {e}")
+            await self._update_placement_statistics(False, side.upper())
             return OrderExecutionResult(
                 success=False,
-                error_message=f"Unexpected error in local creation: {str(e)}"
+                error_message=f"Unexpected error: {str(e)}"
             )
-
+    
     async def place_existing_order(self, order: Order) -> OrderExecutionResult:
         """
-        📤 Размещает на бирже уже существующий локальный ордер (в статусе PENDING).
+        Размещение на бирже уже существующего локального ордера (в статусе PENDING)
         """
         if not order.is_pending():
-            return OrderExecutionResult(success=False, error_message=f"Order {order.order_id} is not in PENDING state.")
-
-        logger.info(f"📤 Размещаем существующий ордер {order.order_id} ({order.side} {order.amount} {order.symbol}) на бирже.")
-
-        # Проверка баланса перед размещением
-        balance_check = await self._check_balance_for_order(order.symbol, order.side, order.amount, order.price)
-        if not balance_check[0]:
+            return OrderExecutionResult(
+                success=False, 
+                error_message=f"Order {order.order_id} is not in PENDING state."
+            )
+        
+        logger.info(f"📤 Placing existing order {order.order_id} ({order.side} {order.amount} {order.symbol})")
+        
+        try:
+            execution_result = await self._execute_order_on_exchange(order)
+            
+            # Обновление статистики
+            await self._update_placement_statistics(execution_result.success, order.side)
+            
+            return execution_result
+            
+        except Exception as e:
+            logger.error(f"❌ Error placing existing order {order.order_id}: {e}")
+            await self._update_placement_statistics(False, order.side)
             return OrderExecutionResult(
                 success=False,
-                error_message=f"Insufficient balance for pending order: need {order.amount * order.price:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
+                error_message=f"Unexpected error: {str(e)}"
             )
-
-        if self.exchange_connector:
-            execution_result = await self._execute_order_on_exchange(order)
-            if execution_result.success:
-                self.stats['orders_executed'] += 1
-                logger.info(f"✅ Existing order {order.order_id} placed successfully: {order.exchange_id}")
-            else:
-                self.stats['orders_failed'] += 1
-                logger.error(f"❌ Failed to place existing order {order.order_id}: {execution_result.error_message}")
-            return execution_result
-        else:
-            return OrderExecutionResult(success=False, error_message="No exchange connector available.")
-
-    # 🔧 ВНУТРЕННИЕ МЕТОДЫ
-
+    
     async def _execute_order_on_exchange(self, order: Order) -> OrderExecutionResult:
         """
-        🚀 РЕАЛЬНОЕ размещение ордера на бирже с retry механизмом
+        Реальное размещение ордера на бирже с retry механизмом
         """
         last_error = None
-
+        
         for attempt in range(self.max_retries):
             try:
-                logger.info(f"📤 Placing order on exchange (attempt {attempt + 1}/{self.max_retries})")
-
+                logger.info(f"📤 Executing order on exchange (attempt {attempt + 1}/{self.max_retries})")
+                
                 # Вызов API биржи
                 exchange_response = await self.exchange_connector.create_order(
                     symbol=order.symbol,
@@ -7977,12 +16612,13 @@ class OrderService:
                     amount=order.amount,
                     price=order.price if order.order_type == Order.TYPE_LIMIT else None
                 )
-
+                
                 # Обновляем ордер данными с биржи
                 order.mark_as_placed(
                     exchange_id=exchange_response['id'],
                     exchange_timestamp=exchange_response.get('timestamp')
                 )
+                
                 # Дополнительный запрос для получения полных данных об исполнении
                 if hasattr(self.exchange_connector, 'fetch_order'):
                     full_order_data = await self.exchange_connector.fetch_order(
@@ -7990,334 +16626,81 @@ class OrderService:
                         order.symbol
                     )
                     order.update_from_exchange(full_order_data)
-
+                
                 # Сохраняем обновленный ордер
                 self.orders_repo.save(order)
-
+                
                 logger.info(f"✅ Order placed successfully: {order.exchange_id}")
+                self._stats['orders_placed'] += 1
+                
                 return OrderExecutionResult(
                     success=True,
                     order=order,
                     exchange_response=exchange_response
                 )
-
+                
             except Exception as e:
                 last_error = e
                 order.retries += 1
+                self._stats['retry_attempts'] += 1
                 logger.warning(f"⚠️ Order placement failed (attempt {attempt + 1}): {e}")
-
+                
                 # Exponential backoff для retry
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay * (self.retry_backoff ** attempt))
-
+        
         # Все попытки неудачны
         order.mark_as_failed(f"Failed after {self.max_retries} attempts: {last_error}")
         self.orders_repo.save(order)
-
+        self._stats['orders_failed'] += 1
+        
         return OrderExecutionResult(
             success=False,
             order=order,
             error_message=f"Failed after {self.max_retries} attempts: {last_error}"
         )
-
-    async def _validate_order_params(
-        self,
-        symbol: str,
-        side: str,
-        amount: float,
-        price: float,
-        order_type: str
-    ) -> OrderValidationResult:
-        """
-        🔍 Валидация параметров ордера
-        """
-        errors = []
-        warnings = []
-
-        # Основная валидация
-        if not symbol:
-            errors.append("Symbol is required")
-        if amount <= 0:
-            errors.append("Amount must be positive")
-        if order_type == Order.TYPE_LIMIT and price <= 0:
-            errors.append("Price must be positive for limit orders")
-        if side not in [Order.SIDE_BUY, Order.SIDE_SELL]:
-            errors.append("Side must be BUY or SELL")
-
-        # Валидация через exchange info если доступно
-        if self.exchange_connector:
-            try:
-                symbol_info = await self.exchange_connector.get_symbol_info(symbol)
-
-                if amount < symbol_info.min_qty:
-                    errors.append(f"Amount {amount} below minimum {symbol_info.min_qty}")
-                if amount > symbol_info.max_qty:
-                    errors.append(f"Amount {amount} above maximum {symbol_info.max_qty}")
-
-                if order_type == Order.TYPE_LIMIT:
-                    if price < symbol_info.min_price:
-                        errors.append(f"Price {price} below minimum {symbol_info.min_price}")
-                    if price > symbol_info.max_price:
-                        errors.append(f"Price {price} above maximum {symbol_info.max_price}")
-
-                    # Проверяем минимальную стоимость
-                    notional_value = amount * price
-                    if notional_value < symbol_info.min_notional:
-                        errors.append(f"Order value {notional_value} below minimum {symbol_info.min_notional}")
-
-                    # Предупреждения
-                    if notional_value < symbol_info.min_notional * 1.1:
-                        warnings.append(f"Order value close to minimum notional")
-
-            except Exception as e:
-                warnings.append(f"Could not validate against exchange info: {e}")
-
-        return OrderValidationResult(
-            is_valid=len(errors) == 0,
-            errors=errors,
-            warnings=warnings
-        )
-
-    async def _check_balance_for_order(
-        self,
-        symbol: str,
-        side: str,
-        amount: float,
-        price: float
-    ) -> Tuple[bool, str, float]:
-        """
-        💰 Проверка баланса для ордера
-        """
-        if not self.exchange_connector:
-            return True, "UNKNOWN", 0.0  # Пропускаем проверку без коннектора
-
+    
+    async def _update_placement_statistics(self, success: bool, side: str) -> None:
+        """Обновление статистики размещения ордеров"""
+        if not self.statistics_repo:
+            return
+        
         try:
-            return await self.exchange_connector.check_sufficient_balance(
-                symbol, side, amount, price
+            # Общая статистика размещения
+            await self.statistics_repo.increment_counter(
+                f"orders_placed_total",
+                StatisticCategory.ORDERS,
+                tags={"side": side.lower(), "success": str(success).lower()}
             )
+            
+            # Статистика по результату
+            if success:
+                await self.statistics_repo.increment_counter(
+                    f"orders_placed_success",
+                    StatisticCategory.ORDERS,
+                    tags={"side": side.lower()}
+                )
+            else:
+                await self.statistics_repo.increment_counter(
+                    f"orders_placed_failed",
+                    StatisticCategory.ORDERS,
+                    tags={"side": side.lower()}
+                )
+                
         except Exception as e:
-            logger.error(f"❌ Error checking balance: {e}")
-            return False, "ERROR", 0.0
-
-    # 📊 МЕТОДЫ ОТСЛЕЖИВАНИЯ И УПРАВЛЕНИЯ ОРДЕРАМИ
-
-    async def get_order_status(self, order: Order) -> Optional[Order]:
-        """
-        📊 РЕАЛЬНАЯ проверка статуса ордера на бирже
-        """
-        if not order.exchange_id or not self.exchange_connector:
-            return order
-
-        try:
-            logger.debug(f"📊 Checking status for order {order.exchange_id}")
-
-            # РЕАЛЬНЫЙ запрос к бирже
-            exchange_order = await self.exchange_connector.fetch_order(
-                order.exchange_id,
-                order.symbol
-            )
-
-            # Обновляем локальный ордер данными с биржи
-            order.update_from_exchange(exchange_order)
-
-            # Сохраняем обновления
-            self.orders_repo.save(order)
-
-            logger.debug(f"📊 Order {order.order_id} status updated: {order.status}")
-            return order
-
-        except Exception as e:
-            logger.error(f"❌ Error checking order status {order.order_id}: {e}")
-            return order
-
-    async def cancel_order(self, order: Order) -> bool:
-        """
-        ❌ РЕАЛЬНАЯ отмена ордера на бирже
-        """
-        if not order.is_open():
-            logger.warning(f"⚠️ Order {order.order_id} is not open ({order.status})")
-            return False
-
-        if not self.exchange_connector or not order.exchange_id:
-            # Локальная отмена без биржи
-            order.cancel("No exchange connector or exchange_id")
-            self.orders_repo.save(order)
-            logger.warning(f"⚠️ Order {order.order_id} cancelled locally")
-            return True
-
-        try:
-            logger.info(f"❌ Cancelling order {order.exchange_id} on exchange")
-
-            # РЕАЛЬНАЯ отмена на бирже
-            exchange_response = await self.exchange_connector.cancel_order(
-                order.exchange_id,
-                order.symbol
-            )
-
-            # Обновляем статус
-            order.cancel("Cancelled by user")
-            if exchange_response:
-                order.update_from_exchange(exchange_response)
-
-            self.orders_repo.save(order)
-            self.stats['orders_cancelled'] += 1
-
-            logger.info(f"✅ Order {order.order_id} cancelled successfully")
-            return True
-
-        except ccxt.OrderNotFound:
-            # Ордер не найден на бирже, значит, его уже нет или он исполнен
-            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange. Assuming it's already gone.")
-            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE # Новый статус
-            order.closed_at = int(time.time() * 1000)
-            self.orders_repo.save(order)
-            return True # Считаем, что цель достигнута: ордера на бирже нет
-
-        except Exception as e:
-            logger.error(f"❌ Error cancelling order {order.order_id}: {e}")
-            order.status = Order.STATUS_FAILED # Или новый статус FAILED_TO_CANCEL
-            order.error_message = str(e)
-            self.orders_repo.save(order)
-            return False # Отмена не удалась
-
-    async def sync_orders_with_exchange(self) -> List[Order]:
-        """
-        🔄 Синхронизация всех открытых ордеров с биржей
-        """
-        if not self.exchange_connector:
-            logger.warning("⚠️ No exchange connector for sync")
-            return []
-
-        updated_orders = []
-
-        try:
-            # Получаем все локальные открытые ордера
-            local_orders = self.get_open_orders()
-
-            # Получаем открытые ордера с биржи
-            # Используем self.currency_pair_symbol для fetchOpenOrders
-            symbol_to_fetch = self.currency_pair_symbol if self.currency_pair_symbol else (local_orders[0].symbol if local_orders else None)
-            if not symbol_to_fetch:
-                logger.warning("⚠️ No symbol available to fetch open orders. Skipping sync.")
-                return []
-
-            exchange_open_orders = await self.exchange_connector.fetch_open_orders(symbol=symbol_to_fetch)
-            exchange_open_orders_map = {order['id']: order for order in exchange_open_orders}
-
-            for order in local_orders:
-                if order.exchange_id:
-                    if order.exchange_id in exchange_open_orders_map:
-                        # Ордер есть на бирже и открыт - обновляем статус
-                        exchange_data = exchange_open_orders_map[order.exchange_id]
-                        order.update_from_exchange(exchange_data)
-                        self.orders_repo.save(order)
-                        updated_orders.append(order)
-                    else:
-                        # Ордера нет среди ОТКРЫТЫХ на бирже.
-                        # Нужно запросить его полный статус, чтобы понять, что с ним произошло.
-                        try:
-                            full_exchange_order = await self.exchange_connector.fetch_order(
-                                order.exchange_id,
-                                order.symbol
-                            )
-                            order.update_from_exchange(full_exchange_order)
-                            self.orders_repo.save(order)
-                            updated_orders.append(order)
-                            logger.info(f"🔄 Synced order {order.order_id} (exchange_id: {order.exchange_id}) status: {order.status}")
-                        except ccxt.OrderNotFound:
-                            # Ордер не найден на бирже вообще (ни открытый, ни закрытый)
-                            logger.warning(f"⚠️ Order {order.order_id} (exchange_id: {order.exchange_id}) not found on exchange during sync. Marking as NOT_FOUND_ON_EXCHANGE.")
-                            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
-                            order.closed_at = int(time.time() * 1000)
-                            self.orders_repo.save(order)
-                            updated_orders.append(order)
-                        except Exception as e:
-                            logger.error(f"❌ Error fetching status for order {order.order_id} (exchange_id: {order.exchange_id}) during sync: {e}")
-                            # Оставляем ордер в текущем состоянии, но логируем ошибку
-                else:
-                    # Локальный ордер без exchange_id - возможно, не был размещен
-                    logger.warning(f"⚠️ Local order {order.order_id} has no exchange_id. Skipping sync for this order.")
-
-            # logger.info(f"🔄 Synced {len(updated_orders)} orders with exchange")
-            return updated_orders
-
-        except Exception as e:
-            logger.error(f"❌ Error syncing orders: {e}")
-            return []
-
-    # 📋 МЕТОДЫ ПОЛУЧЕНИЯ ОРДЕРОВ
-
-    def get_orders_by_deal(self, deal_id: int) -> List[Order]:
-        """📋 Получает все ордера по ID сделки"""
-        return self.orders_repo.get_all_by_deal(deal_id)
-
-    def get_open_orders(self) -> List[Order]:
-        """📋 Получает все открытые ордера"""
-        all_orders = self.orders_repo.get_all()
-        return [order for order in all_orders if order.is_open() or order.is_partially_filled()]
-
-    def get_order_by_id(self, order_id: int) -> Optional[Order]:
-        """📋 Получает ордер по ID"""
-        return self.orders_repo.get_by_id(order_id)
-
-    def get_orders_by_symbol(self, symbol: str) -> List[Order]:
-        """📋 Получает все ордера по символу"""
-        all_orders = self.orders_repo.get_all()
-        return [order for order in all_orders if order.symbol == symbol]
-
-    # 🚨 ЭКСТРЕННЫЕ МЕТОДЫ
-
-    async def emergency_cancel_all_orders(self, symbol: str = None) -> int:
-        """
-        🚨 Экстренная отмена всех открытых ордеров
-        """
-        logger.warning("🚨 Emergency cancellation of all orders")
-
-        open_orders = self.get_open_orders()
-        if symbol:
-            open_orders = [order for order in open_orders if order.symbol == symbol]
-
-        cancelled_count = 0
-        for order in open_orders:
-            try:
-                if await self.cancel_order(order):
-                    cancelled_count += 1
-            except Exception as e:
-                logger.error(f"❌ Failed to cancel order {order.order_id}: {e}")
-
-        logger.warning(f"🚨 Emergency cancelled {cancelled_count}/{len(open_orders)} orders")
-        return cancelled_count
-
-    # 📊 СТАТИСТИКА И МОНИТОРИНГ
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """📊 Получение статистики работы сервиса"""
-        all_orders = self.orders_repo.get_all()
-
-        stats = self.stats.copy()
-        stats.update({
-            'total_orders': len(all_orders),
-            'open_orders': len(self.get_open_orders()),
-            'success_rate': (self.stats['orders_executed'] / max(self.stats['orders_created'], 1)) * 100
-        })
-
-        return stats
-
-    def reset_statistics(self):
-        """🔄 Сброс статистики"""
-        self.stats = {
-            'orders_created': 0,
-            'orders_executed': 0,
+            logger.error(f"Error updating placement statistics: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Получение статистики сервиса"""
+        return self._stats.copy()
+    
+    def reset_stats(self) -> None:
+        """Сброс статистики"""
+        self._stats = {
+            'orders_placed': 0,
             'orders_failed': 0,
-            'orders_cancelled': 0,
-            'total_fees': 0.0
+            'retry_attempts': 0
         }
-
-    def save_order(self, order: Order):
-        """Сохранение ордера в репозиторий"""
-        self.orders_repo.save(order)
-        self.stats['orders_created'] += 1
-
 ```
 
 ### 📄 `src\domain\services\orders\order_timeout_service.py`
@@ -8332,7 +16715,7 @@ from datetime import datetime, timedelta
 
 from domain.entities.order import Order
 from domain.entities.currency_pair import CurrencyPair
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from domain.services.deals.deal_service import DealService
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
@@ -8811,6 +17194,857 @@ class OrderTimeoutService:
 
 ```
 
+### 📄 `src\domain\services\orders\order_validation_service.py`
+
+```python
+import logging
+from typing import Dict, List, Optional, Tuple, Any
+
+from src.domain.entities.order import Order, OrderValidationResult
+from src.domain.services.orders.balance_service import BalanceService
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
+
+logger = logging.getLogger(__name__)
+
+
+class OrderValidationService:
+    """
+    Сервис для валидации параметров ордеров.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за валидацию ордеров перед размещением.
+    """
+    
+    def __init__(
+        self,
+        balance_service: BalanceService,
+        exchange_connector: CcxtExchangeConnector,
+        statistics_repo: Optional[IStatisticsRepository] = None
+    ):
+        self.exchange_connector = exchange_connector
+        self.statistics_repo = statistics_repo
+        
+        self._stats = {
+            'validations_performed': 0,
+            'validations_passed': 0,
+            'validations_failed': 0,
+            'warnings_issued': 0
+        }
+    
+    async def validate_order_params(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        order_type: str
+    ) -> OrderValidationResult:
+        """
+        Полная валидация параметров ордера
+        
+        Args:
+            symbol: Торговая пара
+            side: Сторона ордера (BUY/SELL)
+            amount: Количество
+            price: Цена (для лимитных ордеров)
+            order_type: Тип ордера (LIMIT/MARKET)
+            
+        Returns:
+            OrderValidationResult с результатом валидации
+        """
+        try:
+            self._stats['validations_performed'] += 1
+            
+            errors = []
+            warnings = []
+            
+            # 1. Базовая валидация параметров
+            basic_errors = self._validate_basic_params(symbol, side, amount, price, order_type)
+            errors.extend(basic_errors)
+            
+            # 2. Валидация через биржевую информацию
+            if self.exchange_connector:
+                exchange_errors, exchange_warnings = await self._validate_against_exchange_info(
+                    symbol, side, amount, price, order_type
+                )
+                errors.extend(exchange_errors)
+                warnings.extend(exchange_warnings)
+            else:
+                warnings.append("No exchange connector available for detailed validation")
+            
+            # Результат валидации
+            is_valid = len(errors) == 0
+            
+            if is_valid:
+                self._stats['validations_passed'] += 1
+            else:
+                self._stats['validations_failed'] += 1
+                
+            if warnings:
+                self._stats['warnings_issued'] += len(warnings)
+            
+            # Обновляем статистику
+            await self._update_validation_statistics(is_valid, symbol, side, order_type)
+            
+            return OrderValidationResult(
+                is_valid=is_valid,
+                errors=errors,
+                warnings=warnings
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Error validating order params: {e}")
+            self._stats['validations_failed'] += 1
+            
+            return OrderValidationResult(
+                is_valid=False,
+                errors=[f"Validation error: {str(e)}"],
+                warnings=[]
+            )
+    
+    def _validate_basic_params(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        order_type: str
+    ) -> List[str]:
+        """Базовая валидация параметров"""
+        errors = []
+        
+        # Проверка обязательных полей
+        if not symbol:
+            errors.append("Symbol is required")
+        if not symbol.replace('/', '').replace('-', '').isalnum():
+            errors.append("Invalid symbol format")
+            
+        if not side:
+            errors.append("Side is required")
+        elif side not in [Order.SIDE_BUY, Order.SIDE_SELL]:
+            errors.append("Side must be BUY or SELL")
+        
+        # Проверка числовых значений
+        if amount <= 0:
+            errors.append("Amount must be positive")
+        elif amount > 1e10:  # Защита от слишком больших значений
+            errors.append("Amount is too large")
+            
+        if order_type == Order.TYPE_LIMIT:
+            if price <= 0:
+                errors.append("Price must be positive for limit orders")
+            elif price > 1e10:  # Защита от слишком больших значений
+                errors.append("Price is too large")
+                
+        if not order_type:
+            errors.append("Order type is required")
+        elif order_type not in [Order.TYPE_LIMIT, Order.TYPE_MARKET]:
+            errors.append("Order type must be LIMIT or MARKET")
+        
+        return errors
+    
+    async def _validate_against_exchange_info(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        order_type: str
+    ) -> Tuple[List[str], List[str]]:
+        """Валидация против информации с биржи"""
+        errors = []
+        warnings = []
+        
+        try:
+            symbol_info = await self.exchange_connector.get_symbol_info(symbol)
+            
+            # Валидация количества
+            if hasattr(symbol_info, 'min_qty') and amount < symbol_info.min_qty:
+                errors.append(f"Amount {amount} below minimum {symbol_info.min_qty}")
+                
+            if hasattr(symbol_info, 'max_qty') and amount > symbol_info.max_qty:
+                errors.append(f"Amount {amount} above maximum {symbol_info.max_qty}")
+            
+            # Валидация цены для лимитных ордеров
+            if order_type == Order.TYPE_LIMIT:
+                if hasattr(symbol_info, 'min_price') and price < symbol_info.min_price:
+                    errors.append(f"Price {price} below minimum {symbol_info.min_price}")
+                    
+                if hasattr(symbol_info, 'max_price') and price > symbol_info.max_price:
+                    errors.append(f"Price {price} above maximum {symbol_info.max_price}")
+                
+                # Проверка минимальной стоимости ордера
+                notional_value = amount * price
+                if hasattr(symbol_info, 'min_notional') and notional_value < symbol_info.min_notional:
+                    errors.append(f"Order value {notional_value} below minimum {symbol_info.min_notional}")
+                
+                # Предупреждения
+                if (hasattr(symbol_info, 'min_notional') and 
+                    notional_value < symbol_info.min_notional * 1.1):
+                    warnings.append("Order value close to minimum notional")
+                    
+            # Валидация шагов цены и количества
+            await self._validate_precision_steps(symbol_info, amount, price, order_type, errors, warnings)
+            
+        except Exception as e:
+            warnings.append(f"Could not validate against exchange info: {e}")
+        
+        return errors, warnings
+    
+    async def _validate_precision_steps(
+        self,
+        symbol_info: Any,
+        amount: float,
+        price: float,
+        order_type: str,
+        errors: List[str],
+        warnings: List[str]
+    ) -> None:
+        """Валидация шагов точности"""
+        try:
+            # Проверка шага количества
+            if hasattr(symbol_info, 'amount_precision'):
+                amount_precision = symbol_info.amount_precision
+                if amount_precision and amount_precision > 0:
+                    step = 1 / (10 ** amount_precision)
+                    if abs(amount % step) > 1e-10:  # Учитываем погрешность float
+                        warnings.append(f"Amount precision may not match exchange requirements (step: {step})")
+            
+            # Проверка шага цены для лимитных ордеров
+            if order_type == Order.TYPE_LIMIT and hasattr(symbol_info, 'price_precision'):
+                price_precision = symbol_info.price_precision
+                if price_precision and price_precision > 0:
+                    step = 1 / (10 ** price_precision)
+                    if abs(price % step) > 1e-10:  # Учитываем погрешность float
+                        warnings.append(f"Price precision may not match exchange requirements (step: {step})")
+                        
+        except Exception as e:
+            warnings.append(f"Could not validate precision steps: {e}")
+    
+    async def validate_order_object(self, order: Order) -> OrderValidationResult:
+        """
+        Валидация объекта ордера
+        
+        Args:
+            order: Ордер для валидации
+            
+        Returns:
+            OrderValidationResult
+        """
+        try:
+            return await self.validate_order_params(
+                symbol=order.symbol,
+                side=order.side,
+                amount=order.amount,
+                price=order.price,
+                order_type=order.order_type
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Error validating order object: {e}")
+            return OrderValidationResult(
+                is_valid=False,
+                errors=[f"Order object validation error: {str(e)}"],
+                warnings=[]
+            )
+    
+    async def validate_multiple_orders(self, orders: List[Order]) -> Dict[int, OrderValidationResult]:
+        """
+        Валидация нескольких ордеров
+        
+        Args:
+            orders: Список ордеров для валидации
+            
+        Returns:
+            Словарь {order_id: ValidationResult}
+        """
+        results = {}
+        
+        try:
+            for order in orders:
+                validation_result = await self.validate_order_object(order)
+                results[order.order_id] = validation_result
+                
+        except Exception as e:
+            logger.error(f"❌ Error validating multiple orders: {e}")
+            
+        return results
+    
+    async def check_duplicate_orders(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        active_orders: List[Order],
+        tolerance_percent: float = 0.1
+    ) -> Tuple[bool, Optional[Order]]:
+        """
+        Проверка на дублирующиеся ордера
+        
+        Args:
+            symbol: Торговая пара
+            side: Сторона ордера
+            amount: Количество
+            price: Цена
+            active_orders: Список активных ордеров
+            tolerance_percent: Допустимое отклонение в процентах
+            
+        Returns:
+            (is_duplicate, duplicate_order)
+        """
+        try:
+            tolerance = tolerance_percent / 100
+            
+            for order in active_orders:
+                if (order.symbol == symbol and 
+                    order.side == side and
+                    order.is_open()):
+                    
+                    # Проверяем близость количества
+                    amount_diff = abs(order.amount - amount) / order.amount
+                    
+                    # Проверяем близость цены
+                    price_diff = abs(order.price - price) / order.price if order.price > 0 else 0
+                    
+                    if amount_diff <= tolerance and price_diff <= tolerance:
+                        return True, order
+            
+            return False, None
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking duplicate orders: {e}")
+            return False, None
+    
+    async def _update_validation_statistics(
+        self,
+        is_valid: bool,
+        symbol: str,
+        side: str,
+        order_type: str
+    ) -> None:
+        """Обновление статистики валидации"""
+        if not self.statistics_repo:
+            return
+        
+        try:
+            # Общая статистика валидации
+            await self.statistics_repo.increment_counter(
+                "order_validations_total",
+                StatisticCategory.ORDERS,
+                tags={
+                    "symbol": symbol,
+                    "side": side.lower(),
+                    "order_type": order_type.lower(),
+                    "result": "valid" if is_valid else "invalid"
+                }
+            )
+            
+            # Статистика успешности
+            if is_valid:
+                await self.statistics_repo.increment_counter(
+                    "order_validations_passed",
+                    StatisticCategory.ORDERS,
+                    tags={"symbol": symbol}
+                )
+            else:
+                await self.statistics_repo.increment_counter(
+                    "order_validations_failed",
+                    StatisticCategory.ORDERS,
+                    tags={"symbol": symbol}
+                )
+                
+        except Exception as e:
+            logger.error(f"Error updating validation statistics: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Получение статистики сервиса"""
+        return self._stats.copy()
+    
+    def reset_stats(self) -> None:
+        """Сброс статистики"""
+        self._stats = {
+            'validations_performed': 0,
+            'validations_passed': 0,
+            'validations_failed': 0,
+            'warnings_issued': 0
+        }
+```
+
+### 📄 `src\domain\services\orders\unified_order_service.py`
+
+```python
+import logging
+from typing import Optional, Dict, List, Any, Tuple
+
+from src.domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
+from src.domain.factories.order_factory import OrderFactory
+from src.infrastructure.repositories.orders_repository import OrdersRepository
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+
+# Импорт специализированных сервисов
+from src.domain.services.orders.order_placement_service import OrderPlacementService
+from src.domain.services.orders.order_monitoring_service import OrderMonitoringService
+from src.domain.services.orders.order_validation_service import OrderValidationService
+from src.domain.services.orders.balance_service import BalanceService
+from src.domain.services.orders.order_cancellation_service import OrderCancellationService
+
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+
+logger = logging.getLogger(__name__)
+
+
+class UnifiedOrderService:
+    """
+    Унифицированный сервис для управления ордерами.
+    
+    Координирует работу специализированных сервисов, соблюдающих принцип SRP:
+    - OrderPlacementService: размещение ордеров
+    - OrderMonitoringService: мониторинг статусов
+    - OrderValidationService: валидация параметров
+    - BalanceService: проверка балансов
+    - OrderCancellationService: отмена ордеров
+    
+    Этот сервис предоставляет единый интерфейс для всех операций с ордерами,
+    но делегирует выполнение специализированным сервисам.
+    """
+    
+    def __init__(
+        self,
+        orders_repo: OrdersRepository,
+        order_factory: OrderFactory,
+        exchange_connector: CcxtExchangeConnector,
+        balance_service: BalanceService,  # ❗️ ИНЪЕКЦИЯ ЗАВИСИМОСТИ
+        statistics_repo: Optional[IStatisticsRepository] = None,
+        currency_pair_symbol: Optional[str] = None
+    ):
+        self.orders_repo = orders_repo
+        self.order_factory = order_factory
+        self.exchange_connector = exchange_connector
+        self.statistics_repo = statistics_repo
+        self.currency_pair_symbol = currency_pair_symbol
+        
+        # Инициализация специализированных сервисов
+        # BalanceService теперь передается извне
+        self.balance_service = balance_service
+        
+        self.placement_service = OrderPlacementService(
+            self.balance_service, # ❗️ ПЕРЕДАЕМ СЕРВИС БАЛАНСА
+            orders_repo, 
+            order_factory, 
+            exchange_connector, 
+            statistics_repo
+        )
+        
+        self.monitoring_service = OrderMonitoringService(
+            orders_repo, exchange_connector, statistics_repo, currency_pair_symbol
+        )
+        
+        self.validation_service = OrderValidationService(
+            self.balance_service, # ❗️ ПЕРЕДАЕМ СЕРВИС БАЛАНСА
+            exchange_connector, 
+            statistics_repo
+        )
+        
+        self.cancellation_service = OrderCancellationService(
+            orders_repo, exchange_connector, statistics_repo
+        )
+        
+        self._stats = {
+            'total_operations': 0,
+            'delegation_errors': 0
+        }
+    
+    # ================================
+    # РАЗМЕЩЕНИЕ ОРДЕРОВ
+    # ================================
+    
+    async def create_and_place_buy_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: int,
+        order_type: str = Order.TYPE_LIMIT,
+        client_order_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        Создание и размещение BUY ордера с полной валидацией
+        """
+        try:
+            self._stats['total_operations'] += 1
+            
+            # 1. Валидация параметров
+            validation_result = await self.validation_service.validate_order_params(
+                symbol, Order.SIDE_BUY, amount, price, order_type
+            )
+            if not validation_result.is_valid:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
+                )
+            
+            # 2. Проверка баланса
+            balance_check = await self.balance_service.check_sufficient_balance(
+                symbol, Order.SIDE_BUY, amount, price
+            )
+            if not balance_check[0]:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Insufficient balance: need {amount * price:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
+                )
+            
+            # 3. Размещение ордера
+            return await self.placement_service.place_buy_order(
+                symbol, amount, price, deal_id, order_type, client_order_id
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Error in create_and_place_buy_order: {e}")
+            self._stats['delegation_errors'] += 1
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Service delegation error: {str(e)}"
+            )
+    
+    async def create_and_place_sell_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: int,
+        order_type: str = Order.TYPE_LIMIT,
+        client_order_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        Создание и размещение SELL ордера с полной валидацией
+        """
+        try:
+            self._stats['total_operations'] += 1
+            
+            # 1. Валидация параметров
+            validation_result = await self.validation_service.validate_order_params(
+                symbol, Order.SIDE_SELL, amount, price, order_type
+            )
+            if not validation_result.is_valid:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
+                )
+            
+            # 2. Проверка баланса
+            balance_check = await self.balance_service.check_sufficient_balance(
+                symbol, Order.SIDE_SELL, amount, price
+            )
+            if not balance_check[0]:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Insufficient balance: need {amount:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
+                )
+            
+            # 3. Размещение ордера
+            return await self.placement_service.place_sell_order(
+                symbol, amount, price, deal_id, order_type, client_order_id
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Error in create_and_place_sell_order: {e}")
+            self._stats['delegation_errors'] += 1
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Service delegation error: {str(e)}"
+            )
+    
+    async def create_local_sell_order(
+        self,
+        symbol: str,
+        amount: float,
+        price: float,
+        deal_id: int,
+        order_type: str = Order.TYPE_LIMIT,
+        client_order_id: Optional[str] = None
+    ) -> OrderExecutionResult:
+        """
+        Создание локального SELL ордера без размещения на бирже
+        """
+        try:
+            self._stats['total_operations'] += 1
+            
+            # Валидация параметров
+            validation_result = await self.validation_service.validate_order_params(
+                symbol, Order.SIDE_SELL, amount, price, order_type
+            )
+            if not validation_result.is_valid:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Validation failed: {', '.join(validation_result.errors)}"
+                )
+            
+            # Создание локального ордера
+            order = self.order_factory.create_sell_order(
+                symbol=symbol,
+                amount=amount,
+                price=price,
+                deal_id=deal_id,
+                order_type=order_type,
+                client_order_id=client_order_id
+            )
+            
+            order.status = Order.STATUS_PENDING
+            self.orders_repo.save(order)
+            
+            logger.info(f"✅ LOCAL SELL order {order.order_id} created with PENDING status")
+            
+            return OrderExecutionResult(
+                success=True,
+                order=order,
+                error_message="Created locally with PENDING status"
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating local SELL order: {e}")
+            self._stats['delegation_errors'] += 1
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    async def place_existing_order(self, order: Order) -> OrderExecutionResult:
+        """
+        Размещение существующего локального ордера на бирже
+        """
+        try:
+            self._stats['total_operations'] += 1
+            
+            # Проверка баланса перед размещением
+            balance_check = await self.balance_service.check_sufficient_balance(
+                order.symbol, order.side, order.amount, order.price
+            )
+            if not balance_check[0]:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Insufficient balance: need {order.amount * order.price:.4f} {balance_check[1]}, have {balance_check[2]:.4f}"
+                )
+            
+            # Размещение ордера
+            return await self.placement_service.place_existing_order(order)
+            
+        except Exception as e:
+            logger.error(f"❌ Error placing existing order: {e}")
+            self._stats['delegation_errors'] += 1
+            return OrderExecutionResult(
+                success=False,
+                error_message=f"Service delegation error: {str(e)}"
+            )
+    
+    # ================================
+    # МОНИТОРИНГ ОРДЕРОВ
+    # ================================
+    
+    async def get_order_status(self, order: Order) -> Optional[Order]:
+        """Проверка статуса ордера"""
+        try:
+            return await self.monitoring_service.check_order_status(order)
+        except Exception as e:
+            logger.error(f"❌ Error getting order status: {e}")
+            self._stats['delegation_errors'] += 1
+            return order
+    
+    async def sync_orders_with_exchange(self) -> List[Order]:
+        """Синхронизация всех открытых ордеров с биржей"""
+        try:
+            return await self.monitoring_service.sync_orders_with_exchange()
+        except Exception as e:
+            logger.error(f"❌ Error syncing orders: {e}")
+            self._stats['delegation_errors'] += 1
+            return []
+    
+    # ================================
+    # ОТМЕНА ОРДЕРОВ
+    # ================================
+    
+    async def cancel_order(self, order: Order, reason: str = "User request") -> Optional[Order]:
+        """Отмена ордера"""
+        try:
+            return await self.cancellation_service.cancel_order(order, reason)
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order: {e}")
+            self._stats['delegation_errors'] += 1
+            return None
+    
+    async def emergency_cancel_all_orders(self, symbol: Optional[str] = None) -> int:
+        """Экстренная отмена всех ордеров"""
+        try:
+            return await self.cancellation_service.emergency_cancel_all_orders(symbol)
+        except Exception as e:
+            logger.error(f"❌ Error in emergency cancellation: {e}")
+            self._stats['delegation_errors'] += 1
+            return 0
+    
+    # ================================
+    # ИНФОРМАЦИОННЫЕ МЕТОДЫ
+    # ================================
+    
+    def get_orders_by_deal(self, deal_id: int) -> List[Order]:
+        """Получить все ордера по ID сделки"""
+        return self.orders_repo.get_all_by_deal(deal_id)
+    
+    def get_open_orders(self) -> List[Order]:
+        """Получить все открытые ордера"""
+        all_orders = self.orders_repo.get_all()
+        return [order for order in all_orders if order.is_open() or order.is_partially_filled()]
+    
+    def get_order_by_id(self, order_id: int) -> Optional[Order]:
+        """Получить ордер по ID"""
+        return self.orders_repo.get_by_id(order_id)
+    
+    def get_orders_by_symbol(self, symbol: str) -> List[Order]:
+        """Получить все ордера по символу"""
+        all_orders = self.orders_repo.get_all()
+        return [order for order in all_orders if order.symbol == symbol]
+    
+    # ================================
+    # ПРОВЕРКА БАЛАНСОВ
+    # ================================
+    
+    async def get_account_balance(self, force_refresh: bool = False) -> Dict[str, Dict[str, float]]:
+        """Получение баланса аккаунта"""
+        try:
+            return await self.balance_service.get_account_balance(force_refresh)
+        except Exception as e:
+            logger.error(f"❌ Error getting account balance: {e}")
+            self._stats['delegation_errors'] += 1
+            return {}
+    
+    async def check_sufficient_balance(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float
+    ) -> Tuple[bool, str, float]:
+        """Проверка достаточности баланса"""
+        try:
+            return await self.balance_service.check_sufficient_balance(symbol, side, amount, price)
+        except Exception as e:
+            logger.error(f"❌ Error checking balance: {e}")
+            self._stats['delegation_errors'] += 1
+            return False, "ERROR", 0.0
+    
+    # ================================
+    # СТАТИСТИКА И МОНИТОРИНГ
+    # ================================
+    
+    def get_comprehensive_statistics(self) -> Dict[str, Any]:
+        """Получение объединенной статистики всех сервисов"""
+        try:
+            return {
+                "unified_service_stats": self._stats.copy(),
+                "placement_service_stats": self.placement_service.get_stats(),
+                "monitoring_service_stats": self.monitoring_service.get_stats(),
+                "validation_service_stats": self.validation_service.get_stats(),
+                "balance_service_stats": self.balance_service.get_stats(),
+                "cancellation_service_stats": self.cancellation_service.get_stats()
+            }
+        except Exception as e:
+            logger.error(f"❌ Error getting comprehensive statistics: {e}")
+            return {"error": str(e)}
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Получение совместимой статистики (для обратной совместимости)"""
+        try:
+            all_stats = self.get_comprehensive_statistics()
+            
+            # Агрегируем основные метрики для совместимости
+            placement_stats = all_stats.get("placement_service_stats", {})
+            monitoring_stats = all_stats.get("monitoring_service_stats", {})
+            cancellation_stats = all_stats.get("cancellation_service_stats", {})
+            
+            # Подсчитываем общие метрики
+            orders_created = placement_stats.get('orders_placed', 0)
+            orders_executed = placement_stats.get('orders_placed', 0)  # В новой архитектуре размещение = исполнение
+            orders_failed = placement_stats.get('orders_failed', 0)
+            orders_cancelled = cancellation_stats.get('orders_cancelled', 0)
+            
+            total_orders = len(self.orders_repo.get_all())
+            open_orders = len(self.get_open_orders())
+            
+            return {
+                'orders_created': orders_created,
+                'orders_executed': orders_executed,
+                'orders_failed': orders_failed,
+                'orders_cancelled': orders_cancelled,
+                'total_fees': 0.0,  # Эта метрика перенесена в статистику
+                'total_orders': total_orders,
+                'open_orders': open_orders,
+                'success_rate': (orders_executed / max(orders_created, 1)) * 100
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting statistics: {e}")
+            return {"error": str(e)}
+    
+    def reset_statistics(self) -> None:
+        """Сброс статистики всех сервисов"""
+        try:
+            self._stats = {
+                'total_operations': 0,
+                'delegation_errors': 0
+            }
+            
+            self.placement_service.reset_stats()
+            self.monitoring_service.reset_stats()
+            self.validation_service.reset_stats()
+            self.balance_service.reset_stats()
+            self.cancellation_service.reset_stats()
+            
+        except Exception as e:
+            logger.error(f"❌ Error resetting statistics: {e}")
+    
+    def save_order(self, order: Order) -> None:
+        """Сохранение ордера в репозиторий (для обратной совместимости)"""
+        self.orders_repo.save(order)
+    
+    async def health_check(self) -> Dict[str, Any]:
+        """Проверка состояния всех компонентов"""
+        health = {
+            "status": "healthy",
+            "services": {},
+            "timestamp": int(__import__('time').time() * 1000)
+        }
+        
+        try:
+            # Проверяем каждый сервис
+            services = [
+                ("placement", self.placement_service),
+                ("monitoring", self.monitoring_service),
+                ("validation", self.validation_service),
+                ("balance", self.balance_service),
+                ("cancellation", self.cancellation_service)
+            ]
+            
+            for name, service in services:
+                try:
+                    stats = service.get_stats()
+                    health["services"][name] = {
+                        "status": "healthy",
+                        "stats": stats
+                    }
+                except Exception as e:
+                    health["services"][name] = {
+                        "status": "unhealthy",
+                        "error": str(e)
+                    }
+                    health["status"] = "degraded"
+            
+        except Exception as e:
+            health["status"] = "unhealthy"
+            health["error"] = str(e)
+        
+        return health
+```
+
 ### 📄 `src\domain\services\risk\stop_loss_monitor.py`
 
 ```python
@@ -9010,6 +18244,1075 @@ class StopLossMonitor:
         """Возвращает статистику работы монитора."""
         return self._stats
 
+```
+
+### 📄 `src\domain\services\signals\signal_generation_service.py`
+
+```python
+import logging
+from typing import Dict, List, Optional, Any
+import time
+
+from src.domain.entities.trading_signal import TradingSignal, SignalType, SignalSource
+from src.domain.repositories.i_trading_signal_repository import ITradingSignalRepository
+from src.domain.repositories.i_cache_repository import ICacheRepository
+
+logger = logging.getLogger(__name__)
+
+
+class SignalGenerationService:
+    """
+    Сервис для генерации торговых сигналов.
+    Соблюдает принцип единственной ответственности (SRP).
+    Отвечает ТОЛЬКО за создание торговых сигналов на основе индикаторов.
+    """
+    
+    def __init__(
+        self,
+        signal_repository: ITradingSignalRepository,
+        cache_repository: Optional[ICacheRepository] = None
+    ):
+        self.signal_repository = signal_repository
+        self.cache_repository = cache_repository
+        
+        self._stats = {
+            "signals_generated": 0,
+            "buy_signals": 0,
+            "sell_signals": 0,
+            "hold_signals": 0,
+            "combined_signals": 0,
+            "errors": 0
+        }
+    
+    async def generate_macd_signal(self, symbol: str, indicators: Dict[str, float]) -> Optional[TradingSignal]:
+        """Генерировать сигнал на основе MACD"""
+        try:
+            macd = indicators.get('macd', 0)
+            signal = indicators.get('macd_signal', 0)
+            histogram = indicators.get('macd_histogram', 0)
+            
+            if macd == 0 or signal == 0:
+                return None
+            
+            # Определяем тип сигнала
+            if macd > signal and histogram > 0:
+                signal_type = SignalType.BUY
+                strength = min(abs(histogram) / 100, 1.0)  # Нормализация
+            elif macd < signal and histogram < 0:
+                signal_type = SignalType.SELL
+                strength = min(abs(histogram) / 100, 1.0)
+            else:
+                signal_type = SignalType.HOLD
+                strength = 0.1
+            
+            # Уверенность основана на силе дивергенции
+            confidence = min(abs(macd - signal) / max(abs(macd), abs(signal), 0.001), 0.95)
+            
+            trading_signal = TradingSignal(
+                symbol=symbol,
+                timestamp=int(time.time() * 1000),
+                signal_type=signal_type,
+                source=SignalSource.MACD,
+                strength=strength,
+                confidence=confidence,
+                metadata={
+                    "macd": macd,
+                    "signal": signal,
+                    "histogram": histogram
+                }
+            )
+            
+            await self._save_signal(trading_signal)
+            return trading_signal
+            
+        except Exception as e:
+            logger.error(f"Error generating MACD signal for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return None
+    
+    async def generate_sma_crossover_signal(self, symbol: str, indicators: Dict[str, float]) -> Optional[TradingSignal]:
+        """Генерировать сигнал на основе пересечения SMA"""
+        try:
+            sma_7 = indicators.get('sma_7', 0)
+            sma_25 = indicators.get('sma_25', 0)
+            
+            if sma_7 == 0 or sma_25 == 0:
+                return None
+            
+            # Определяем силу сигнала на основе разности SMA
+            price_diff_percent = abs(sma_7 - sma_25) / sma_25 * 100
+            
+            if sma_7 > sma_25:
+                signal_type = SignalType.BUY
+                strength = min(price_diff_percent / 5.0, 1.0)  # 5% = максимальная сила
+            elif sma_7 < sma_25:
+                signal_type = SignalType.SELL  
+                strength = min(price_diff_percent / 5.0, 1.0)
+            else:
+                signal_type = SignalType.HOLD
+                strength = 0.1
+            
+            # Уверенность зависит от величины разрыва
+            confidence = min(price_diff_percent / 2.0, 0.9)  # 2% = высокая уверенность
+            
+            trading_signal = TradingSignal(
+                symbol=symbol,
+                timestamp=int(time.time() * 1000),
+                signal_type=signal_type,
+                source=SignalSource.SMA_CROSSOVER,
+                strength=strength,
+                confidence=confidence,
+                metadata={
+                    "sma_7": sma_7,
+                    "sma_25": sma_25,
+                    "price_diff_percent": price_diff_percent
+                }
+            )
+            
+            await self._save_signal(trading_signal)
+            return trading_signal
+            
+        except Exception as e:
+            logger.error(f"Error generating SMA crossover signal for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return None
+    
+    async def generate_rsi_signal(self, symbol: str, indicators: Dict[str, float]) -> Optional[TradingSignal]:
+        """Генерировать сигнал на основе RSI"""
+        try:
+            rsi_5 = indicators.get('rsi_5', 50)
+            rsi_15 = indicators.get('rsi_15', 50)
+            
+            # Средний RSI для более стабильного сигнала
+            avg_rsi = (rsi_5 + rsi_15) / 2
+            
+            # Определяем сигнал
+            if avg_rsi < 30:  # Перепроданность
+                signal_type = SignalType.BUY
+                strength = (30 - avg_rsi) / 30  # Чем ниже, тем сильнее
+            elif avg_rsi > 70:  # Перекупленность
+                signal_type = SignalType.SELL
+                strength = (avg_rsi - 70) / 30  # Чем выше, тем сильнее
+            else:
+                signal_type = SignalType.HOLD
+                strength = 0.1
+            
+            # Уверенность зависит от экстремальности значения
+            if avg_rsi < 30 or avg_rsi > 70:
+                confidence = min(abs(avg_rsi - 50) / 50, 0.9)
+            else:
+                confidence = 0.3
+            
+            trading_signal = TradingSignal(
+                symbol=symbol,
+                timestamp=int(time.time() * 1000),
+                signal_type=signal_type,
+                source=SignalSource.RSI,
+                strength=strength,
+                confidence=confidence,
+                metadata={
+                    "rsi_5": rsi_5,
+                    "rsi_15": rsi_15,
+                    "avg_rsi": avg_rsi
+                }
+            )
+            
+            await self._save_signal(trading_signal)
+            return trading_signal
+            
+        except Exception as e:
+            logger.error(f"Error generating RSI signal for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return None
+    
+    async def generate_bollinger_signal(self, symbol: str, indicators: Dict[str, float], current_price: float) -> Optional[TradingSignal]:
+        """Генерировать сигнал на основе Bollinger Bands"""
+        try:
+            bb_upper = indicators.get('bb_upper', 0)
+            bb_middle = indicators.get('bb_middle', 0)
+            bb_lower = indicators.get('bb_lower', 0)
+            
+            if bb_upper == 0 or bb_lower == 0 or bb_middle == 0:
+                return None
+            
+            # Определяем положение цены относительно полос
+            bb_range = bb_upper - bb_lower
+            if bb_range == 0:
+                return None
+            
+            # Позиция в процентах (0 = нижняя полоса, 1 = верхняя полоса)
+            bb_position = (current_price - bb_lower) / bb_range
+            
+            if bb_position < 0.2:  # Близко к нижней полосе
+                signal_type = SignalType.BUY
+                strength = 1.0 - bb_position / 0.2  # Чем ближе к низу, тем сильнее
+            elif bb_position > 0.8:  # Близко к верхней полосе
+                signal_type = SignalType.SELL
+                strength = (bb_position - 0.8) / 0.2  # Чем ближе к верху, тем сильнее
+            else:
+                signal_type = SignalType.HOLD
+                strength = 0.1
+            
+            # Уверенность зависит от ширины полос (узкие полосы = выше уверенность)
+            bb_width_percent = bb_range / bb_middle * 100
+            confidence = max(0.3, min(0.9, 5.0 / bb_width_percent))  # 5% ширина = высокая уверенность
+            
+            trading_signal = TradingSignal(
+                symbol=symbol,
+                timestamp=int(time.time() * 1000),
+                signal_type=signal_type,
+                source=SignalSource.BOLLINGER_BANDS,
+                strength=strength,
+                confidence=confidence,
+                price=current_price,
+                metadata={
+                    "bb_upper": bb_upper,
+                    "bb_middle": bb_middle,
+                    "bb_lower": bb_lower,
+                    "bb_position": bb_position,
+                    "bb_width_percent": bb_width_percent
+                }
+            )
+            
+            await self._save_signal(trading_signal)
+            return trading_signal
+            
+        except Exception as e:
+            logger.error(f"Error generating Bollinger signal for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return None
+    
+    async def generate_combined_signal(self, symbol: str, indicators: Dict[str, float], current_price: float) -> Optional[TradingSignal]:
+        """Генерировать комбинированный сигнал на основе всех индикаторов"""
+        try:
+            # Генерируем все отдельные сигналы
+            signals = []
+            
+            macd_signal = await self.generate_macd_signal(symbol, indicators)
+            if macd_signal:
+                signals.append(macd_signal)
+            
+            sma_signal = await self.generate_sma_crossover_signal(symbol, indicators)
+            if sma_signal:
+                signals.append(sma_signal)
+            
+            rsi_signal = await self.generate_rsi_signal(symbol, indicators)
+            if rsi_signal:
+                signals.append(rsi_signal)
+            
+            bollinger_signal = await self.generate_bollinger_signal(symbol, indicators, current_price)
+            if bollinger_signal:
+                signals.append(bollinger_signal)
+            
+            if not signals:
+                return None
+            
+            # Комбинируем сигналы
+            buy_signals = [s for s in signals if s.is_bullish]
+            sell_signals = [s for s in signals if s.is_bearish]
+            
+            # Определяем итоговый сигнал
+            if len(buy_signals) > len(sell_signals):
+                signal_type = SignalType.STRONG_BUY if len(buy_signals) >= 3 else SignalType.BUY
+                relevant_signals = buy_signals
+            elif len(sell_signals) > len(buy_signals):
+                signal_type = SignalType.STRONG_SELL if len(sell_signals) >= 3 else SignalType.SELL
+                relevant_signals = sell_signals
+            else:
+                signal_type = SignalType.HOLD
+                relevant_signals = signals
+            
+            # Средние значения силы и уверенности
+            avg_strength = sum(s.strength for s in relevant_signals) / len(relevant_signals)
+            avg_confidence = sum(s.confidence for s in relevant_signals) / len(relevant_signals)
+            
+            # Бонус за согласованность
+            if len(relevant_signals) >= 3:
+                avg_confidence = min(avg_confidence * 1.2, 0.95)
+            
+            combined_signal = TradingSignal(
+                symbol=symbol,
+                timestamp=int(time.time() * 1000),
+                signal_type=signal_type,
+                source=SignalSource.COMBINED,
+                strength=avg_strength,
+                confidence=avg_confidence,
+                price=current_price,
+                metadata={
+                    "component_signals": [s.signal_id for s in signals],
+                    "buy_count": len(buy_signals),
+                    "sell_count": len(sell_signals),
+                    "total_signals": len(signals)
+                }
+            )
+            
+            await self._save_signal(combined_signal)
+            self._stats["combined_signals"] += 1
+            
+            return combined_signal
+            
+        except Exception as e:
+            logger.error(f"Error generating combined signal for {symbol}: {e}")
+            self._stats["errors"] += 1
+            return None
+    
+    async def get_current_signal(self, symbol: str) -> str:
+        """Получить текущий торговый сигнал в простом формате"""
+        try:
+            # Получаем последний комбинированный сигнал
+            latest_signal = await self.signal_repository.get_latest(symbol)
+            
+            if not latest_signal or not latest_signal.is_actionable:
+                return "HOLD"
+            
+            if latest_signal.signal_type in [SignalType.BUY, SignalType.STRONG_BUY]:
+                return "BUY"
+            elif latest_signal.signal_type in [SignalType.SELL, SignalType.STRONG_SELL]:
+                return "SELL"
+            else:
+                return "HOLD"
+                
+        except Exception as e:
+            logger.error(f"Error getting current signal for {symbol}: {e}")
+            return "HOLD"
+    
+    async def _save_signal(self, signal: TradingSignal) -> None:
+        """Сохранить сигнал в репозиторий и кэш"""
+        try:
+            # Сохраняем в репозиторий
+            await self.signal_repository.save(signal)
+            
+            # Кэшируем если есть кэш-репозиторий
+            if self.cache_repository:
+                signal_data = {
+                    "signal_type": signal.signal_type.value,
+                    "strength": signal.strength,
+                    "confidence": signal.confidence,
+                    "timestamp": signal.timestamp,
+                    "is_actionable": signal.is_actionable
+                }
+                await self.cache_repository.cache_signal(
+                    signal.symbol, signal.source.value, signal_data, 60
+                )
+            
+            # Обновляем статистику
+            self._stats["signals_generated"] += 1
+            if signal.is_bullish:
+                self._stats["buy_signals"] += 1
+            elif signal.is_bearish:
+                self._stats["sell_signals"] += 1
+            else:
+                self._stats["hold_signals"] += 1
+                
+        except Exception as e:
+            logger.error(f"Error saving signal {signal.signal_id}: {e}")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Получить статистику сервиса"""
+        return self._stats.copy()
+    
+    def reset_stats(self) -> None:
+        """Сбросить статистику"""
+        self._stats = {
+            "signals_generated": 0,
+            "buy_signals": 0,
+            "sell_signals": 0,
+            "hold_signals": 0,
+            "combined_signals": 0,
+            "errors": 0
+        }
+```
+
+### 📄 `src\domain\services\state\__init__.py`
+
+```python
+# State Management Services
+
+from .state_management_service import StateManagementService
+
+__all__ = [
+    'StateManagementService'
+]
+```
+
+### 📄 `src\domain\services\state\state_management_service.py`
+
+```python
+import asyncio
+import logging
+import signal
+import time
+import hashlib
+import json
+from typing import Dict, List, Optional, Any, Callable, Set
+from datetime import datetime
+import uuid
+
+from src.domain.entities.application_state import (
+    ApplicationState, ApplicationStateInfo, SystemSnapshot, 
+    RecoveryInfo, StateTransition, TradingSessionState, ShutdownReason
+)
+from src.domain.repositories.i_state_repository import IStateRepository
+from src.domain.repositories.i_deals_repository import IDealsRepository
+from src.domain.repositories.i_orders_repository import IOrdersRepository
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.domain.repositories.i_configuration_repository import IConfigurationRepository
+from src.domain.entities.statistics import StatisticCategory
+
+logger = logging.getLogger(__name__)
+
+
+class StateManagementService:
+    """
+    Сервис управления состоянием приложения.
+    Отвечает за graceful shutdown, recovery и state persistence.
+    """
+    
+    def __init__(
+        self,
+        state_repo: IStateRepository,
+        deals_repo: Optional[IDealsRepository] = None,
+        orders_repo: Optional[IOrdersRepository] = None,
+        statistics_repo: Optional[IStatisticsRepository] = None,
+        config_repo: Optional[IConfigurationRepository] = None
+    ):
+        self.state_repo = state_repo
+        self.deals_repo = deals_repo
+        self.orders_repo = orders_repo
+        self.statistics_repo = statistics_repo
+        self.config_repo = config_repo
+        
+        # Текущее состояние
+        self.current_state = ApplicationState.STARTING
+        self.state_info = ApplicationStateInfo(current_state=self.current_state)
+        self.trading_sessions: Dict[str, TradingSessionState] = {}
+        
+        # Обработчики событий
+        self.state_change_handlers: Dict[ApplicationState, List[Callable]] = {}
+        self.shutdown_handlers: List[Callable] = []
+        self.recovery_handlers: List[Callable] = []
+        
+        # Контроль выполнения
+        self.shutdown_requested = False
+        self.emergency_stop = False
+        self.snapshot_interval_seconds = 300  # 5 минут
+        self.last_snapshot_time = 0
+        
+        # Метрики
+        self.start_time = time.time()
+        self.state_transitions_count = 0
+        self.snapshots_created = 0
+        self.recovery_attempts = 0
+        
+        # Установка обработчиков сигналов
+        self._setup_signal_handlers()
+    
+    async def initialize(self) -> bool:
+        """Инициализация сервиса состояний"""
+        try:
+            logger.info("🔄 Initializing State Management Service...")
+            
+            # Загружаем последнее состояние
+            await self._load_previous_state()
+            
+            # Проверяем необходимость восстановления
+            recovery_needed = await self._check_recovery_needed()
+            if recovery_needed:
+                await self._perform_recovery()
+            
+            # Устанавливаем состояние RUNNING
+            await self.transition_to_state(ApplicationState.RUNNING, "Initialization completed")
+            
+            # Запускаем фоновые задачи
+            asyncio.create_task(self._periodic_snapshot_task())
+            asyncio.create_task(self._state_monitoring_task())
+            
+            logger.info("✅ State Management Service initialized successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize State Management Service: {e}")
+            await self.transition_to_state(ApplicationState.ERROR, f"Initialization error: {e}")
+            return False
+    
+    async def transition_to_state(
+        self, 
+        new_state: ApplicationState, 
+        reason: str,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Переход в новое состояние"""
+        try:
+            if new_state == self.current_state:
+                return True
+            
+            start_time = time.time()
+            previous_state = self.current_state
+            
+            logger.info(f"🔄 State transition: {previous_state.value} → {new_state.value} ({reason})")
+            
+            # Выполняем пре-обработчики
+            success = await self._execute_pre_transition_handlers(previous_state, new_state)
+            if not success:
+                logger.error(f"❌ Pre-transition handlers failed for {previous_state.value} → {new_state.value}")
+                return False
+            
+            # Записываем переход
+            transition = StateTransition(
+                from_state=previous_state,
+                to_state=new_state,
+                timestamp=int(time.time() * 1000),
+                reason=reason,
+                success=True,
+                duration_ms=int((time.time() - start_time) * 1000),
+                metadata=metadata or {}
+            )
+            await self.state_repo.log_state_transition(transition)
+
+            # Обновляем состояние
+            self.current_state = new_state
+            self.state_info.previous_state = previous_state
+            self.state_info.current_state = new_state
+            self.state_info.state_changed_at = int(time.time() * 1000)
+            self.state_transitions_count += 1
+            
+            # Выполняем пост-обработчики
+            await self._execute_post_transition_handlers(previous_state, new_state)
+            
+            # Сохраняем состояние
+            await self.state_repo.save_application_state(self.state_info)
+            
+            # Обновляем статистику
+            if self.statistics_repo:
+                await self.statistics_repo.increment_counter(
+                    f"state_transitions_{new_state.value}",
+                    StatisticCategory.SYSTEM
+                )
+            
+            logger.info(f"✅ State transition completed: {previous_state.value} → {new_state.value}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ State transition failed: {e}")
+            
+            # Записываем неудачный переход
+            failed_transition = StateTransition(
+                from_state=previous_state if 'previous_state' in locals() else self.current_state,
+                to_state=new_state,
+                timestamp=int(time.time() * 1000),
+                reason=reason,
+                success=False,
+                error_message=str(e),
+                metadata=metadata or {}
+            )
+            
+            try:
+                await self.state_repo.log_state_transition(failed_transition)
+            except:
+                pass  # Не критично если не удалось записать
+            
+            return False
+    
+    async def request_graceful_shutdown(self, reason: ShutdownReason = ShutdownReason.USER_REQUEST) -> bool:
+        """Запросить graceful shutdown"""
+        try:
+            logger.warning(f"🛑 Graceful shutdown requested: {reason.value}")
+            
+            self.shutdown_requested = True
+            self.state_info.safe_shutdown_requested = True
+            self.state_info.last_shutdown_reason = reason
+            
+            # Переходим в состояние остановки
+            await self.transition_to_state(
+                ApplicationState.STOPPING, 
+                f"Graceful shutdown: {reason.value}"
+            )
+            
+            # Создаем финальный снимок
+            await self.create_system_snapshot("pre_shutdown")
+            
+            # Выполняем shutdown handlers
+            await self._execute_shutdown_handlers()
+            
+            # Завершаем торговые сессии
+            await self._shutdown_trading_sessions()
+            
+            # Финальное состояние
+            await self.transition_to_state(ApplicationState.STOPPED, "Graceful shutdown completed")
+            
+            logger.info("✅ Graceful shutdown completed")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Graceful shutdown failed: {e}")
+            await self.emergency_shutdown()
+            return False
+    
+    async def emergency_shutdown(self) -> None:
+        """Экстренная остановка"""
+        try:
+            logger.critical("🚨 Emergency shutdown initiated")
+            
+            self.emergency_stop = True
+            self.state_info.emergency_stop_active = True
+            
+            # Быстрый переход в состояние ошибки
+            self.current_state = ApplicationState.ERROR
+            self.state_info.current_state = ApplicationState.ERROR
+            
+            # Попытка сохранить критическое состояние
+            try:
+                await self.create_system_snapshot("emergency_shutdown")
+                await self.state_repo.save_application_state(self.state_info)
+            except:
+                pass  # Игнорируем ошибки при экстренной остановке
+            
+            logger.critical("🚨 Emergency shutdown completed")
+            
+        except Exception as e:
+            logger.critical(f"🚨 Emergency shutdown error: {e}")
+    
+    async def create_system_snapshot(self, snapshot_type: str = "periodic") -> Optional[str]:
+        """Создать снимок состояния системы"""
+        try:
+            snapshot_id = f"{snapshot_type}_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+            
+            # Собираем данные о сделках
+            active_deals = []
+            if self.deals_repo:
+                deals = await self.deals_repo.get_active_deals()
+                active_deals = [deal.to_dict() if hasattr(deal, 'to_dict') else deal for deal in deals]
+            
+            # Собираем данные о заказах
+            pending_orders = []
+            if self.orders_repo:
+                orders = await self.orders_repo.get_open_orders()
+                pending_orders = [order.to_dict() if hasattr(order, 'to_dict') else order for order in orders]
+            
+            # Собираем системные метрики
+            system_metrics = await self._collect_system_metrics()
+            
+            # Создаем снимок
+            snapshot = SystemSnapshot(
+                snapshot_id=snapshot_id,
+                timestamp=int(time.time() * 1000),
+                application_state=self.current_state,
+                trading_sessions=list(self.trading_sessions.values()),
+                active_deals=active_deals,
+                pending_orders=pending_orders,
+                system_metrics=system_metrics,
+                configuration_checksum=await self._calculate_config_checksum()
+            )
+            
+            # Сохраняем снимок
+            success = await self.state_repo.save_system_snapshot(snapshot)
+            if success:
+                self.snapshots_created += 1
+                self.last_snapshot_time = time.time()
+                
+                # Создаем информацию для восстановления
+                recovery_info = RecoveryInfo(
+                    snapshot_id=snapshot_id,
+                    created_at=snapshot.timestamp,
+                    application_version="2.4.0",  # TODO: получать из конфигурации
+                    recovery_priority=self._calculate_recovery_priority(),
+                    recovery_notes=f"Auto-generated {snapshot_type} snapshot"
+                )
+                
+                await self.state_repo.save_recovery_info(recovery_info)
+                
+                logger.debug(f"📸 System snapshot created: {snapshot_id}")
+                return snapshot_id
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to create system snapshot: {e}")
+            return None
+    
+    async def start_trading_session(
+        self, 
+        currency_pair: str,
+        session_config: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Запустить торговую сессию"""
+        try:
+            session_id = f"{currency_pair}_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+            
+            session_state = TradingSessionState(
+                session_id=session_id,
+                currency_pair=currency_pair,
+                is_active=True,
+                start_timestamp=int(time.time() * 1000),
+                last_activity_timestamp=int(time.time() * 1000),
+                active_deals_count=0,
+                open_orders_count=0,
+                metadata=session_config or {}
+            )
+            
+            self.trading_sessions[session_id] = session_state
+            await self.state_repo.save_trading_session_state(session_state)
+            
+            self.state_info.trading_active = True
+            await self.state_repo.save_application_state(self.state_info)
+            
+            logger.info(f"📈 Trading session started: {session_id} for {currency_pair}")
+            return session_id
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to start trading session: {e}")
+            raise
+    
+    async def stop_trading_session(self, session_id: str, reason: str = "User request") -> bool:
+        """Остановить торговую сессию"""
+        try:
+            if session_id not in self.trading_sessions:
+                logger.warning(f"⚠️ Trading session not found: {session_id}")
+                return False
+            
+            session = self.trading_sessions[session_id]
+            session.is_active = False
+            session.metadata['stop_reason'] = reason
+            session.metadata['stop_timestamp'] = int(time.time() * 1000)
+            
+            await self.state_repo.save_trading_session_state(session)
+            del self.trading_sessions[session_id]
+            
+            # Проверяем, есть ли еще активные сессии
+            if not self.trading_sessions:
+                self.state_info.trading_active = False
+                await self.state_repo.save_application_state(self.state_info)
+            
+            logger.info(f"📉 Trading session stopped: {session_id} ({reason})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to stop trading session: {e}")
+            return False
+    
+    def register_state_change_handler(self, state: ApplicationState, handler: Callable) -> None:
+        """Зарегистрировать обработчик изменения состояния"""
+        if state not in self.state_change_handlers:
+            self.state_change_handlers[state] = []
+        self.state_change_handlers[state].append(handler)
+    
+    def register_shutdown_handler(self, handler: Callable) -> None:
+        """Зарегистрировать обработчик shutdown"""
+        self.shutdown_handlers.append(handler)
+    
+    def register_recovery_handler(self, handler: Callable) -> None:
+        """Зарегистрировать обработчик recovery"""
+        self.recovery_handlers.append(handler)
+    
+    async def get_state_summary(self) -> Dict[str, Any]:
+        """Получить сводку состояния"""
+        uptime = time.time() - self.start_time
+        
+        return {
+            'current_state': self.current_state.value,
+            'uptime_seconds': int(uptime),
+            'trading_active': self.state_info.trading_active,
+            'active_sessions': len(self.trading_sessions),
+            'shutdown_requested': self.shutdown_requested,
+            'emergency_stop': self.emergency_stop,
+            'state_transitions_count': self.state_transitions_count,
+            'snapshots_created': self.snapshots_created,
+            'last_snapshot_age_seconds': int(time.time() - self.last_snapshot_time) if self.last_snapshot_time > 0 else None,
+            'recovery_attempts': self.recovery_attempts,
+            'sessions': {sid: {
+                'currency_pair': session.currency_pair,
+                'active_deals': session.active_deals_count,
+                'open_orders': session.open_orders_count,
+                'uptime_minutes': (time.time() * 1000 - session.start_timestamp) / (1000 * 60)
+            } for sid, session in self.trading_sessions.items()}
+        }
+    
+    # Внутренние методы
+    
+    async def _load_previous_state(self) -> None:
+        """Загрузить предыдущее состояние"""
+        try:
+            previous_state = await self.state_repo.load_application_state()
+            if previous_state:
+                self.state_info = previous_state
+                self.state_info.restart_count += 1
+                self.state_info.uptime_seconds = 0  # Сбрасываем uptime
+                
+                logger.info(f"📥 Previous state loaded: {previous_state.current_state.value}")
+            else:
+                logger.info("📥 No previous state found, starting fresh")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to load previous state: {e}")
+    
+    async def _check_recovery_needed(self) -> bool:
+        """Проверить необходимость восстановления"""
+        try:
+            # Проверяем последнее состояние
+            if self.state_info.current_state in [ApplicationState.ERROR, ApplicationState.STOPPING]:
+                logger.warning("⚠️ Previous session ended unexpectedly, recovery may be needed")
+                return True
+            
+            # Проверяем активные торговые сессии
+            active_sessions = await self.state_repo.get_active_trading_sessions()
+            if active_sessions:
+                logger.warning(f"⚠️ Found {len(active_sessions)} active trading sessions from previous run")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to check recovery status: {e}")
+            return False
+    
+    async def _perform_recovery(self) -> None:
+        """Выполнить восстановление"""
+        try:
+            logger.info("🔄 Starting recovery process...")
+            self.recovery_attempts += 1
+            
+            await self.transition_to_state(ApplicationState.RECOVERY, "Recovery initiated")
+            
+            # Получаем кандидатов для восстановления
+            recovery_candidates = await self.state_repo.get_recovery_candidates()
+            
+            if recovery_candidates:
+                # Выбираем лучший кандидат
+                best_candidate = recovery_candidates[0]
+                snapshot = await self.state_repo.load_system_snapshot(best_candidate.snapshot_id)
+                
+                if snapshot:
+                    # Восстанавливаем торговые сессии
+                    for session_state in snapshot.trading_sessions:
+                        if session_state.is_active:
+                            self.trading_sessions[session_state.session_id] = session_state
+                    
+                    # Выполняем recovery handlers
+                    await self._execute_recovery_handlers(snapshot)
+                    
+                    logger.info(f"✅ Recovery completed from snapshot: {best_candidate.snapshot_id}")
+                else:
+                    logger.error("❌ Failed to load recovery snapshot")
+            else:
+                logger.info("ℹ️ No recovery candidates found, starting clean")
+            
+        except Exception as e:
+            logger.error(f"❌ Recovery failed: {e}")
+            await self.transition_to_state(ApplicationState.ERROR, f"Recovery failed: {e}")
+    
+    async def _execute_pre_transition_handlers(
+        self, 
+        from_state: ApplicationState, 
+        to_state: ApplicationState
+    ) -> bool:
+        """Выполнить пре-обработчики перехода состояний"""
+        try:
+            handlers = self.state_change_handlers.get(to_state, [])
+            for handler in handlers:
+                try:
+                    if asyncio.iscoroutinefunction(handler):
+                        await handler(from_state, to_state)
+                    else:
+                        handler(from_state, to_state)
+                except Exception as e:
+                    logger.error(f"❌ State change handler failed: {e}")
+                    return False
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Pre-transition handlers failed: {e}")
+            return False
+    
+    async def _execute_post_transition_handlers(
+        self, 
+        from_state: ApplicationState, 
+        to_state: ApplicationState
+    ) -> None:
+        """Выполнить пост-обработчики перехода состояний"""
+        try:
+            # Дополнительная логика после успешного перехода
+            if to_state == ApplicationState.RUNNING:
+                self.state_info.session_start_time = int(time.time() * 1000)
+            elif to_state == ApplicationState.STOPPED:
+                self.state_info.trading_active = False
+                
+        except Exception as e:
+            logger.error(f"❌ Post-transition handlers failed: {e}")
+    
+    async def _execute_shutdown_handlers(self) -> None:
+        """Выполнить shutdown handlers"""
+        try:
+            for handler in self.shutdown_handlers:
+                try:
+                    if asyncio.iscoroutinefunction(handler):
+                        await handler()
+                    else:
+                        handler()
+                except Exception as e:
+                    logger.error(f"❌ Shutdown handler failed: {e}")
+                    
+        except Exception as e:
+            logger.error(f"❌ Shutdown handlers execution failed: {e}")
+    
+    async def _execute_recovery_handlers(self, snapshot: SystemSnapshot) -> None:
+        """Выполнить recovery handlers"""
+        try:
+            for handler in self.recovery_handlers:
+                try:
+                    if asyncio.iscoroutinefunction(handler):
+                        await handler(snapshot)
+                    else:
+                        handler(snapshot)
+                except Exception as e:
+                    logger.error(f"❌ Recovery handler failed: {e}")
+                    
+        except Exception as e:
+            logger.error(f"❌ Recovery handlers execution failed: {e}")
+    
+    async def _shutdown_trading_sessions(self) -> None:
+        """Остановить все торговые сессии"""
+        try:
+            session_ids = list(self.trading_sessions.keys())
+            for session_id in session_ids:
+                await self.stop_trading_session(session_id, "System shutdown")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to shutdown trading sessions: {e}")
+    
+    async def _collect_system_metrics(self) -> Dict[str, Any]:
+        """Собрать системные метрики"""
+        try:
+            uptime = time.time() - self.start_time
+            
+            metrics = {
+                'uptime_seconds': int(uptime),
+                'state_transitions': self.state_transitions_count,
+                'snapshots_created': self.snapshots_created,
+                'recovery_attempts': self.recovery_attempts,
+                'active_sessions_count': len(self.trading_sessions),
+                'memory_usage_mb': self._get_memory_usage(),
+                'timestamp': int(time.time() * 1000)
+            }
+            
+            # Добавляем статистику из statistics_repo
+            if self.statistics_repo:
+                try:
+                    # Получаем системные метрики за последний час
+                    current_time = int(time.time() * 1000)
+                    hour_ago = current_time - (60 * 60 * 1000)
+                    
+                    system_stats = await self.statistics_repo.get_statistics_range(
+                        hour_ago, current_time, StatisticCategory.SYSTEM
+                    )
+                    
+                    metrics['system_statistics_count'] = len(system_stats)
+                except Exception as e:
+                    logger.debug(f"Could not collect system statistics: {e}")
+            
+            return metrics
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to collect system metrics: {e}")
+            return {}
+    
+    async def _calculate_config_checksum(self) -> Optional[str]:
+        """Вычислить контрольную сумму конфигурации"""
+        try:
+            if not self.config_repo:
+                return None
+            
+            all_configs = await self.config_repo.get_all_configs(include_secrets=False)
+            config_data = json.dumps(all_configs, sort_keys=True)
+            
+            return hashlib.md5(config_data.encode()).hexdigest()
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to calculate config checksum: {e}")
+            return None
+    
+    def _calculate_recovery_priority(self) -> int:
+        """Вычислить приоритет восстановления"""
+        priority = 3  # Средний приоритет по умолчанию
+        
+        # Повышаем приоритет если есть активные сессии
+        if self.trading_sessions:
+            priority = 1
+        
+        # Понижаем приоритет если в состоянии ошибки
+        if self.current_state == ApplicationState.ERROR:
+            priority = 5
+        
+        return priority
+    
+    def _get_memory_usage(self) -> float:
+        """Получить использование памяти в MB"""
+        try:
+            import psutil
+            process = psutil.Process()
+            return process.memory_info().rss / 1024 / 1024
+        except:
+            return 0.0
+    
+    def _setup_signal_handlers(self) -> None:
+        """Настроить обработчики сигналов"""
+        try:
+            def signal_handler(signum, frame):
+                logger.warning(f"🔔 Received signal {signum}")
+                
+                if signum in [signal.SIGTERM, signal.SIGINT]:
+                    # Graceful shutdown
+                    asyncio.create_task(
+                        self.request_graceful_shutdown(ShutdownReason.SYSTEM_SIGNAL)
+                    )
+                elif signum == signal.SIGUSR1:
+                    # Create snapshot
+                    asyncio.create_task(self.create_system_snapshot("signal_requested"))
+            
+            signal.signal(signal.SIGTERM, signal_handler)
+            signal.signal(signal.SIGINT, signal_handler)
+            
+            # SIGUSR1 for snapshot creation (Unix only)
+            if hasattr(signal, 'SIGUSR1'):
+                signal.signal(signal.SIGUSR1, signal_handler)
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Could not setup signal handlers: {e}")
+    
+    async def _periodic_snapshot_task(self) -> None:
+        """Фоновая задача для периодических снимков"""
+        try:
+            while not self.shutdown_requested:
+                await asyncio.sleep(self.snapshot_interval_seconds)
+                
+                if self.current_state == ApplicationState.RUNNING:
+                    await self.create_system_snapshot("periodic")
+                    
+        except asyncio.CancelledError:
+            logger.info("📸 Periodic snapshot task cancelled")
+        except Exception as e:
+            logger.error(f"❌ Periodic snapshot task error: {e}")
+    
+    async def _state_monitoring_task(self) -> None:
+        """Фоновая задача мониторинга состояния"""
+        try:
+            while not self.shutdown_requested:
+                await asyncio.sleep(60)  # Проверка каждую минуту
+                
+                # Обновляем uptime
+                self.state_info.uptime_seconds = int(time.time() - self.start_time)
+                
+                # Обновляем активность торговых сессий
+                current_time = int(time.time() * 1000)
+                for session in self.trading_sessions.values():
+                    session.last_activity_timestamp = current_time
+                
+                # Сохраняем обновленное состояние
+                await self.state_repo.save_application_state(self.state_info)
+                
+        except asyncio.CancelledError:
+            logger.info("📊 State monitoring task cancelled")
+        except Exception as e:
+            logger.error(f"❌ State monitoring task error: {e}")
 ```
 
 ### 📄 `src\domain\services\trading\__init__.py`
@@ -9214,7 +19517,7 @@ from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
 from infrastructure.repositories.deals_repository import DealsRepository
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9232,7 +19535,7 @@ class TradingService:
     def __init__(
         self,
         deals_repo: DealsRepository,
-        order_service: OrderService,
+        order_service: UnifiedOrderService,
         deal_factory: DealFactory
     ):
         self.deals_repo = deals_repo
@@ -9388,6 +19691,1077 @@ class TradingService:
 
 ```python
 """Exchange connectors for external API integrations."""
+```
+
+### 📄 `src\infrastructure\connectors\ccxt_exchange_connector.py`
+
+```python
+# infrastructure/connectors/ccxt_exchange_connector.py
+import asyncio
+import logging
+import time
+from datetime import datetime, timezone
+from typing import Dict, List, Any, Optional, Tuple
+from pathlib import Path
+import ccxt.pro as ccxtpro
+import ccxt
+
+from src.domain.entities.order import Order
+from src.config.config_loader import load_config
+
+logger = logging.getLogger(__name__)
+
+
+class CCXTExchangeConnector:
+    """
+    🚀 CCXT COMPLIANT Exchange Connector
+    
+    Полностью совместимая с CCXT Unified API реализация коннектора к бирже.
+    Все методы возвращают данные в стандартном CCXT формате.
+    Поддерживает как WebSocket streams, так и REST API.
+    """
+
+    def __init__(self, exchange_name: str = "binance", use_sandbox: bool = False):
+        self.exchange_name = exchange_name.lower()
+        self.use_sandbox = use_sandbox
+        self.config = None
+        self.rest_client: Optional[ccxt.Exchange] = None      # REST API клиент
+        self.stream_client: Optional[ccxtpro.Exchange] = None  # WebSocket клиент
+        
+        # Кэши для производительности
+        self._markets_cache: Optional[Dict[str, Any]] = None
+        self._markets_cache_time: float = 0
+        self._markets_cache_ttl: float = 3600  # 1 час
+        
+        self._tickers_cache: Dict[str, Dict[str, Any]] = {}
+        self._tickers_cache_ttl: float = 10  # 10 секунд
+        
+        # Инициализация
+        self._load_config()
+        self._init_clients()
+
+    def _load_config(self) -> None:
+        """Загружает конфигурацию API ключей"""
+        try:
+            full_config = load_config()
+            env_key = 'sandbox' if self.use_sandbox else 'production'
+            self.config = full_config.get(self.exchange_name, {}).get(env_key, {})
+
+            # Загружаем приватный ключ из файла если указан
+            private_key_path = self.config.get('privateKeyPath')
+            if private_key_path and Path(private_key_path).exists():
+                with open(private_key_path, 'r', encoding='utf-8') as f:
+                    private_key = f.read().strip()
+                self.config['secret'] = private_key
+                self.config['privateKey'] = private_key
+
+            logger.info(f"✅ Config loaded for {self.exchange_name} ({'sandbox' if self.use_sandbox else 'production'})")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load config: {e}")
+            raise
+
+    def _init_clients(self) -> None:
+        """Инициализирует CCXT клиенты (REST и WebSocket)"""
+        try:
+            # Базовые настройки CCXT
+            base_settings = {
+                'apiKey': self.config.get('apiKey'),
+                'secret': self.config.get('secret'),
+                'enableRateLimit': True,
+                'options': {
+                    'defaultType': 'spot',
+                    'adjustForTimeDifference': True
+                },
+                'timeout': 30000,  # 30 секунд
+                'rateLimit': 50,   # 50ms между запросами
+            }
+
+            # Инициализируем REST клиент
+            rest_class = getattr(ccxt, self.exchange_name)
+            self.rest_client = rest_class(base_settings.copy())
+
+            # Инициализируем WebSocket клиент
+            stream_settings = base_settings.copy()
+            stream_settings['newUpdates'] = True
+            stream_class = getattr(ccxtpro, self.exchange_name)
+            self.stream_client = stream_class(stream_settings)
+
+            # Настраиваем sandbox mode
+            if self.use_sandbox:
+                self.rest_client.set_sandbox_mode(True)
+                self.stream_client.set_sandbox_mode(True)
+                logger.info("🧪 Sandbox mode enabled")
+
+            logger.info(f"✅ CCXT clients initialized for {self.exchange_name}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize CCXT clients: {e}")
+            raise
+
+    # ===== MARKET DATA METHODS =====
+
+    async def load_markets(self, reload: bool = False) -> Dict[str, Any]:
+        """
+        Загружает информацию о торговых парах (CCXT markets)
+        """
+        current_time = time.time()
+        
+        # Проверяем кэш
+        if (not reload and 
+            self._markets_cache and 
+            (current_time - self._markets_cache_time) < self._markets_cache_ttl):
+            return self._markets_cache
+
+        try:
+            markets = await self.rest_client.load_markets(reload)
+            
+            # Обновляем кэш
+            self._markets_cache = markets
+            self._markets_cache_time = current_time
+            
+            logger.debug(f"Loaded {len(markets)} markets from {self.exchange_name}")
+            return markets
+            
+        except Exception as e:
+            logger.error(f"Failed to load markets: {e}")
+            raise
+
+    async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
+        """
+        Получает тикер для торговой пары (CCXT ticker structure)
+        """
+        try:
+            ticker = await self.rest_client.fetch_ticker(symbol)
+            
+            # Кэшируем тикер
+            current_time = time.time()
+            self._tickers_cache[symbol] = {
+                'data': ticker,
+                'timestamp': current_time
+            }
+            
+            return ticker
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch ticker for {symbol}: {e}")
+            raise
+
+    async def fetch_order_book(self, symbol: str, limit: int = 100) -> Dict[str, Any]:
+        """
+        Получает стакан заявок (CCXT order book structure)
+        """
+        try:
+            order_book = await self.rest_client.fetch_order_book(symbol, limit)
+            return order_book
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch order book for {symbol}: {e}")
+            raise
+
+    async def fetch_trades(self, symbol: str, since: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Получает последние сделки (CCXT trades structure)
+        """
+        try:
+            trades = await self.rest_client.fetch_trades(symbol, since, limit)
+            return trades
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch trades for {symbol}: {e}")
+            raise
+
+    async def fetch_ohlcv(self, symbol: str, timeframe: str = '1m', since: Optional[int] = None, limit: int = 100) -> List[List]:
+        """
+        Получает OHLCV данные (CCXT OHLCV structure)
+        """
+        try:
+            ohlcv = await self.rest_client.fetch_ohlcv(symbol, timeframe, since, limit)
+            return ohlcv
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch OHLCV for {symbol}: {e}")
+            raise
+
+    # ===== STREAMING METHODS =====
+
+    async def watch_ticker(self, symbol: str) -> Dict[str, Any]:
+        """
+        WebSocket стрим тикеров (CCXT ticker structure)
+        """
+        try:
+            ticker = await self.stream_client.watch_ticker(symbol)
+            return ticker
+            
+        except Exception as e:
+            logger.error(f"Failed to watch ticker for {symbol}: {e}")
+            raise
+
+    async def watch_order_book(self, symbol: str, limit: int = 100) -> Dict[str, Any]:
+        """
+        WebSocket стрим стакана заявок (CCXT order book structure)
+        """
+        try:
+            order_book = await self.stream_client.watch_order_book(symbol, limit)
+            return order_book
+            
+        except Exception as e:
+            logger.error(f"Failed to watch order book for {symbol}: {e}")
+            raise
+
+    async def watch_trades(self, symbol: str) -> List[Dict[str, Any]]:
+        """
+        WebSocket стрим сделок (CCXT trades structure)
+        """
+        try:
+            trades = await self.stream_client.watch_trades(symbol)
+            return trades
+            
+        except Exception as e:
+            logger.error(f"Failed to watch trades for {symbol}: {e}")
+            raise
+
+    async def watch_ohlcv(self, symbol: str, timeframe: str = '1m') -> List[List]:
+        """
+        WebSocket стрим OHLCV (CCXT OHLCV structure)
+        """
+        try:
+            ohlcv = await self.stream_client.watch_ohlcv(symbol, timeframe)
+            return ohlcv
+            
+        except Exception as e:
+            logger.error(f"Failed to watch OHLCV for {symbol}: {e}")
+            raise
+
+    # ===== ORDER MANAGEMENT METHODS =====
+
+    async def create_order(
+        self,
+        symbol: str,
+        type: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None,
+        params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Создает ордер (возвращает CCXT order structure)
+        """
+        try:
+            logger.info(f"📤 Creating {side.upper()} {type.upper()} order: {amount} {symbol} @ {price}")
+            
+            # Создаем ордер через CCXT
+            order_result = await self.rest_client.create_order(
+                symbol=symbol,
+                type=type,
+                side=side,
+                amount=amount,
+                price=price,
+                params=params or {}
+            )
+            
+            logger.info(f"✅ Order created successfully: {order_result.get('id', 'N/A')}")
+            return order_result
+            
+        except ccxt.InsufficientFunds as e:
+            logger.error(f"💸 Insufficient funds: {e}")
+            raise
+        except ccxt.InvalidOrder as e:
+            logger.error(f"❌ Invalid order: {e}")
+            raise
+        except ccxt.NetworkError as e:
+            logger.error(f"🌐 Network error: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Unexpected error creating order: {e}")
+            raise
+
+    async def create_limit_order(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Создает лимитный ордер
+        """
+        return await self.create_order(symbol, 'limit', side, amount, price, params)
+
+    async def create_market_order(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Создает маркет ордер
+        """
+        return await self.create_order(symbol, 'market', side, amount, None, params)
+
+    async def cancel_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
+        """
+        Отменяет ордер (возвращает CCXT order structure)
+        """
+        try:
+            logger.info(f"❌ Cancelling order {order_id} for {symbol}")
+            
+            result = await self.rest_client.cancel_order(order_id, symbol)
+            
+            logger.info(f"✅ Order cancelled successfully: {order_id}")
+            return result
+            
+        except ccxt.OrderNotFound as e:
+            logger.warning(f"⚠️ Order not found on exchange: {order_id}")
+            raise
+        except Exception as e:
+            logger.error(f"❌ Error cancelling order {order_id}: {e}")
+            raise
+
+    async def fetch_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
+        """
+        Получает информацию об ордере (CCXT order structure)
+        """
+        try:
+            order = await self.rest_client.fetch_order(order_id, symbol)
+            return order
+            
+        except ccxt.OrderNotFound as e:
+            logger.warning(f"⚠️ Order not found: {order_id}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to fetch order {order_id}: {e}")
+            raise
+
+    async def fetch_orders(self, symbol: Optional[str] = None, since: Optional[int] = None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Получает список ордеров (CCXT orders structure)
+        """
+        try:
+            orders = await self.rest_client.fetch_orders(symbol, since, limit)
+            return orders
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch orders: {e}")
+            raise
+
+    async def fetch_open_orders(self, symbol: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Получает открытые ордера (CCXT orders structure)
+        """
+        try:
+            orders = await self.rest_client.fetch_open_orders(symbol)
+            return orders
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch open orders: {e}")
+            raise
+
+    async def fetch_closed_orders(self, symbol: Optional[str] = None, since: Optional[int] = None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Получает закрытые ордера (CCXT orders structure)
+        """
+        try:
+            orders = await self.rest_client.fetch_closed_orders(symbol, since, limit)
+            return orders
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch closed orders: {e}")
+            raise
+
+    # ===== BALANCE METHODS =====
+
+    async def fetch_balance(self) -> Dict[str, Any]:
+        """
+        Получает баланс аккаунта (CCXT balance structure)
+        """
+        try:
+            balance = await self.rest_client.fetch_balance()
+            return balance
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch balance: {e}")
+            raise
+
+    async def get_available_balance(self, currency: str) -> float:
+        """
+        Получает доступный баланс по валюте
+        """
+        try:
+            balance = await self.fetch_balance()
+            return balance.get(currency, {}).get('free', 0.0)
+            
+        except Exception as e:
+            logger.error(f"Failed to get available balance for {currency}: {e}")
+            return 0.0
+
+    async def get_total_balance(self, currency: str) -> float:
+        """
+        Получает общий баланс по валюте
+        """
+        try:
+            balance = await self.fetch_balance()
+            return balance.get(currency, {}).get('total', 0.0)
+            
+        except Exception as e:
+            logger.error(f"Failed to get total balance for {currency}: {e}")
+            return 0.0
+
+    # ===== TRADING HELPER METHODS =====
+
+    async def check_sufficient_balance(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None
+    ) -> Tuple[bool, str, float]:
+        """
+        Проверяет достаточность баланса для создания ордера
+        """
+        try:
+            # Получаем информацию о рынке
+            markets = await self.load_markets()
+            market = markets.get(symbol)
+            if not market:
+                logger.error(f"Market {symbol} not found")
+                return False, "UNKNOWN", 0.0
+
+            base_currency = market['base']
+            quote_currency = market['quote']
+
+            if side.lower() == 'buy':
+                # Для покупки нужна котируемая валюта
+                if not price:
+                    # Для маркет ордера получаем текущую цену
+                    ticker = await self.fetch_ticker(symbol)
+                    price = ticker.get('ask', ticker.get('last', 0))
+                
+                required_amount = amount * price
+                available = await self.get_available_balance(quote_currency)
+                return available >= required_amount, quote_currency, available
+                
+            else:
+                # Для продажи нужна базовая валюта
+                available = await self.get_available_balance(base_currency)
+                return available >= amount, base_currency, available
+
+        except Exception as e:
+            logger.error(f"Error checking balance: {e}")
+            return False, "UNKNOWN", 0.0
+
+    async def get_market_info(self, symbol: str) -> Dict[str, Any]:
+        """
+        Получает полную информацию о рынке (CCXT market structure)
+        """
+        try:
+            markets = await self.load_markets()
+            market = markets.get(symbol)
+            if not market:
+                raise ValueError(f"Symbol {symbol} not found in markets")
+            
+            return market
+            
+        except Exception as e:
+            logger.error(f"Failed to get market info for {symbol}: {e}")
+            raise
+
+    async def get_trading_fees(self, symbol: str) -> Dict[str, float]:
+        """
+        Получает торговые комиссии для символа
+        """
+        try:
+            market = await self.get_market_info(symbol)
+            return {
+                'maker': market.get('maker', 0.001),
+                'taker': market.get('taker', 0.001)
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get trading fees for {symbol}: {e}")
+            return {'maker': 0.001, 'taker': 0.001}
+
+    async def calculate_order_cost(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Рассчитывает стоимость ордера с учетом комиссий
+        """
+        try:
+            # Получаем цену если не указана
+            if not price:
+                ticker = await self.fetch_ticker(symbol)
+                if side.lower() == 'buy':
+                    price = ticker.get('ask', ticker.get('last', 0))
+                else:
+                    price = ticker.get('bid', ticker.get('last', 0))
+
+            # Базовая стоимость
+            base_cost = amount * price
+
+            # Получаем комиссии
+            fees = await self.get_trading_fees(symbol)
+            fee_rate = fees.get('taker', 0.001)  # Используем taker fee как более консервативную оценку
+            fee_cost = base_cost * fee_rate
+
+            return {
+                'base_cost': base_cost,
+                'fee_cost': fee_cost,
+                'total_cost': base_cost + fee_cost,
+                'fee_rate': fee_rate,
+                'price': price,
+                'amount': amount
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate order cost: {e}")
+            raise
+
+    # ===== AUTOTRADE INTEGRATION METHODS =====
+
+    def create_order_from_autotrade(self, order: Order) -> Dict[str, Any]:
+        """
+        Преобразует AutoTrade Order в CCXT параметры
+        """
+        # Валидируем Order
+        is_valid, errors = order.validate_ccxt_compliance()
+        if not is_valid:
+            raise ValueError(f"Order validation failed: {'; '.join(errors)}")
+
+        # Возвращаем CCXT-совместимые параметры
+        return {
+            'symbol': order.symbol,
+            'type': order.type,
+            'side': order.side,
+            'amount': order.amount,
+            'price': order.price,
+            'params': {
+                'timeInForce': order.timeInForce,
+                'clientOrderId': order.clientOrderId
+            }
+        }
+
+    async def sync_order_with_exchange(self, order: Order) -> Order:
+        """
+        Синхронизирует AutoTrade Order с биржей
+        """
+        if not order.id:
+            logger.warning("Cannot sync order without exchange ID")
+            return order
+
+        try:
+            # Получаем актуальную информацию с биржи
+            ccxt_order = await self.fetch_order(order.id, order.symbol)
+            
+            # Обновляем Order данными с биржи
+            order.update_from_ccxt_response(ccxt_order)
+            
+            logger.debug(f"Synced order {order.id} with exchange")
+            return order
+            
+        except ccxt.OrderNotFound:
+            # Ордер не найден на бирже - помечаем как rejected
+            order.status = Order.STATUS_REJECTED
+            order.error_message = "Order not found on exchange"
+            logger.warning(f"Order {order.id} not found on exchange")
+            return order
+            
+        except Exception as e:
+            logger.error(f"Failed to sync order {order.id}: {e}")
+            raise
+
+    # ===== CONNECTION MANAGEMENT =====
+
+    async def test_connection(self) -> bool:
+        """
+        Тестирует подключение к бирже
+        """
+        try:
+            # Тестируем REST API
+            await self.fetch_balance()
+            
+            # Тестируем WebSocket (пытаемся загрузить рынки)
+            await self.load_markets()
+            
+            logger.info(f"✅ Connection test successful for {self.exchange_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Connection test failed: {e}")
+            return False
+
+    async def get_server_time(self) -> int:
+        """
+        Получает время сервера биржи (Unix timestamp в миллисекундах)
+        """
+        try:
+            if hasattr(self.rest_client, 'fetch_time'):
+                return await self.rest_client.fetch_time()
+            else:
+                # Fallback - используем текущее время
+                return int(time.time() * 1000)
+                
+        except Exception as e:
+            logger.warning(f"Failed to get server time: {e}")
+            return int(time.time() * 1000)
+
+    async def get_exchange_status(self) -> Dict[str, Any]:
+        """
+        Получает статус биржи
+        """
+        try:
+            if hasattr(self.rest_client, 'fetch_status'):
+                status = await self.rest_client.fetch_status()
+                return status
+            else:
+                # Fallback - проверяем через balance
+                await self.fetch_balance()
+                return {
+                    'status': 'ok',
+                    'updated': int(time.time() * 1000)
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to get exchange status: {e}")
+            return {
+                'status': 'error',
+                'error': str(e),
+                'updated': int(time.time() * 1000)
+            }
+
+    async def close(self) -> None:
+        """
+        Закрывает соединения с биржей
+        """
+        try:
+            if self.rest_client:
+                await self.rest_client.close()
+                logger.debug("Closed REST client connection")
+                
+            if self.stream_client:
+                await self.stream_client.close()
+                logger.debug("Closed WebSocket client connection")
+                
+            logger.info(f"🔌 Closed all connections for {self.exchange_name}")
+            
+        except Exception as e:
+            logger.error(f"Error closing connections: {e}")
+
+    # ===== UTILITY METHODS =====
+
+    def get_exchange_info(self) -> Dict[str, Any]:
+        """
+        Возвращает информацию о коннекторе
+        """
+        return {
+            'exchange_name': self.exchange_name,
+            'use_sandbox': self.use_sandbox,
+            'has_rest_client': self.rest_client is not None,
+            'has_stream_client': self.stream_client is not None,
+            'markets_cached': self._markets_cache is not None,
+            'markets_cache_age': time.time() - self._markets_cache_time if self._markets_cache else None,
+            'ccxt_version': ccxt.__version__
+        }
+
+    def __repr__(self):
+        return (f"CCXTExchangeConnector(exchange={self.exchange_name}, "
+                f"sandbox={self.use_sandbox}, "
+                f"rest_client={'✓' if self.rest_client else '✗'}, "
+                f"stream_client={'✓' if self.stream_client else '✗'})")
+
+
+# ===== FACTORY FUNCTION =====
+
+def create_ccxt_connector(
+    exchange_name: str = "binance",
+    use_sandbox: bool = False
+) -> CCXTExchangeConnector:
+    """
+    Factory function для создания CCXT коннектора
+    """
+    return CCXTExchangeConnector(exchange_name, use_sandbox)
+
+
+# ===== EXAMPLE USAGE =====
+
+if __name__ == "__main__":
+    async def example_usage():
+        # Создание коннектора
+        connector = create_ccxt_connector("binance", use_sandbox=True)
+        
+        try:
+            # Тест соединения
+            if await connector.test_connection():
+                print("✅ Connection successful!")
+                
+                # Загрузка рынков
+                markets = await connector.load_markets()
+                print(f"📊 Loaded {len(markets)} markets")
+                
+                # Получение тикера
+                ticker = await connector.fetch_ticker("BTC/USDT")
+                print(f"💰 BTC/USDT: {ticker['last']}")
+                
+                # Получение баланса
+                balance = await connector.fetch_balance()
+                print(f"💳 USDT balance: {balance.get('USDT', {}).get('free', 0)}")
+                
+        except Exception as e:
+            print(f"❌ Error: {e}")
+            
+        finally:
+            # Закрытие соединений
+            await connector.close()
+    
+    asyncio.run(example_usage())
+```
+
+### 📄 `src\infrastructure\connectors\exchange_adapter.py`
+
+```python
+# infrastructure/connectors/exchange_adapter.py
+import logging
+from typing import Dict, List, Any, Optional, Tuple
+from src.infrastructure.connectors.ccxt_exchange_connector import CCXTExchangeConnector
+from src.domain.entities.order import Order, OrderExecutionResult
+
+logger = logging.getLogger(__name__)
+
+
+class ExchangeAdapter:
+    """
+    🔄 BACKWARD COMPATIBILITY ADAPTER
+    
+    Адаптер для обеспечения обратной совместимости между новым CCXT коннектором
+    и существующим кодом AutoTrade. Транслирует вызовы старого API в новый CCXT формат.
+    """
+
+    def __init__(self, exchange_name: str = "binance", use_sandbox: bool = False):
+        self.ccxt_connector = CCXTExchangeConnector(exchange_name, use_sandbox)
+        self.exchange_name = exchange_name
+        self.use_sandbox = use_sandbox
+
+    # ===== DIRECT DELEGATION METHODS =====
+
+    async def load_markets(self, reload: bool = False) -> Dict[str, Any]:
+        """Прямая делегация к CCXT connector"""
+        return await self.ccxt_connector.load_markets(reload)
+
+    async def fetch_balance(self) -> Dict[str, Any]:
+        """Прямая делегация к CCXT connector"""
+        return await self.ccxt_connector.fetch_balance()
+
+    async def test_connection(self) -> bool:
+        """Прямая делегация к CCXT connector"""
+        return await self.ccxt_connector.test_connection()
+
+    async def close(self) -> None:
+        """Прямая делегация к CCXT connector"""
+        await self.ccxt_connector.close()
+
+    # ===== STREAMING METHODS (прямая делегация) =====
+
+    async def watch_ticker(self, symbol: str) -> Dict[str, Any]:
+        """WebSocket стрим тикеров"""
+        return await self.ccxt_connector.watch_ticker(symbol)
+
+    async def watch_order_book(self, symbol: str) -> Dict[str, Any]:
+        """WebSocket стрим стакана заявок"""
+        return await self.ccxt_connector.watch_order_book(symbol)
+
+    async def watch_trades(self, symbol: str) -> List[Dict[str, Any]]:
+        """WebSocket стрим сделок"""
+        return await self.ccxt_connector.watch_trades(symbol)
+
+    async def watch_ohlcv(self, symbol: str, timeframe: str = '1m') -> List[List]:
+        """WebSocket стрим OHLCV"""
+        return await self.ccxt_connector.watch_ohlcv(symbol, timeframe)
+
+    # ===== ADAPTED METHODS FOR BACKWARD COMPATIBILITY =====
+
+    def _normalize_symbol(self, symbol: str) -> str:
+        """
+        LEGACY METHOD: Преобразует 'ETHUSDT' -> 'ETH/USDT'
+        Сохранено для обратной совместимости
+        """
+        if not symbol:
+            return None
+        if '/' in symbol:
+            return symbol
+        
+        # Обработка популярных пар
+        if symbol.endswith('USDT'):
+            return f"{symbol[:-4]}/USDT"
+        elif symbol.endswith('USDC'):
+            return f"{symbol[:-4]}/USDC"
+        elif symbol.endswith('BTC'):
+            return f"{symbol[:-3]}/BTC"
+        elif symbol.endswith('ETH'):
+            return f"{symbol[:-3]}/ETH"
+        
+        return symbol
+
+    async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
+        """LEGACY: Получение тикера с нормализацией символа"""
+        normalized_symbol = self._normalize_symbol(symbol)
+        return await self.ccxt_connector.fetch_ticker(normalized_symbol)
+
+    async def fetch_order_book(self, symbol: str, limit: int = 100) -> Dict[str, Any]:
+        """LEGACY: Получение стакана с нормализацией символа"""
+        normalized_symbol = self._normalize_symbol(symbol)
+        return await self.ccxt_connector.fetch_order_book(normalized_symbol, limit)
+
+    async def create_order(
+        self,
+        symbol: str,
+        side: str,
+        order_type: str,
+        amount: float,
+        price: float = None,
+        params: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        LEGACY: Создание ордера с адаптацией параметров
+        """
+        # Нормализуем символ
+        normalized_symbol = self._normalize_symbol(symbol)
+        
+        # Конвертируем старые типы в CCXT стандарт
+        ccxt_type = self._convert_order_type_to_ccxt(order_type)
+        ccxt_side = side.lower()
+        
+        return await self.ccxt_connector.create_order(
+            symbol=normalized_symbol,
+            type=ccxt_type,
+            side=ccxt_side,
+            amount=amount,
+            price=price,
+            params=params
+        )
+
+    async def cancel_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
+        """LEGACY: Отмена ордера с нормализацией символа"""
+        normalized_symbol = self._normalize_symbol(symbol)
+        return await self.ccxt_connector.cancel_order(order_id, normalized_symbol)
+
+    async def fetch_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
+        """LEGACY: Получение ордера с нормализацией символа"""
+        normalized_symbol = self._normalize_symbol(symbol)
+        return await self.ccxt_connector.fetch_order(order_id, normalized_symbol)
+
+    async def fetch_open_orders(self, symbol: str = None) -> List[Dict[str, Any]]:
+        """LEGACY: Получение открытых ордеров"""
+        normalized_symbol = self._normalize_symbol(symbol) if symbol else None
+        return await self.ccxt_connector.fetch_open_orders(normalized_symbol)
+
+    # ===== LEGACY BALANCE METHODS =====
+
+    async def get_available_balance(self, currency: str) -> float:
+        """LEGACY: Получение доступного баланса"""
+        return await self.ccxt_connector.get_available_balance(currency.upper())
+
+    async def get_balance(self, currency: str) -> float:
+        """LEGACY: Алиас для get_available_balance"""
+        return await self.get_available_balance(currency)
+
+    async def check_sufficient_balance(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float = None
+    ) -> Tuple[bool, str, float]:
+        """LEGACY: Проверка достаточности баланса"""
+        normalized_symbol = self._normalize_symbol(symbol)
+        return await self.ccxt_connector.check_sufficient_balance(
+            normalized_symbol, side.lower(), amount, price
+        )
+
+    # ===== LEGACY SPECIFIC METHODS =====
+
+    async def create_market_sell_order(self, symbol: str, amount: float) -> Optional[OrderExecutionResult]:
+        """
+        LEGACY: Создание маркет ордера на продажу для стоп-лосса
+        """
+        try:
+            normalized_symbol = self._normalize_symbol(symbol)
+            
+            # Создаем маркет ордер через CCXT
+            result = await self.ccxt_connector.create_market_order(
+                symbol=normalized_symbol,
+                side='sell',
+                amount=amount
+            )
+            
+            if result:
+                logger.info(f"✅ Market SELL order created: {result.get('id', 'N/A')}")
+                
+                # Возвращаем в старом формате для совместимости
+                return OrderExecutionResult(
+                    success=True,
+                    order=Order.from_ccxt_response(result),
+                    exchange_response=result
+                )
+            else:
+                logger.error("❌ Failed to create market sell order - no result")
+                return OrderExecutionResult(
+                    success=False,
+                    error_message="No result from exchange"
+                )
+                
+        except Exception as e:
+            logger.error(f"❌ Error creating market sell order: {e}")
+            return OrderExecutionResult(
+                success=False,
+                error_message=str(e)
+            )
+
+    async def get_symbol_info(self, symbol: str) -> Dict[str, Any]:
+        """
+        LEGACY: Получение информации о торговой паре в старом формате
+        """
+        try:
+            normalized_symbol = self._normalize_symbol(symbol)
+            market = await self.ccxt_connector.get_market_info(normalized_symbol)
+            
+            # Конвертируем в старый формат ExchangeInfo
+            limits = market.get('limits', {})
+            precision = market.get('precision', {})
+            
+            return {
+                'symbol': normalized_symbol,
+                'min_qty': limits.get('amount', {}).get('min'),
+                'max_qty': limits.get('amount', {}).get('max'),
+                'step_size': precision.get('amount'),
+                'min_price': limits.get('price', {}).get('min'),
+                'max_price': limits.get('price', {}).get('max'),
+                'tick_size': precision.get('price'),
+                'min_notional': limits.get('cost', {}).get('min'),
+                'fees': {
+                    'maker': market.get('maker', 0.001),
+                    'taker': market.get('taker', 0.001)
+                },
+                'precision': precision
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get symbol info for {symbol}: {e}")
+            raise
+
+    # ===== AUTOTRADE INTEGRATION METHODS =====
+
+    async def place_order_from_autotrade(self, order: Order) -> OrderExecutionResult:
+        """
+        Размещает AutoTrade Order на бирже через CCXT
+        """
+        try:
+            # Валидируем ордер
+            is_valid, error_msg = order.validate_for_exchange_placement()
+            if not is_valid:
+                return OrderExecutionResult(
+                    success=False,
+                    error_message=f"Order validation failed: {error_msg}"
+                )
+
+            # Создаем ордер через CCXT
+            ccxt_result = await self.ccxt_connector.create_order(
+                symbol=order.symbol,
+                type=order.type,
+                side=order.side,
+                amount=order.amount,
+                price=order.price,
+                params={
+                    'timeInForce': order.timeInForce,
+                    'clientOrderId': order.clientOrderId
+                }
+            )
+
+            # Обновляем ордер данными с биржи
+            order.update_from_ccxt_response(ccxt_result)
+            order.mark_as_placed_on_exchange(
+                ccxt_result['id'],
+                ccxt_result.get('timestamp')
+            )
+
+            return OrderExecutionResult(
+                success=True,
+                order=order,
+                exchange_response=ccxt_result
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to place order: {e}")
+            order.mark_as_failed(str(e))
+            
+            return OrderExecutionResult(
+                success=False,
+                order=order,
+                error_message=str(e)
+            )
+
+    async def sync_autotrade_order(self, order: Order) -> Order:
+        """
+        Синхронизирует AutoTrade Order с биржей
+        """
+        return await self.ccxt_connector.sync_order_with_exchange(order)
+
+    # ===== UTILITY METHODS =====
+
+    def _convert_order_type_to_ccxt(self, legacy_type: str) -> str:
+        """Конвертирует старые типы ордеров в CCXT стандарт"""
+        type_mapping = {
+            'LIMIT': 'limit',
+            'MARKET': 'market',
+            'STOP_LOSS': 'stop',
+            'TAKE_PROFIT': 'take_profit'
+        }
+        return type_mapping.get(legacy_type.upper(), legacy_type.lower())
+
+    def _convert_order_status_from_ccxt(self, ccxt_status: str) -> str:
+        """Конвертирует CCXT статусы в старый формат"""
+        status_mapping = {
+            'open': 'OPEN',
+            'closed': 'FILLED',
+            'canceled': 'CANCELED',
+            'expired': 'EXPIRED',
+            'rejected': 'FAILED',
+            'pending': 'PENDING'
+        }
+        return status_mapping.get(ccxt_status.lower(), ccxt_status.upper())
+
+    def get_adapter_info(self) -> Dict[str, Any]:
+        """Возвращает информацию об адаптере"""
+        return {
+            'adapter_type': 'ExchangeAdapter',
+            'exchange_name': self.exchange_name,
+            'use_sandbox': self.use_sandbox,
+            'ccxt_connector_info': self.ccxt_connector.get_exchange_info(),
+            'backward_compatibility': True
+        }
+
+    def __repr__(self):
+        return (f"ExchangeAdapter(exchange={self.exchange_name}, "
+                f"sandbox={self.use_sandbox}, "
+                f"ccxt_connector={self.ccxt_connector})")
+
+
+# ===== FACTORY FUNCTION FOR LEGACY COMPATIBILITY =====
+
+def create_exchange_connector(exchange_name: str = "binance", use_sandbox: bool = False) -> ExchangeAdapter:
+    """
+    Factory function для создания адаптера с обратной совместимостью
+    """
+    return ExchangeAdapter(exchange_name, use_sandbox)
+
+
+# Алиас для полной обратной совместимости
+CcxtExchangeConnector = ExchangeAdapter
 ```
 
 ### 📄 `src\infrastructure\connectors\exchange_connector.py`
@@ -9636,6 +21010,817 @@ class CcxtExchangeConnector:
         await self.client.close()
 ```
 
+### 📄 `src\infrastructure\database\ccxt_database_config.py`
+
+```python
+# infrastructure/database/ccxt_database_config.py
+import os
+import asyncio
+import asyncpg
+import logging
+from typing import Optional, Dict, Any
+from asyncpg import Pool
+
+logger = logging.getLogger(__name__)
+
+
+class CCXTDatabaseConfig:
+    """
+    🚀 CCXT Database Configuration Manager
+    
+    Управляет подключением к PostgreSQL с CCXT-совместимой схемой.
+    Поддерживает connection pooling и автоматическую миграцию.
+    """
+
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 5432,
+        database: str = "autotrade_ccxt",
+        username: str = "autotrade",
+        password: str = "autotrade_password",
+        pool_min_size: int = 5,
+        pool_max_size: int = 20,
+        command_timeout: int = 60,
+        ssl_mode: str = "prefer"
+    ):
+        self.host = host
+        self.port = port
+        self.database = database
+        self.username = username
+        self.password = password
+        self.pool_min_size = pool_min_size
+        self.pool_max_size = pool_max_size
+        self.command_timeout = command_timeout
+        self.ssl_mode = ssl_mode
+        
+        self._pool: Optional[Pool] = None
+
+    @classmethod
+    def from_env(cls) -> 'CCXTDatabaseConfig':
+        """
+        Создает конфигурацию из переменных окружения
+        """
+        return cls(
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=int(os.getenv("POSTGRES_PORT", "5432")),
+            database=os.getenv("POSTGRES_DB", "autotrade_ccxt"),
+            username=os.getenv("POSTGRES_USER", "autotrade"),
+            password=os.getenv("POSTGRES_PASSWORD", "autotrade_password"),
+            pool_min_size=int(os.getenv("POSTGRES_POOL_MIN_SIZE", "5")),
+            pool_max_size=int(os.getenv("POSTGRES_POOL_MAX_SIZE", "20")),
+            command_timeout=int(os.getenv("POSTGRES_COMMAND_TIMEOUT", "60")),
+            ssl_mode=os.getenv("POSTGRES_SSL_MODE", "prefer")
+        )
+
+    @classmethod
+    def from_config_dict(cls, config: Dict[str, Any]) -> 'CCXTDatabaseConfig':
+        """
+        Создает конфигурацию из словаря
+        """
+        db_config = config.get("database", {})
+        return cls(
+            host=db_config.get("host", "localhost"),
+            port=db_config.get("port", 5432),
+            database=db_config.get("database", "autotrade_ccxt"),
+            username=db_config.get("username", "autotrade"),
+            password=db_config.get("password", "autotrade_password"),
+            pool_min_size=db_config.get("pool_min_size", 5),
+            pool_max_size=db_config.get("pool_max_size", 20),
+            command_timeout=db_config.get("command_timeout", 60),
+            ssl_mode=db_config.get("ssl_mode", "prefer")
+        )
+
+    def get_connection_dsn(self) -> str:
+        """
+        Возвращает DSN строку подключения
+        """
+        return (
+            f"postgresql://{self.username}:{self.password}@"
+            f"{self.host}:{self.port}/{self.database}"
+            f"?sslmode={self.ssl_mode}"
+        )
+
+    async def create_connection_pool(self) -> Pool:
+        """
+        Создает pool соединений с базой данных
+        """
+        if self._pool is not None:
+            logger.warning("Connection pool already exists")
+            return self._pool
+
+        try:
+            self._pool = await asyncpg.create_pool(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.username,
+                password=self.password,
+                min_size=self.pool_min_size,
+                max_size=self.pool_max_size,
+                command_timeout=self.command_timeout,
+                ssl=self.ssl_mode
+            )
+            
+            logger.info(f"Created PostgreSQL connection pool: {self.host}:{self.port}/{self.database}")
+            
+            # Проверяем подключение
+            await self.health_check()
+            
+            return self._pool
+            
+        except Exception as e:
+            logger.error(f"Failed to create connection pool: {str(e)}")
+            raise
+
+    async def close_connection_pool(self) -> None:
+        """
+        Закрывает pool соединений
+        """
+        if self._pool is not None:
+            await self._pool.close()
+            self._pool = None
+            logger.info("Closed PostgreSQL connection pool")
+
+    def get_pool(self) -> Optional[Pool]:
+        """
+        Возвращает текущий pool соединений
+        """
+        return self._pool
+
+    async def health_check(self) -> Dict[str, Any]:
+        """
+        Проверка здоровья подключения к БД
+        """
+        if self._pool is None:
+            return {"status": "no_pool", "error": "Connection pool not initialized"}
+
+        try:
+            async with self._pool.acquire() as conn:
+                # Проверяем подключение
+                await conn.fetchval("SELECT 1")
+                
+                # Проверяем версию PostgreSQL
+                pg_version = await conn.fetchval("SELECT version()")
+                
+                # Проверяем наличие CCXT схемы
+                ccxt_tables = await conn.fetchval("""
+                    SELECT COUNT(*) FROM information_schema.tables 
+                    WHERE table_name IN ('ccxt_orders', 'ccxt_markets', 'ccxt_tickers')
+                """)
+                
+                # Статистика pool
+                pool_stats = {
+                    "size": self._pool.get_size(),
+                    "free": self._pool.get_size() - self._pool.get_busy_size(),
+                    "busy": self._pool.get_busy_size(),
+                    "min_size": self.pool_min_size,
+                    "max_size": self.pool_max_size
+                }
+                
+                return {
+                    "status": "healthy",
+                    "postgresql_version": pg_version,
+                    "ccxt_tables_count": ccxt_tables,
+                    "ccxt_schema_ready": ccxt_tables >= 3,
+                    "pool_stats": pool_stats,
+                    "connection_info": {
+                        "host": self.host,
+                        "port": self.port,
+                        "database": self.database,
+                        "ssl_mode": self.ssl_mode
+                    }
+                }
+                
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "error": str(e)
+            }
+
+    async def create_database_if_not_exists(self) -> bool:
+        """
+        Создает базу данных, если она не существует
+        """
+        try:
+            # Подключаемся к системной БД postgres для создания нашей БД
+            system_conn = await asyncpg.connect(
+                host=self.host,
+                port=self.port,
+                database="postgres",
+                user=self.username,
+                password=self.password
+            )
+            
+            # Проверяем существование БД
+            db_exists = await system_conn.fetchval(
+                "SELECT 1 FROM pg_database WHERE datname = $1", 
+                self.database
+            )
+            
+            if not db_exists:
+                # Создаем БД
+                await system_conn.execute(f'CREATE DATABASE "{self.database}"')
+                logger.info(f"Created database: {self.database}")
+                
+            await system_conn.close()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to create database {self.database}: {str(e)}")
+            return False
+
+    async def execute_schema_migration(self, schema_file_path: str) -> bool:
+        """
+        Выполняет миграцию схемы из SQL файла
+        """
+        if self._pool is None:
+            logger.error("Connection pool not initialized")
+            return False
+
+        try:
+            # Читаем SQL файл
+            with open(schema_file_path, 'r', encoding='utf-8') as f:
+                schema_sql = f.read()
+            
+            async with self._pool.acquire() as conn:
+                await conn.execute(schema_sql)
+                logger.info(f"Executed schema migration from: {schema_file_path}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to execute schema migration: {str(e)}")
+            return False
+
+    async def check_schema_version(self) -> Optional[str]:
+        """
+        Проверяет версию схемы в БД
+        """
+        if self._pool is None:
+            return None
+
+        try:
+            async with self._pool.acquire() as conn:
+                version = await conn.fetchval("""
+                    SELECT value FROM configuration 
+                    WHERE key = 'schema_version' AND category = 'system'
+                """)
+                return version
+                
+        except Exception as e:
+            logger.warning(f"Could not check schema version: {str(e)}")
+            return None
+
+    async def get_table_statistics(self) -> Dict[str, int]:
+        """
+        Получает статистику по таблицам
+        """
+        if self._pool is None:
+            return {}
+
+        try:
+            async with self._pool.acquire() as conn:
+                tables = ['ccxt_orders', 'ccxt_markets', 'ccxt_tickers', 'deals']
+                stats = {}
+                
+                for table in tables:
+                    try:
+                        count = await conn.fetchval(f"SELECT COUNT(*) FROM {table}")
+                        stats[table] = count or 0
+                    except:
+                        stats[table] = 0
+                
+                return stats
+                
+        except Exception as e:
+            logger.error(f"Failed to get table statistics: {str(e)}")
+            return {}
+
+    def __repr__(self):
+        return (f"CCXTDatabaseConfig(host={self.host}, port={self.port}, "
+                f"database={self.database}, pool_size={self.pool_min_size}-{self.pool_max_size})")
+
+
+# ===== UTILITY FUNCTIONS =====
+
+async def initialize_ccxt_database(config: CCXTDatabaseConfig) -> bool:
+    """
+    Полная инициализация CCXT базы данных
+    """
+    logger.info("Initializing CCXT database...")
+    
+    try:
+        # 1. Создаем БД если не существует
+        if not await config.create_database_if_not_exists():
+            logger.error("Failed to create database")
+            return False
+        
+        # 2. Создаем connection pool
+        pool = await config.create_connection_pool()
+        if not pool:
+            logger.error("Failed to create connection pool")
+            return False
+        
+        # 3. Проверяем схему
+        schema_version = await config.check_schema_version()
+        logger.info(f"Current schema version: {schema_version}")
+        
+        # 4. Health check
+        health = await config.health_check()
+        if health["status"] != "healthy":
+            logger.error(f"Database health check failed: {health}")
+            return False
+        
+        logger.info("CCXT database initialization completed successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize CCXT database: {str(e)}")
+        return False
+
+
+async def migrate_to_ccxt_schema(
+    config: CCXTDatabaseConfig,
+    schema_file: str,
+    migration_file: str
+) -> bool:
+    """
+    Выполняет полную миграцию к CCXT схеме
+    """
+    logger.info("Starting CCXT schema migration...")
+    
+    try:
+        # 1. Выполняем CCXT схему
+        if not await config.execute_schema_migration(schema_file):
+            logger.error("Failed to execute CCXT schema")
+            return False
+        
+        # 2. Выполняем миграцию данных
+        if not await config.execute_schema_migration(migration_file):
+            logger.error("Failed to execute data migration")
+            return False
+        
+        # 3. Проверяем результат
+        health = await config.health_check()
+        if not health.get("ccxt_schema_ready", False):
+            logger.error("CCXT schema not ready after migration")
+            return False
+        
+        logger.info("CCXT schema migration completed successfully")
+        return True
+        
+    except Exception as e:
+        logger.error(f"CCXT schema migration failed: {str(e)}")
+        return False
+
+
+# ===== EXAMPLE USAGE =====
+
+if __name__ == "__main__":
+    async def example_usage():
+        # Создание конфигурации
+        config = CCXTDatabaseConfig.from_env()
+        
+        # Инициализация БД
+        success = await initialize_ccxt_database(config)
+        if success:
+            print("Database initialized successfully!")
+            
+            # Health check
+            health = await config.health_check()
+            print(f"Health status: {health}")
+            
+            # Статистика таблиц
+            stats = await config.get_table_statistics()
+            print(f"Table statistics: {stats}")
+        
+        # Закрытие соединений
+        await config.close_connection_pool()
+    
+    asyncio.run(example_usage())
+```
+
+### 📄 `src\infrastructure\database\database_manager.py`
+
+```python
+import asyncio
+import logging
+import os
+from typing import Optional, Dict, Any, List
+from pathlib import Path
+import aiosqlite
+import asyncpg
+import json
+
+logger = logging.getLogger(__name__)
+
+
+class DatabaseManager:
+    """
+    Менеджер базы данных для управления подключениями к PostgreSQL и SQLite
+    """
+    
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        self.db_type = config.get('type', 'sqlite').lower()
+        self.connection_pool = None
+        self.sqlite_connection = None
+        
+        # Пути к схемам
+        self.schema_dir = Path(__file__).parent / 'schemas'
+        self.postgresql_schema = self.schema_dir / 'postgresql_schema.sql'
+        self.sqlite_schema = self.schema_dir / 'sqlite_schema.sql'
+    
+    async def initialize(self) -> bool:
+        """Инициализация подключения к базе данных"""
+        try:
+            if self.db_type == 'postgresql':
+                return await self._initialize_postgresql()
+            elif self.db_type == 'sqlite':
+                return await self._initialize_sqlite()
+            else:
+                logger.error(f"Unsupported database type: {self.db_type}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            return False
+    
+    async def _initialize_postgresql(self) -> bool:
+        """Инициализация PostgreSQL"""
+        try:
+            dsn = self._build_postgresql_dsn()
+            
+            # Создаем пул соединений
+            self.connection_pool = await asyncpg.create_pool(
+                dsn=dsn,
+                min_size=self.config.get('min_pool_size', 2),
+                max_size=self.config.get('max_pool_size', 10),
+                command_timeout=self.config.get('command_timeout', 60)
+            )
+            
+            logger.info("✅ PostgreSQL connection pool created successfully")
+            
+            # Проверяем подключение
+            async with self.connection_pool.acquire() as conn:
+                result = await conn.fetchval("SELECT version()")
+                logger.info(f"PostgreSQL version: {result}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize PostgreSQL: {e}")
+            return False
+    
+    async def _initialize_sqlite(self) -> bool:
+        """Инициализация SQLite"""
+        try:
+            db_path = self.config.get('path', 'autotrade.db')
+            
+            # Создаем директорию если нужно
+            db_dir = Path(db_path).parent
+            db_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Устанавливаем соединение
+            self.sqlite_connection = await aiosqlite.connect(db_path)
+            
+            # Включаем внешние ключи
+            await self.sqlite_connection.execute("PRAGMA foreign_keys = ON")
+            
+            # Настройки производительности
+            await self.sqlite_connection.execute("PRAGMA journal_mode = WAL")
+            await self.sqlite_connection.execute("PRAGMA synchronous = NORMAL")
+            await self.sqlite_connection.execute("PRAGMA cache_size = -64000")  # 64MB cache
+            
+            await self.sqlite_connection.commit()
+            
+            logger.info(f"✅ SQLite database initialized: {db_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize SQLite: {e}")
+            return False
+    
+    def _build_postgresql_dsn(self) -> str:
+        """Построение DSN для PostgreSQL"""
+        host = self.config.get('host', 'localhost')
+        port = self.config.get('port', 5432)
+        database = self.config.get('database', 'autotrade')
+        user = self.config.get('user', 'autotrade')
+        password = self.config.get('password', '')
+        
+        return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+    
+    async def create_schema(self) -> bool:
+        """Создание схемы базы данных"""
+        try:
+            if self.db_type == 'postgresql':
+                return await self._create_postgresql_schema()
+            elif self.db_type == 'sqlite':
+                return await self._create_sqlite_schema()
+            else:
+                logger.error(f"Unsupported database type: {self.db_type}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Schema creation failed: {e}")
+            return False
+    
+    async def _create_postgresql_schema(self) -> bool:
+        """Создание схемы PostgreSQL"""
+        try:
+            if not self.postgresql_schema.exists():
+                logger.error(f"PostgreSQL schema file not found: {self.postgresql_schema}")
+                return False
+            
+            schema_sql = self.postgresql_schema.read_text(encoding='utf-8')
+            
+            async with self.connection_pool.acquire() as conn:
+                # Выполняем скрипт по частям для лучшего контроля ошибок
+                statements = schema_sql.split(';')
+                
+                for statement in statements:
+                    statement = statement.strip()
+                    if statement and not statement.startswith('--'):
+                        try:
+                            await conn.execute(statement)
+                        except Exception as e:
+                            # Игнорируем ошибки создания уже существующих объектов
+                            if "already exists" not in str(e).lower():
+                                logger.warning(f"Schema statement failed: {e}")
+                                logger.debug(f"Statement: {statement[:100]}...")
+            
+            logger.info("✅ PostgreSQL schema created successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to create PostgreSQL schema: {e}")
+            return False
+    
+    async def _create_sqlite_schema(self) -> bool:
+        """Создание схемы SQLite"""
+        try:
+            if not self.sqlite_schema.exists():
+                logger.error(f"SQLite schema file not found: {self.sqlite_schema}")
+                return False
+            
+            schema_sql = self.sqlite_schema.read_text(encoding='utf-8')
+            
+            # Выполняем скрипт
+            await self.sqlite_connection.executescript(schema_sql)
+            await self.sqlite_connection.commit()
+            
+            logger.info("✅ SQLite schema created successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to create SQLite schema: {e}")
+            return False
+    
+    async def get_connection(self):
+        """Получение соединения с базой данных"""
+        if self.db_type == 'postgresql':
+            if not self.connection_pool:
+                raise RuntimeError("PostgreSQL pool not initialized")
+            return self.connection_pool.acquire()
+        elif self.db_type == 'sqlite':
+            if not self.sqlite_connection:
+                raise RuntimeError("SQLite connection not initialized")
+            return self.sqlite_connection
+        else:
+            raise ValueError(f"Unsupported database type: {self.db_type}")
+    
+    async def execute_query(self, query: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
+        """Выполнение SELECT запроса"""
+        try:
+            if self.db_type == 'postgresql':
+                async with self.connection_pool.acquire() as conn:
+                    if params:
+                        rows = await conn.fetch(query, *params)
+                    else:
+                        rows = await conn.fetch(query)
+                    return [dict(row) for row in rows]
+            
+            elif self.db_type == 'sqlite':
+                async with self.sqlite_connection.execute(query, params or ()) as cursor:
+                    rows = await cursor.fetchall()
+                    columns = [description[0] for description in cursor.description]
+                    return [dict(zip(columns, row)) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Query execution failed: {e}")
+            logger.debug(f"Query: {query}")
+            logger.debug(f"Params: {params}")
+            raise
+    
+    async def execute_command(self, command: str, params: Optional[tuple] = None) -> int:
+        """Выполнение INSERT/UPDATE/DELETE команды"""
+        try:
+            if self.db_type == 'postgresql':
+                async with self.connection_pool.acquire() as conn:
+                    if params:
+                        result = await conn.execute(command, *params)
+                    else:
+                        result = await conn.execute(command)
+                    # Извлекаем количество затронутых строк из результата
+                    return int(result.split()[-1]) if result.split() else 0
+            
+            elif self.db_type == 'sqlite':
+                cursor = await self.sqlite_connection.execute(command, params or ())
+                await self.sqlite_connection.commit()
+                return cursor.rowcount
+            
+        except Exception as e:
+            logger.error(f"Command execution failed: {e}")
+            logger.debug(f"Command: {command}")
+            logger.debug(f"Params: {params}")
+            raise
+    
+    async def execute_many(self, command: str, params_list: List[tuple]) -> int:
+        """Выполнение команды с множественными параметрами"""
+        try:
+            if self.db_type == 'postgresql':
+                async with self.connection_pool.acquire() as conn:
+                    await conn.executemany(command, params_list)
+                    return len(params_list)
+            
+            elif self.db_type == 'sqlite':
+                await self.sqlite_connection.executemany(command, params_list)
+                await self.sqlite_connection.commit()
+                return len(params_list)
+            
+        except Exception as e:
+            logger.error(f"Batch execution failed: {e}")
+            logger.debug(f"Command: {command}")
+            logger.debug(f"Batch size: {len(params_list)}")
+            raise
+    
+    async def transaction(self):
+        """Создание транзакции"""
+        if self.db_type == 'postgresql':
+            return self.connection_pool.acquire()
+        elif self.db_type == 'sqlite':
+            # SQLite автоматически использует транзакции
+            return self.sqlite_connection
+    
+    async def health_check(self) -> Dict[str, Any]:
+        """Проверка здоровья базы данных"""
+        try:
+            start_time = asyncio.get_event_loop().time()
+            
+            if self.db_type == 'postgresql':
+                async with self.connection_pool.acquire() as conn:
+                    version = await conn.fetchval("SELECT version()")
+                    pool_size = self.connection_pool.get_size()
+                    
+                end_time = asyncio.get_event_loop().time()
+                
+                return {
+                    "status": "healthy",
+                    "type": "postgresql",
+                    "version": version,
+                    "pool_size": pool_size,
+                    "response_time_ms": round((end_time - start_time) * 1000, 2)
+                }
+            
+            elif self.db_type == 'sqlite':
+                cursor = await self.sqlite_connection.execute("SELECT sqlite_version()")
+                version = (await cursor.fetchone())[0]
+                
+                end_time = asyncio.get_event_loop().time()
+                
+                return {
+                    "status": "healthy",
+                    "type": "sqlite",
+                    "version": version,
+                    "response_time_ms": round((end_time - start_time) * 1000, 2)
+                }
+            
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "type": self.db_type,
+                "error": str(e)
+            }
+    
+    async def cleanup_old_data(self, days_to_keep: Dict[str, int]) -> Dict[str, int]:
+        """Очистка старых данных"""
+        try:
+            results = {}
+            
+            # Очистка потоковых данных
+            if 'stream_data' in days_to_keep:
+                if self.db_type == 'postgresql':
+                    count = await self.execute_command(
+                        "SELECT cleanup_old_stream_data($1)",
+                        (days_to_keep['stream_data'],)
+                    )
+                else:
+                    count = await self.execute_command(
+                        "DELETE FROM stream_data WHERE created_at < datetime('now', '-{} days')".format(
+                            days_to_keep['stream_data']
+                        )
+                    )
+                results['stream_data'] = count
+            
+            # Очистка индикаторов
+            if 'indicators' in days_to_keep:
+                if self.db_type == 'postgresql':
+                    count = await self.execute_command(
+                        "SELECT cleanup_old_indicators($1)",
+                        (days_to_keep['indicators'],)
+                    )
+                else:
+                    count = await self.execute_command(
+                        "DELETE FROM indicators WHERE created_at < datetime('now', '-{} days')".format(
+                            days_to_keep['indicators']
+                        )
+                    )
+                results['indicators'] = count
+            
+            # Очистка торговых сигналов
+            if 'trading_signals' in days_to_keep:
+                if self.db_type == 'postgresql':
+                    count = await self.execute_command(
+                        "SELECT cleanup_old_trading_signals($1)",
+                        (days_to_keep['trading_signals'],)
+                    )
+                else:
+                    count = await self.execute_command(
+                        "DELETE FROM trading_signals WHERE created_at < datetime('now', '-{} days')".format(
+                            days_to_keep['trading_signals']
+                        )
+                    )
+                results['trading_signals'] = count
+            
+            # Очистка просроченного кэша
+            if self.db_type == 'postgresql':
+                cache_count = await self.execute_command("SELECT cleanup_expired_cache()")
+            else:
+                cache_count = await self.execute_command(
+                    "DELETE FROM cache_entries WHERE expires_at IS NOT NULL AND expires_at < datetime('now')"
+                )
+            results['cache'] = cache_count
+            
+            logger.info(f"Data cleanup completed: {results}")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Data cleanup failed: {e}")
+            return {}
+    
+    async def close(self) -> None:
+        """Закрытие соединений с базой данных"""
+        try:
+            if self.connection_pool:
+                await self.connection_pool.close()
+                logger.info("PostgreSQL connection pool closed")
+            
+            if self.sqlite_connection:
+                await self.sqlite_connection.close()
+                logger.info("SQLite connection closed")
+                
+        except Exception as e:
+            logger.error(f"Error closing database connections: {e}")
+    
+    def __del__(self):
+        """Деструктор для гарантированного закрытия соединений"""
+        if self.connection_pool or self.sqlite_connection:
+            logger.warning("Database connections not properly closed - forcing cleanup")
+
+
+# Утилитарные функции для создания менеджера БД
+
+def create_database_manager(config: Dict[str, Any]) -> DatabaseManager:
+    """Создание менеджера базы данных из конфигурации"""
+    return DatabaseManager(config)
+
+
+async def init_database_from_config(config_path: str) -> Optional[DatabaseManager]:
+    """Инициализация базы данных из файла конфигурации"""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        
+        db_config = config.get('database', {})
+        if not db_config:
+            logger.error("Database configuration not found")
+            return None
+        
+        db_manager = create_database_manager(db_config)
+        
+        if await db_manager.initialize():
+            logger.info("✅ Database initialized from config")
+            return db_manager
+        else:
+            logger.error("❌ Database initialization failed")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Failed to initialize database from config: {e}")
+        return None
+```
+
 ### 📄 `src\infrastructure\repositories\__init__.py`
 
 ```python
@@ -9694,6 +21879,374 @@ class InMemoryDealsRepository(DealsRepository):
         """Возвращает все сделки (открытые, закрытые, отмененные)"""
         return list(self._storage.values())
 
+```
+
+### 📄 `src\infrastructure\repositories\in_memory_state_repository.py`
+
+```python
+import asyncio
+import logging
+import json
+import time
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
+
+from src.domain.entities.application_state import (
+    ApplicationStateInfo, SystemSnapshot, RecoveryInfo, 
+    StateTransition, TradingSessionState
+)
+from src.domain.repositories.i_state_repository import IStateRepository
+
+logger = logging.getLogger(__name__)
+
+
+class InMemoryStateRepository(IStateRepository):
+    """
+    In-memory реализация репозитория состояний для разработки и тестирования
+    """
+    
+    def __init__(self):
+        self._application_state: Optional[ApplicationStateInfo] = None
+        self._system_snapshots: Dict[str, SystemSnapshot] = {}
+        self._recovery_info: Dict[str, RecoveryInfo] = {}
+        self._state_transitions: List[StateTransition] = []
+        self._trading_sessions: Dict[str, TradingSessionState] = {}
+        
+        # Для упорядочивания
+        self._snapshot_order: List[str] = []
+        self._transition_order: List[StateTransition] = []
+    
+    async def save_application_state(self, state_info: ApplicationStateInfo) -> bool:
+        """Сохранить текущее состояние приложения"""
+        try:
+            self._application_state = state_info
+            logger.debug(f"💾 Application state saved: {state_info.current_state.value}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save application state: {e}")
+            return False
+    
+    async def load_application_state(self) -> Optional[ApplicationStateInfo]:
+        """Загрузить последнее состояние приложения"""
+        try:
+            if self._application_state:
+                logger.debug(f"📥 Application state loaded: {self._application_state.current_state.value}")
+            return self._application_state
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load application state: {e}")
+            return None
+    
+    async def save_system_snapshot(self, snapshot: SystemSnapshot) -> bool:
+        """Сохранить снимок системы"""
+        try:
+            self._system_snapshots[snapshot.snapshot_id] = snapshot
+            self._snapshot_order.append(snapshot.snapshot_id)
+            
+            logger.debug(f"📸 System snapshot saved: {snapshot.snapshot_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save system snapshot: {e}")
+            return False
+    
+    async def load_system_snapshot(self, snapshot_id: Optional[str] = None) -> Optional[SystemSnapshot]:
+        """Загрузить снимок системы (последний или по ID)"""
+        try:
+            if snapshot_id:
+                return self._system_snapshots.get(snapshot_id)
+            
+            # Возвращаем последний снимок
+            if self._snapshot_order:
+                latest_id = self._snapshot_order[-1]
+                return self._system_snapshots.get(latest_id)
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load system snapshot: {e}")
+            return None
+    
+    async def get_system_snapshots(
+        self, 
+        limit: int = 10,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> List[SystemSnapshot]:
+        """Получить список снимков системы"""
+        try:
+            snapshots = []
+            
+            # Сортируем по времени (новые сначала)
+            sorted_ids = sorted(
+                self._snapshot_order, 
+                key=lambda sid: self._system_snapshots[sid].timestamp, 
+                reverse=True
+            )
+            
+            for snapshot_id in sorted_ids[:limit]:
+                snapshot = self._system_snapshots[snapshot_id]
+                
+                # Фильтр по времени
+                if start_timestamp and snapshot.timestamp < start_timestamp:
+                    continue
+                if end_timestamp and snapshot.timestamp > end_timestamp:
+                    continue
+                
+                snapshots.append(snapshot)
+            
+            return snapshots
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get system snapshots: {e}")
+            return []
+    
+    async def save_recovery_info(self, recovery_info: RecoveryInfo) -> bool:
+        """Сохранить информацию для восстановления"""
+        try:
+            self._recovery_info[recovery_info.snapshot_id] = recovery_info
+            logger.debug(f"💾 Recovery info saved: {recovery_info.snapshot_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save recovery info: {e}")
+            return False
+    
+    async def get_recovery_info(self, snapshot_id: str) -> Optional[RecoveryInfo]:
+        """Получить информацию для восстановления"""
+        try:
+            return self._recovery_info.get(snapshot_id)
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get recovery info: {e}")
+            return None
+    
+    async def log_state_transition(self, transition: StateTransition) -> bool:
+        """Записать переход состояний"""
+        try:
+            self._state_transitions.append(transition)
+            self._transition_order.append(transition)
+            
+            logger.debug(f"📝 State transition logged: {transition.from_state.value} → {transition.to_state.value}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to log state transition: {e}")
+            return False
+    
+    async def get_state_transitions(
+        self,
+        limit: int = 50,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> List[StateTransition]:
+        """Получить историю переходов состояний"""
+        try:
+            transitions = []
+            
+            # Сортируем по времени (новые сначала)
+            sorted_transitions = sorted(
+                self._state_transitions, 
+                key=lambda t: t.timestamp, 
+                reverse=True
+            )
+            
+            for transition in sorted_transitions[:limit]:
+                # Фильтр по времени
+                if start_timestamp and transition.timestamp < start_timestamp:
+                    continue
+                if end_timestamp and transition.timestamp > end_timestamp:
+                    continue
+                
+                transitions.append(transition)
+            
+            return transitions
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get state transitions: {e}")
+            return []
+    
+    async def save_trading_session_state(self, session_state: TradingSessionState) -> bool:
+        """Сохранить состояние торговой сессии"""
+        try:
+            self._trading_sessions[session_state.session_id] = session_state
+            logger.debug(f"💾 Trading session state saved: {session_state.session_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save trading session state: {e}")
+            return False
+    
+    async def load_trading_session_state(self, session_id: str) -> Optional[TradingSessionState]:
+        """Загрузить состояние торговой сессии"""
+        try:
+            return self._trading_sessions.get(session_id)
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load trading session state: {e}")
+            return None
+    
+    async def get_active_trading_sessions(self) -> List[TradingSessionState]:
+        """Получить активные торговые сессии"""
+        try:
+            active_sessions = []
+            
+            for session in self._trading_sessions.values():
+                if session.is_active:
+                    active_sessions.append(session)
+            
+            return active_sessions
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get active trading sessions: {e}")
+            return []
+    
+    async def cleanup_old_snapshots(self, days_to_keep: int = 30) -> int:
+        """Очистить старые снимки"""
+        try:
+            cutoff_time = int((datetime.now() - timedelta(days=days_to_keep)).timestamp() * 1000)
+            
+            snapshots_to_remove = []
+            for snapshot_id, snapshot in self._system_snapshots.items():
+                if snapshot.timestamp < cutoff_time:
+                    snapshots_to_remove.append(snapshot_id)
+            
+            # Удаляем старые снимки
+            for snapshot_id in snapshots_to_remove:
+                del self._system_snapshots[snapshot_id]
+                if snapshot_id in self._snapshot_order:
+                    self._snapshot_order.remove(snapshot_id)
+                # Удаляем связанную recovery info
+                self._recovery_info.pop(snapshot_id, None)
+            
+            logger.debug(f"🧹 Cleaned up {len(snapshots_to_remove)} old snapshots")
+            return len(snapshots_to_remove)
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to cleanup old snapshots: {e}")
+            return 0
+    
+    async def cleanup_old_transitions(self, days_to_keep: int = 90) -> int:
+        """Очистить старые переходы состояний"""
+        try:
+            cutoff_time = int((datetime.now() - timedelta(days=days_to_keep)).timestamp() * 1000)
+            
+            original_count = len(self._state_transitions)
+            
+            # Фильтруем переходы
+            self._state_transitions = [
+                transition for transition in self._state_transitions
+                if transition.timestamp >= cutoff_time
+            ]
+            
+            # Обновляем порядок
+            self._transition_order = [
+                transition for transition in self._transition_order
+                if transition.timestamp >= cutoff_time
+            ]
+            
+            removed_count = original_count - len(self._state_transitions)
+            
+            logger.debug(f"🧹 Cleaned up {removed_count} old state transitions")
+            return removed_count
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to cleanup old transitions: {e}")
+            return 0
+    
+    async def get_recovery_candidates(self) -> List[RecoveryInfo]:
+        """Получить кандидатов для восстановления (отсортированных по приоритету)"""
+        try:
+            candidates = list(self._recovery_info.values())
+            
+            # Сортируем по приоритету (1 = highest) и времени создания
+            candidates.sort(key=lambda r: (r.recovery_priority, -r.created_at))
+            
+            return candidates
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to get recovery candidates: {e}")
+            return []
+    
+    # Дополнительные методы для отладки и тестирования
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Получить статистику репозитория"""
+        return {
+            'snapshots_count': len(self._system_snapshots),
+            'transitions_count': len(self._state_transitions),
+            'trading_sessions_count': len(self._trading_sessions),
+            'recovery_info_count': len(self._recovery_info),
+            'active_sessions_count': len([s for s in self._trading_sessions.values() if s.is_active])
+        }
+    
+    def clear_all_data(self) -> None:
+        """Очистить все данные (для тестирования)"""
+        self._application_state = None
+        self._system_snapshots.clear()
+        self._recovery_info.clear()
+        self._state_transitions.clear()
+        self._trading_sessions.clear()
+        self._snapshot_order.clear()
+        self._transition_order.clear()
+        
+        logger.debug("🧹 All state repository data cleared")
+    
+    async def export_state_data(self) -> Dict[str, Any]:
+        """Экспорт всех данных состояния"""
+        try:
+            return {
+                'application_state': self._application_state.to_dict() if self._application_state else None,
+                'system_snapshots': {
+                    sid: {
+                        'timestamp': snapshot.timestamp,
+                        'application_state': snapshot.application_state.value,
+                        'trading_sessions_count': len(snapshot.trading_sessions),
+                        'active_deals_count': len(snapshot.active_deals),
+                        'pending_orders_count': len(snapshot.pending_orders),
+                        'system_metrics': snapshot.system_metrics
+                    }
+                    for sid, snapshot in self._system_snapshots.items()
+                },
+                'recovery_info': {
+                    rid: {
+                        'snapshot_id': info.snapshot_id,
+                        'created_at': info.created_at,
+                        'application_version': info.application_version,
+                        'recovery_priority': info.recovery_priority,
+                        'recovery_notes': info.recovery_notes
+                    }
+                    for rid, info in self._recovery_info.items()
+                },
+                'state_transitions': [
+                    {
+                        'from_state': t.from_state.value,
+                        'to_state': t.to_state.value,
+                        'timestamp': t.timestamp,
+                        'reason': t.reason,
+                        'success': t.success,
+                        'duration_ms': t.duration_ms
+                    }
+                    for t in self._state_transitions[-50:]  # Последние 50
+                ],
+                'trading_sessions': {
+                    sid: {
+                        'session_id': session.session_id,
+                        'currency_pair': session.currency_pair,
+                        'is_active': session.is_active,
+                        'start_timestamp': session.start_timestamp,
+                        'active_deals_count': session.active_deals_count,
+                        'open_orders_count': session.open_orders_count
+                    }
+                    for sid, session in self._trading_sessions.items()
+                },
+                'repository_stats': self.get_statistics()
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to export state data: {e}")
+            return {}
 ```
 
 ### 📄 `src\infrastructure\repositories\orders_repository.py`
@@ -10194,6 +22747,4336 @@ class InMemoryOrdersRepository(OrdersRepository):
 
 ```
 
+### 📄 `src\infrastructure\repositories\postgresql\__init__.py`
+
+```python
+# PostgreSQL Repository Implementations
+
+from .postgresql_indicator_repository import PostgreSQLIndicatorRepository
+from .postgresql_order_book_repository import PostgreSQLOrderBookRepository
+from .postgresql_trading_signal_repository import PostgreSQLTradingSignalRepository
+from .postgresql_statistics_repository import PostgreSQLStatisticsRepository
+from .postgresql_configuration_repository import PostgreSQLConfigurationRepository
+from .postgresql_cache_repository import PostgreSQLCacheRepository
+
+__all__ = [
+    'PostgreSQLIndicatorRepository',
+    'PostgreSQLOrderBookRepository', 
+    'PostgreSQLTradingSignalRepository',
+    'PostgreSQLStatisticsRepository',
+    'PostgreSQLConfigurationRepository',
+    'PostgreSQLCacheRepository'
+]
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_cache_repository.py`
+
+```python
+import asyncio
+import logging
+from typing import Optional, Dict, Any, List
+from datetime import datetime, timedelta
+import json
+
+from src.domain.repositories.i_cache_repository import ICacheRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLCacheRepository(ICacheRepository):
+    """
+    PostgreSQL реализация репозитория кэша
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self._ensure_postgresql()
+        self._memory_cache = {}  # Дополнительный in-memory кэш для горячих данных
+        self._max_memory_cache_size = 1000
+    
+    def _ensure_postgresql(self):
+        """Проверяем, что используется PostgreSQL"""
+        if self.db_manager.db_type != 'postgresql':
+            raise ValueError("PostgreSQLCacheRepository requires PostgreSQL database")
+    
+    async def set(
+        self,
+        key: str,
+        value: Any,
+        ttl_seconds: Optional[int] = None
+    ) -> bool:
+        """Установить значение в кэш"""
+        try:
+            # Вычисляем время истечения
+            expires_at = None
+            if ttl_seconds is not None:
+                expires_at = datetime.now() + timedelta(seconds=ttl_seconds)
+            
+            query = """
+                INSERT INTO cache_entries (cache_key, value, ttl_seconds, expires_at)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (cache_key) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    ttl_seconds = EXCLUDED.ttl_seconds,
+                    expires_at = EXCLUDED.expires_at,
+                    created_at = CURRENT_TIMESTAMP
+            """
+            
+            # Сериализуем значение в JSON
+            json_value = json.dumps(value)
+            
+            params = (
+                key,
+                json_value,
+                ttl_seconds,
+                expires_at
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            
+            # Обновляем memory cache для горячих данных
+            self._update_memory_cache(key, value, expires_at)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error setting cache value: {e}")
+            return False
+    
+    async def get(
+        self,
+        key: str,
+        default_value: Any = None
+    ) -> Any:
+        """Получить значение из кэша"""
+        try:
+            # Сначала проверяем memory cache
+            if key in self._memory_cache:
+                cached_item = self._memory_cache[key]
+                if self._is_memory_cache_valid(cached_item):
+                    return cached_item['value']
+                else:
+                    # Удаляем просроченное значение
+                    del self._memory_cache[key]
+            
+            # Ищем в базе данных
+            query = """
+                SELECT value, expires_at
+                FROM cache_entries
+                WHERE cache_key = $1
+            """
+            
+            rows = await self.db_manager.execute_query(query, (key,))
+            
+            if not rows:
+                return default_value
+            
+            row = rows[0]
+            
+            # Проверяем истечение срока
+            if row['expires_at'] and datetime.now() > row['expires_at']:
+                # Асинхронно удаляем просроченную запись
+                asyncio.create_task(self.delete(key))
+                return default_value
+            
+            # Десериализуем значение
+            value = json.loads(row['value'])
+            
+            # Обновляем memory cache
+            self._update_memory_cache(key, value, row['expires_at'])
+            
+            return value
+            
+        except Exception as e:
+            logger.error(f"Error getting cache value: {e}")
+            return default_value
+    
+    async def exists(self, key: str) -> bool:
+        """Проверить существование ключа в кэше"""
+        try:
+            # Проверяем memory cache
+            if key in self._memory_cache:
+                cached_item = self._memory_cache[key]
+                if self._is_memory_cache_valid(cached_item):
+                    return True
+                else:
+                    del self._memory_cache[key]
+            
+            query = """
+                SELECT 1
+                FROM cache_entries
+                WHERE cache_key = $1
+                  AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+            """
+            
+            rows = await self.db_manager.execute_query(query, (key,))
+            
+            return len(rows) > 0
+            
+        except Exception as e:
+            logger.error(f"Error checking cache existence: {e}")
+            return False
+    
+    async def delete(self, key: str) -> bool:
+        """Удалить значение из кэша"""
+        try:
+            query = "DELETE FROM cache_entries WHERE cache_key = $1"
+            
+            result = await self.db_manager.execute_command(query, (key,))
+            
+            # Удаляем из memory cache
+            self._memory_cache.pop(key, None)
+            
+            return result > 0
+            
+        except Exception as e:
+            logger.error(f"Error deleting cache value: {e}")
+            return False
+    
+    async def clear(self, pattern: Optional[str] = None) -> int:
+        """Очистить кэш (все или по паттерну)"""
+        try:
+            if pattern:
+                # Используем LIKE для поиска по паттерну
+                query = "DELETE FROM cache_entries WHERE cache_key LIKE $1"
+                like_pattern = pattern.replace('*', '%')
+                result = await self.db_manager.execute_command(query, (like_pattern,))
+                
+                # Очищаем соответствующие записи из memory cache
+                keys_to_remove = [
+                    k for k in self._memory_cache.keys() 
+                    if self._matches_pattern(k, pattern)
+                ]
+                for k in keys_to_remove:
+                    del self._memory_cache[k]
+            else:
+                # Очищаем весь кэш
+                query = "DELETE FROM cache_entries"
+                result = await self.db_manager.execute_command(query)
+                
+                # Очищаем memory cache
+                self._memory_cache.clear()
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error clearing cache: {e}")
+            return 0
+    
+    async def cleanup_expired(self) -> int:
+        """Очистить просроченные записи"""
+        try:
+            # Используем функцию из схемы
+            result = await self.db_manager.execute_query("SELECT cleanup_expired_cache()")
+            
+            deleted_count = result[0]['cleanup_expired_cache'] if result else 0
+            
+            # Очищаем просроченные записи из memory cache
+            current_time = datetime.now()
+            expired_keys = [
+                k for k, v in self._memory_cache.items()
+                if v['expires_at'] and current_time > v['expires_at']
+            ]
+            for k in expired_keys:
+                del self._memory_cache[k]
+            
+            return deleted_count
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up expired cache: {e}")
+            return 0
+    
+    async def get_ttl(self, key: str) -> Optional[int]:
+        """Получить время жизни ключа в секундах"""
+        try:
+            query = """
+                SELECT expires_at
+                FROM cache_entries
+                WHERE cache_key = $1
+            """
+            
+            rows = await self.db_manager.execute_query(query, (key,))
+            
+            if not rows or not rows[0]['expires_at']:
+                return None
+            
+            expires_at = rows[0]['expires_at']
+            current_time = datetime.now()
+            
+            if expires_at <= current_time:
+                return 0  # Уже истекло
+            
+            delta = expires_at - current_time
+            return int(delta.total_seconds())
+            
+        except Exception as e:
+            logger.error(f"Error getting TTL: {e}")
+            return None
+    
+    async def extend_ttl(self, key: str, additional_seconds: int) -> bool:
+        """Продлить время жизни ключа"""
+        try:
+            query = """
+                UPDATE cache_entries
+                SET expires_at = COALESCE(expires_at, CURRENT_TIMESTAMP) + INTERVAL '%s seconds',
+                    ttl_seconds = COALESCE(ttl_seconds, 0) + $2
+                WHERE cache_key = $1
+            """
+            
+            result = await self.db_manager.execute_command(
+                query % additional_seconds,
+                (key, additional_seconds)
+            )
+            
+            # Обновляем memory cache
+            if key in self._memory_cache:
+                item = self._memory_cache[key]
+                if item['expires_at']:
+                    item['expires_at'] += timedelta(seconds=additional_seconds)
+            
+            return result > 0
+            
+        except Exception as e:
+            logger.error(f"Error extending TTL: {e}")
+            return False
+    
+    async def get_cache_stats(self) -> Dict[str, Any]:
+        """Получить статистику кэша"""
+        try:
+            query = """
+                SELECT 
+                    COUNT(*) as total_entries,
+                    COUNT(CASE WHEN expires_at IS NULL THEN 1 END) as permanent_entries,
+                    COUNT(CASE WHEN expires_at IS NOT NULL AND expires_at > CURRENT_TIMESTAMP THEN 1 END) as active_entries,
+                    COUNT(CASE WHEN expires_at IS NOT NULL AND expires_at <= CURRENT_TIMESTAMP THEN 1 END) as expired_entries,
+                    AVG(LENGTH(value)) as avg_value_size,
+                    MAX(LENGTH(value)) as max_value_size,
+                    MIN(created_at) as oldest_entry,
+                    MAX(created_at) as newest_entry
+                FROM cache_entries
+            """
+            
+            rows = await self.db_manager.execute_query(query)
+            
+            if not rows:
+                return {}
+            
+            row = rows[0]
+            
+            return {
+                'total_entries': int(row['total_entries']),
+                'permanent_entries': int(row['permanent_entries']),
+                'active_entries': int(row['active_entries']),
+                'expired_entries': int(row['expired_entries']),
+                'avg_value_size_bytes': float(row['avg_value_size']) if row['avg_value_size'] else 0,
+                'max_value_size_bytes': int(row['max_value_size']) if row['max_value_size'] else 0,
+                'oldest_entry': row['oldest_entry'].isoformat() if row['oldest_entry'] else None,
+                'newest_entry': row['newest_entry'].isoformat() if row['newest_entry'] else None,
+                'memory_cache_entries': len(self._memory_cache),
+                'memory_cache_max_size': self._max_memory_cache_size
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting cache stats: {e}")
+            return {}
+    
+    async def get_all_keys(self, pattern: Optional[str] = None) -> List[str]:
+        """Получить все ключи (опционально по паттерну)"""
+        try:
+            if pattern:
+                query = """
+                    SELECT cache_key
+                    FROM cache_entries
+                    WHERE cache_key LIKE $1
+                      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+                    ORDER BY cache_key
+                """
+                like_pattern = pattern.replace('*', '%')
+                rows = await self.db_manager.execute_query(query, (like_pattern,))
+            else:
+                query = """
+                    SELECT cache_key
+                    FROM cache_entries
+                    WHERE expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP
+                    ORDER BY cache_key
+                """
+                rows = await self.db_manager.execute_query(query)
+            
+            return [row['cache_key'] for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting all keys: {e}")
+            return []
+    
+    async def set_many(self, items: Dict[str, Any], ttl_seconds: Optional[int] = None) -> int:
+        """Установить множественные значения"""
+        try:
+            if not items:
+                return 0
+            
+            # Подготавливаем данные для batch insert
+            expires_at = None
+            if ttl_seconds is not None:
+                expires_at = datetime.now() + timedelta(seconds=ttl_seconds)
+            
+            # Используем upsert для каждого элемента
+            query = """
+                INSERT INTO cache_entries (cache_key, value, ttl_seconds, expires_at)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (cache_key) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    ttl_seconds = EXCLUDED.ttl_seconds,
+                    expires_at = EXCLUDED.expires_at,
+                    created_at = CURRENT_TIMESTAMP
+            """
+            
+            params_list = []
+            for key, value in items.items():
+                json_value = json.dumps(value)
+                params_list.append((key, json_value, ttl_seconds, expires_at))
+                
+                # Обновляем memory cache
+                self._update_memory_cache(key, value, expires_at)
+            
+            await self.db_manager.execute_many(query, params_list)
+            
+            return len(items)
+            
+        except Exception as e:
+            logger.error(f"Error setting multiple cache values: {e}")
+            return 0
+    
+    async def get_many(self, keys: List[str]) -> Dict[str, Any]:
+        """Получить множественные значения"""
+        try:
+            if not keys:
+                return {}
+            
+            result = {}
+            db_keys = []
+            
+            # Сначала проверяем memory cache
+            for key in keys:
+                if key in self._memory_cache:
+                    cached_item = self._memory_cache[key]
+                    if self._is_memory_cache_valid(cached_item):
+                        result[key] = cached_item['value']
+                    else:
+                        del self._memory_cache[key]
+                        db_keys.append(key)
+                else:
+                    db_keys.append(key)
+            
+            # Запрашиваем оставшиеся ключи из БД
+            if db_keys:
+                # Создаем плейсхолдеры для IN клаузы
+                placeholders = ', '.join(f'${i+1}' for i in range(len(db_keys)))
+                
+                query = f"""
+                    SELECT cache_key, value, expires_at
+                    FROM cache_entries
+                    WHERE cache_key IN ({placeholders})
+                      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+                """
+                
+                rows = await self.db_manager.execute_query(query, tuple(db_keys))
+                
+                for row in rows:
+                    key = row['cache_key']
+                    value = json.loads(row['value'])
+                    result[key] = value
+                    
+                    # Обновляем memory cache
+                    self._update_memory_cache(key, value, row['expires_at'])
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting multiple cache values: {e}")
+            return {}
+    
+    def _update_memory_cache(self, key: str, value: Any, expires_at: Optional[datetime]) -> None:
+        """Обновить memory cache"""
+        try:
+            # Проверяем размер кэша
+            if len(self._memory_cache) >= self._max_memory_cache_size:
+                # Удаляем старые записи (простая стратегия FIFO)
+                keys_to_remove = list(self._memory_cache.keys())[:100]
+                for k in keys_to_remove:
+                    del self._memory_cache[k]
+            
+            self._memory_cache[key] = {
+                'value': value,
+                'expires_at': expires_at,
+                'accessed_at': datetime.now()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error updating memory cache: {e}")
+    
+    def _is_memory_cache_valid(self, cached_item: Dict[str, Any]) -> bool:
+        """Проверить валидность записи в memory cache"""
+        if cached_item['expires_at'] is None:
+            return True
+        
+        return datetime.now() <= cached_item['expires_at']
+    
+    def _matches_pattern(self, text: str, pattern: str) -> bool:
+        """Проверить соответствие текста паттерну"""
+        import fnmatch
+        return fnmatch.fnmatch(text, pattern)
+    
+    def clear_memory_cache(self) -> None:
+        """Очистить memory cache"""
+        self._memory_cache.clear()
+    
+    def set_memory_cache_size(self, size: int) -> None:
+        """Установить максимальный размер memory cache"""
+        self._max_memory_cache_size = max(100, size)
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_configuration_repository.py`
+
+```python
+import asyncio
+import logging
+from typing import List, Optional, Dict, Any, Union
+from datetime import datetime
+import json
+
+from src.domain.entities.configuration import Configuration, ConfigCategory, ConfigType
+from src.domain.repositories.i_configuration_repository import IConfigurationRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLConfigurationRepository(IConfigurationRepository):
+    """
+    PostgreSQL реализация репозитория конфигурации
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self._ensure_postgresql()
+        self._config_cache = {}  # Кэш для частых обращений
+    
+    def _ensure_postgresql(self):
+        """Проверяем, что используется PostgreSQL"""
+        if self.db_manager.db_type != 'postgresql':
+            raise ValueError("PostgreSQLConfigurationRepository requires PostgreSQL database")
+    
+    async def save_config(self, config: Configuration) -> bool:
+        """Сохранить конфигурацию"""
+        try:
+            query = """
+                INSERT INTO configuration (
+                    key, category, value, config_type, description,
+                    is_secret, is_required, default_value, validation_rules, tags
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT (key, category) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    config_type = EXCLUDED.config_type,
+                    description = EXCLUDED.description,
+                    is_secret = EXCLUDED.is_secret,
+                    is_required = EXCLUDED.is_required,
+                    default_value = EXCLUDED.default_value,
+                    validation_rules = EXCLUDED.validation_rules,
+                    tags = EXCLUDED.tags
+            """
+            
+            params = (
+                config.key,
+                config.category.value,
+                config.value,
+                config.config_type.value,
+                config.description,
+                config.is_secret,
+                config.is_required,
+                config.default_value,
+                json.dumps(config.validation_rules or {}),
+                config.tags or []
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            
+            # Обновляем кэш
+            cache_key = f"{config.key}_{config.category.value}"
+            self._config_cache[cache_key] = config
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving configuration: {e}")
+            return False
+    
+    async def get_config(
+        self,
+        key: str,
+        category: ConfigCategory,
+        use_cache: bool = True
+    ) -> Optional[Configuration]:
+        """Получить конфигурацию"""
+        try:
+            cache_key = f"{key}_{category.value}"
+            
+            # Проверяем кэш
+            if use_cache and cache_key in self._config_cache:
+                return self._config_cache[cache_key]
+            
+            query = """
+                SELECT id, key, category, value, config_type, description,
+                       is_secret, is_required, default_value, validation_rules,
+                       tags, created_at, updated_at
+                FROM configuration
+                WHERE key = $1 AND category = $2
+            """
+            
+            rows = await self.db_manager.execute_query(query, (key, category.value))
+            
+            if not rows:
+                return None
+            
+            config = self._row_to_config(rows[0])
+            
+            # Обновляем кэш
+            if use_cache:
+                self._config_cache[cache_key] = config
+            
+            return config
+            
+        except Exception as e:
+            logger.error(f"Error getting configuration: {e}")
+            return None
+    
+    async def get_config_value(
+        self,
+        key: str,
+        category: ConfigCategory,
+        default_value: Any = None,
+        expected_type: Optional[ConfigType] = None
+    ) -> Any:
+        """Получить значение конфигурации с преобразованием типа"""
+        try:
+            config = await self.get_config(key, category)
+            
+            if not config:
+                return default_value
+            
+            # Определяем тип для преобразования
+            target_type = expected_type or config.config_type
+            
+            return self._convert_config_value(config.value, target_type, default_value)
+            
+        except Exception as e:
+            logger.error(f"Error getting config value: {e}")
+            return default_value
+    
+    async def set_config_value(
+        self,
+        key: str,
+        category: ConfigCategory,
+        value: Any,
+        config_type: Optional[ConfigType] = None,
+        description: Optional[str] = None
+    ) -> bool:
+        """Установить значение конфигурации"""
+        try:
+            # Получаем существующую конфигурацию или создаем новую
+            existing_config = await self.get_config(key, category, use_cache=False)
+            
+            if existing_config:
+                # Обновляем существующую
+                existing_config.value = str(value)
+                if config_type:
+                    existing_config.config_type = config_type
+                if description:
+                    existing_config.description = description
+                config = existing_config
+            else:
+                # Создаем новую
+                config = Configuration(
+                    key=key,
+                    category=category,
+                    value=str(value),
+                    config_type=config_type or ConfigType.STRING,
+                    description=description
+                )
+            
+            return await self.save_config(config)
+            
+        except Exception as e:
+            logger.error(f"Error setting config value: {e}")
+            return False
+    
+    async def get_configs_by_category(
+        self,
+        category: ConfigCategory,
+        include_secrets: bool = False
+    ) -> List[Configuration]:
+        """Получить все конфигурации по категории"""
+        try:
+            query = """
+                SELECT id, key, category, value, config_type, description,
+                       is_secret, is_required, default_value, validation_rules,
+                       tags, created_at, updated_at
+                FROM configuration
+                WHERE category = $1
+            """
+            
+            if not include_secrets:
+                query += " AND is_secret = false"
+            
+            query += " ORDER BY key"
+            
+            rows = await self.db_manager.execute_query(query, (category.value,))
+            
+            return [self._row_to_config(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting configs by category: {e}")
+            return []
+    
+    async def get_all_configs(
+        self,
+        include_secrets: bool = False
+    ) -> Dict[str, List[Configuration]]:
+        """Получить все конфигурации сгруппированные по категориям"""
+        try:
+            query = """
+                SELECT id, key, category, value, config_type, description,
+                       is_secret, is_required, default_value, validation_rules,
+                       tags, created_at, updated_at
+                FROM configuration
+            """
+            
+            if not include_secrets:
+                query += " WHERE is_secret = false"
+            
+            query += " ORDER BY category, key"
+            
+            rows = await self.db_manager.execute_query(query)
+            
+            # Группируем по категориям
+            result = {}
+            for row in rows:
+                config = self._row_to_config(row)
+                category = config.category.value
+                
+                if category not in result:
+                    result[category] = []
+                
+                result[category].append(config)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting all configs: {e}")
+            return {}
+    
+    async def get_required_configs(self) -> List[Configuration]:
+        """Получить все обязательные конфигурации"""
+        try:
+            query = """
+                SELECT id, key, category, value, config_type, description,
+                       is_secret, is_required, default_value, validation_rules,
+                       tags, created_at, updated_at
+                FROM configuration
+                WHERE is_required = true
+                ORDER BY category, key
+            """
+            
+            rows = await self.db_manager.execute_query(query)
+            
+            return [self._row_to_config(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting required configs: {e}")
+            return []
+    
+    async def validate_config(self, config: Configuration) -> Dict[str, Any]:
+        """Валидация конфигурации"""
+        try:
+            validation_result = {
+                'valid': True,
+                'errors': [],
+                'warnings': []
+            }
+            
+            # Проверка типа
+            try:
+                converted_value = self._convert_config_value(
+                    config.value, 
+                    config.config_type, 
+                    None
+                )
+                
+                # Применяем правила валидации
+                if config.validation_rules:
+                    self._apply_validation_rules(
+                        converted_value, 
+                        config.validation_rules, 
+                        validation_result
+                    )
+                
+            except (ValueError, TypeError) as e:
+                validation_result['valid'] = False
+                validation_result['errors'].append(f"Type conversion error: {e}")
+            
+            return validation_result
+            
+        except Exception as e:
+            logger.error(f"Error validating config: {e}")
+            return {
+                'valid': False,
+                'errors': [f"Validation error: {e}"],
+                'warnings': []
+            }
+    
+    async def delete_config(
+        self,
+        key: str,
+        category: ConfigCategory
+    ) -> bool:
+        """Удалить конфигурацию"""
+        try:
+            query = "DELETE FROM configuration WHERE key = $1 AND category = $2"
+            
+            result = await self.db_manager.execute_command(query, (key, category.value))
+            
+            # Удаляем из кэша
+            cache_key = f"{key}_{category.value}"
+            self._config_cache.pop(cache_key, None)
+            
+            return result > 0
+            
+        except Exception as e:
+            logger.error(f"Error deleting configuration: {e}")
+            return False
+    
+    async def reset_to_defaults(self, category: Optional[ConfigCategory] = None) -> int:
+        """Сбросить конфигурации к значениям по умолчанию"""
+        try:
+            query = """
+                UPDATE configuration 
+                SET value = default_value 
+                WHERE default_value IS NOT NULL
+            """
+            params = []
+            
+            if category:
+                query += " AND category = $1"
+                params.append(category.value)
+            
+            result = await self.db_manager.execute_command(query, tuple(params))
+            
+            # Очищаем кэш
+            self._config_cache.clear()
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error resetting to defaults: {e}")
+            return 0
+    
+    async def export_configs(
+        self,
+        category: Optional[ConfigCategory] = None,
+        include_secrets: bool = False
+    ) -> Dict[str, Any]:
+        """Экспорт конфигураций в JSON"""
+        try:
+            if category:
+                configs_dict = {category.value: await self.get_configs_by_category(category, include_secrets)}
+            else:
+                configs_dict = await self.get_all_configs(include_secrets)
+            
+            # Преобразуем в словарь для экспорта
+            export_data = {}
+            for cat, configs in configs_dict.items():
+                export_data[cat] = {}
+                for config in configs:
+                    export_data[cat][config.key] = {
+                        'value': config.value,
+                        'type': config.config_type.value,
+                        'description': config.description,
+                        'is_required': config.is_required,
+                        'default_value': config.default_value,
+                        'tags': config.tags
+                    }
+            
+            return {
+                'exported_at': datetime.now().isoformat(),
+                'include_secrets': include_secrets,
+                'configurations': export_data
+            }
+            
+        except Exception as e:
+            logger.error(f"Error exporting configs: {e}")
+            return {}
+    
+    async def import_configs(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Импорт конфигураций из JSON"""
+        try:
+            result = {
+                'imported': 0,
+                'updated': 0,
+                'errors': []
+            }
+            
+            configurations = config_data.get('configurations', {})
+            
+            for category_name, category_configs in configurations.items():
+                try:
+                    category = ConfigCategory(category_name)
+                except ValueError:
+                    result['errors'].append(f"Unknown category: {category_name}")
+                    continue
+                
+                for key, config_info in category_configs.items():
+                    try:
+                        # Проверяем существование
+                        existing = await self.get_config(key, category, use_cache=False)
+                        
+                        # Создаем объект конфигурации
+                        config = Configuration(
+                            key=key,
+                            category=category,
+                            value=str(config_info['value']),
+                            config_type=ConfigType(config_info.get('type', 'string')),
+                            description=config_info.get('description'),
+                            is_required=config_info.get('is_required', False),
+                            default_value=config_info.get('default_value'),
+                            tags=config_info.get('tags', [])
+                        )
+                        
+                        if await self.save_config(config):
+                            if existing:
+                                result['updated'] += 1
+                            else:
+                                result['imported'] += 1
+                        else:
+                            result['errors'].append(f"Failed to save: {category_name}.{key}")
+                    
+                    except Exception as e:
+                        result['errors'].append(f"Error importing {category_name}.{key}: {e}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error importing configs: {e}")
+            return {'imported': 0, 'updated': 0, 'errors': [str(e)]}
+    
+    def clear_cache(self) -> None:
+        """Очистить кэш конфигураций"""
+        self._config_cache.clear()
+    
+    def _convert_config_value(
+        self,
+        value: str,
+        config_type: ConfigType,
+        default_value: Any = None
+    ) -> Any:
+        """Преобразовать строковое значение к нужному типу"""
+        try:
+            if value is None:
+                return default_value
+            
+            if config_type == ConfigType.STRING:
+                return str(value)
+            elif config_type == ConfigType.INTEGER:
+                return int(value)
+            elif config_type == ConfigType.FLOAT:
+                return float(value)
+            elif config_type == ConfigType.BOOLEAN:
+                return str(value).lower() in ('true', '1', 'yes', 'on')
+            elif config_type == ConfigType.JSON:
+                return json.loads(value) if isinstance(value, str) else value
+            elif config_type == ConfigType.LIST:
+                if isinstance(value, str):
+                    return json.loads(value)
+                return list(value) if hasattr(value, '__iter__') else [value]
+            elif config_type == ConfigType.DICT:
+                if isinstance(value, str):
+                    return json.loads(value)
+                return dict(value) if isinstance(value, dict) else {}
+            else:
+                return value
+                
+        except Exception as e:
+            logger.warning(f"Error converting config value '{value}' to {config_type}: {e}")
+            return default_value
+    
+    def _apply_validation_rules(
+        self,
+        value: Any,
+        rules: Dict[str, Any],
+        result: Dict[str, Any]
+    ) -> None:
+        """Применить правила валидации"""
+        try:
+            # Проверка минимального значения
+            if 'min' in rules and isinstance(value, (int, float)):
+                if value < rules['min']:
+                    result['valid'] = False
+                    result['errors'].append(f"Value {value} is less than minimum {rules['min']}")
+            
+            # Проверка максимального значения
+            if 'max' in rules and isinstance(value, (int, float)):
+                if value > rules['max']:
+                    result['valid'] = False
+                    result['errors'].append(f"Value {value} is greater than maximum {rules['max']}")
+            
+            # Проверка допустимых значений
+            if 'choices' in rules:
+                if value not in rules['choices']:
+                    result['valid'] = False
+                    result['errors'].append(f"Value {value} not in allowed choices: {rules['choices']}")
+            
+            # Проверка регулярного выражения
+            if 'pattern' in rules and isinstance(value, str):
+                import re
+                if not re.match(rules['pattern'], value):
+                    result['valid'] = False
+                    result['errors'].append(f"Value '{value}' does not match pattern '{rules['pattern']}'")
+            
+        except Exception as e:
+            result['warnings'].append(f"Validation rule error: {e}")
+    
+    def _row_to_config(self, row: Dict[str, Any]) -> Configuration:
+        """Преобразовать строку БД в объект Configuration"""
+        try:
+            validation_rules = row.get('validation_rules', '{}')
+            if isinstance(validation_rules, str):
+                validation_rules = json.loads(validation_rules)
+            elif validation_rules is None:
+                validation_rules = {}
+            
+            return Configuration(
+                key=row['key'],
+                category=ConfigCategory(row['category']),
+                value=row['value'],
+                config_type=ConfigType(row['config_type']),
+                description=row.get('description'),
+                is_secret=bool(row.get('is_secret', False)),
+                is_required=bool(row.get('is_required', False)),
+                default_value=row.get('default_value'),
+                validation_rules=validation_rules,
+                tags=row.get('tags', [])
+            )
+            
+        except Exception as e:
+            logger.error(f"Error converting row to Configuration: {e}")
+            logger.debug(f"Row data: {row}")
+            raise
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_deals_repository.py`
+
+```python
+# infrastructure/repositories/postgresql/postgresql_deals_repository.py
+
+import logging
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import json
+
+from src.domain.entities.deal import Deal
+from src.domain.entities.order import Order
+from src.domain.repositories.i_deals_repository import IDealsRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+class PostgreSQLDealsRepository(IDealsRepository):
+    """
+    PostgreSQL реализация репозитория для хранения сделок.
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+
+    async def save_deal(self, deal: Deal) -> None:
+        """Сохраняет или обновляет сделку в базе данных."""
+        query = """
+            INSERT INTO deals (
+                id, symbol, status, buy_order, sell_order, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (id) DO UPDATE SET
+                status = EXCLUDED.status,
+                buy_order = EXCLUDED.buy_order,
+                sell_order = EXCLUDED.sell_order,
+                updated_at = EXCLUDED.updated_at;
+        """
+        params = (
+            deal.deal_id,
+            deal.currency_pair.symbol,
+            deal.status,
+            json.dumps(deal.buy_order.to_dict()) if deal.buy_order else None,
+            json.dumps(deal.sell_order.to_dict()) if deal.sell_order else None,
+            deal.created_at,
+            datetime.now()
+        )
+        try:
+            await self.db_manager.execute_command(query, params)
+            logger.info(f"Deal {deal.deal_id} saved to PostgreSQL.")
+        except Exception as e:
+            logger.error(f"Failed to save deal {deal.deal_id} to PostgreSQL: {e}")
+            raise
+
+    async def get_deal(self, deal_id: str) -> Optional[Deal]:
+        query = "SELECT * FROM deals WHERE id = $1;"
+        try:
+            result = await self.db_manager.execute_query(query, (deal_id,))
+            if result:
+                return self._map_row_to_deal(result[0])
+        except Exception as e:
+            logger.error(f"Failed to get deal {deal_id} from PostgreSQL: {e}")
+        return None
+
+    async def get_all_deals(self) -> List[Deal]:
+        query = "SELECT * FROM deals;"
+        deals = []
+        try:
+            result = await self.db_manager.execute_query(query)
+            if result:
+                deals = [self._map_row_to_deal(row) for row in result]
+        except Exception as e:
+            logger.error(f"Failed to get all deals from PostgreSQL: {e}")
+        return deals
+
+    def _map_row_to_deal(self, row: Dict[str, Any]) -> Deal:
+        """Преобразует строку из базы данных в объект Deal."""
+        buy_order = Order.from_dict(json.loads(row['buy_order'])) if row['buy_order'] else None
+        sell_order = Order.from_dict(json.loads(row['sell_order'])) if row['sell_order'] else None
+        
+        # This is a simplified mapping. You might need to fetch currency_pair from another table or have its info in the deal table
+        from src.domain.entities.currency_pair import CurrencyPair
+        currency_pair = CurrencyPair(row['symbol'])
+
+        deal = Deal(
+            deal_id=row['id'],
+            currency_pair=currency_pair,
+            status=row['status'],
+            buy_order=buy_order,
+            sell_order=sell_order,
+            created_at=row['created_at']
+        )
+        deal.updated_at = row['updated_at']
+        return deal
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_indicator_repository.py`
+
+```python
+import asyncio
+import logging
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import json
+
+from src.domain.entities.indicator_data import IndicatorData, IndicatorType, IndicatorLevel
+from src.domain.repositories.i_indicator_repository import IIndicatorRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLIndicatorRepository(IIndicatorRepository):
+    """
+    PostgreSQL реализация репозитория индикаторов
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self._ensure_postgresql()
+    
+    def _ensure_postgresql(self):
+        """Проверяем, что используется PostgreSQL"""
+        if self.db_manager.db_type != 'postgresql':
+            raise ValueError("PostgreSQLIndicatorRepository requires PostgreSQL database")
+    
+    async def save_indicator(self, indicator: IndicatorData) -> bool:
+        """Сохранить индикатор"""
+        try:
+            query = """
+                INSERT INTO indicators (
+                    symbol, indicator_type, value, period, level, 
+                    timestamp, metadata
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (symbol, indicator_type, period, timestamp) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    level = EXCLUDED.level,
+                    metadata = EXCLUDED.metadata
+            """
+            
+            params = (
+                indicator.symbol,
+                indicator.indicator_type.value,
+                float(indicator.value),
+                indicator.period,
+                indicator.level.value,
+                indicator.timestamp,
+                json.dumps(indicator.metadata or {})
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving indicator: {e}")
+            return False
+    
+    async def save_indicators_batch(self, indicators: List[IndicatorData]) -> int:
+        """Сохранить пакет индикаторов"""
+        if not indicators:
+            return 0
+        
+        try:
+            query = """
+                INSERT INTO indicators (
+                    symbol, indicator_type, value, period, level, 
+                    timestamp, metadata
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (symbol, indicator_type, period, timestamp) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    level = EXCLUDED.level,
+                    metadata = EXCLUDED.metadata
+            """
+            
+            params_list = []
+            for indicator in indicators:
+                params_list.append((
+                    indicator.symbol,
+                    indicator.indicator_type.value,
+                    float(indicator.value),
+                    indicator.period,
+                    indicator.level.value,
+                    indicator.timestamp,
+                    json.dumps(indicator.metadata or {})
+                ))
+            
+            await self.db_manager.execute_many(query, params_list)
+            return len(indicators)
+            
+        except Exception as e:
+            logger.error(f"Error saving indicators batch: {e}")
+            return 0
+    
+    async def get_latest_indicator(
+        self,
+        symbol: str,
+        indicator_type: IndicatorType,
+        period: Optional[int] = None,
+        level: Optional[IndicatorLevel] = None
+    ) -> Optional[IndicatorData]:
+        """Получить последний индикатор"""
+        try:
+            query = """
+                SELECT symbol, indicator_type, value, period, level, 
+                       timestamp, created_at, metadata
+                FROM indicators
+                WHERE symbol = $1 AND indicator_type = $2
+            """
+            params = [symbol, indicator_type.value]
+            
+            if period is not None:
+                query += " AND period = $3"
+                params.append(period)
+            
+            if level is not None:
+                param_index = len(params) + 1
+                query += f" AND level = ${param_index}"
+                params.append(level.value)
+            
+            query += " ORDER BY timestamp DESC LIMIT 1"
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            if not rows:
+                return None
+            
+            return self._row_to_indicator(rows[0])
+            
+        except Exception as e:
+            logger.error(f"Error getting latest indicator: {e}")
+            return None
+    
+    async def get_indicators_range(
+        self,
+        symbol: str,
+        indicator_type: IndicatorType,
+        start_timestamp: int,
+        end_timestamp: int,
+        period: Optional[int] = None,
+        level: Optional[IndicatorLevel] = None,
+        limit: Optional[int] = None
+    ) -> List[IndicatorData]:
+        """Получить индикаторы за период"""
+        try:
+            query = """
+                SELECT symbol, indicator_type, value, period, level, 
+                       timestamp, created_at, metadata
+                FROM indicators
+                WHERE symbol = $1 AND indicator_type = $2 
+                  AND timestamp >= $3 AND timestamp <= $4
+            """
+            params = [symbol, indicator_type.value, start_timestamp, end_timestamp]
+            param_index = 5
+            
+            if period is not None:
+                query += f" AND period = ${param_index}"
+                params.append(period)
+                param_index += 1
+            
+            if level is not None:
+                query += f" AND level = ${param_index}"
+                params.append(level.value)
+                param_index += 1
+            
+            query += " ORDER BY timestamp ASC"
+            
+            if limit is not None:
+                query += f" LIMIT ${param_index}"
+                params.append(limit)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_indicator(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting indicators range: {e}")
+            return []
+    
+    async def get_indicators_by_symbol(
+        self,
+        symbol: str,
+        level: Optional[IndicatorLevel] = None,
+        limit: Optional[int] = None
+    ) -> List[IndicatorData]:
+        """Получить все индикаторы по символу"""
+        try:
+            query = """
+                SELECT symbol, indicator_type, value, period, level, 
+                       timestamp, created_at, metadata
+                FROM indicators
+                WHERE symbol = $1
+            """
+            params = [symbol]
+            param_index = 2
+            
+            if level is not None:
+                query += f" AND level = ${param_index}"
+                params.append(level.value)
+                param_index += 1
+            
+            query += " ORDER BY timestamp DESC"
+            
+            if limit is not None:
+                query += f" LIMIT ${param_index}"
+                params.append(limit)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_indicator(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting indicators by symbol: {e}")
+            return []
+    
+    async def get_latest_indicators_by_symbol(
+        self,
+        symbol: str,
+        level: Optional[IndicatorLevel] = None
+    ) -> Dict[str, IndicatorData]:
+        """Получить последние индикаторы каждого типа для символа"""
+        try:
+            # Используем представление из схемы
+            query = """
+                SELECT symbol, indicator_type, value, period, level, 
+                       timestamp, created_at
+                FROM latest_indicators_view
+                WHERE symbol = $1
+            """
+            params = [symbol]
+            
+            if level is not None:
+                query += " AND level = $2"
+                params.append(level.value)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            result = {}
+            for row in rows:
+                indicator = self._row_to_indicator(row)
+                key = f"{indicator.indicator_type.value}_{indicator.period or 0}"
+                result[key] = indicator
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting latest indicators by symbol: {e}")
+            return {}
+    
+    async def delete_old_indicators(
+        self,
+        symbol: str,
+        before_timestamp: int,
+        level: Optional[IndicatorLevel] = None
+    ) -> int:
+        """Удалить старые индикаторы"""
+        try:
+            query = """
+                DELETE FROM indicators
+                WHERE symbol = $1 AND timestamp < $2
+            """
+            params = [symbol, before_timestamp]
+            
+            if level is not None:
+                query += " AND level = $3"
+                params.append(level.value)
+            
+            return await self.db_manager.execute_command(query, tuple(params))
+            
+        except Exception as e:
+            logger.error(f"Error deleting old indicators: {e}")
+            return 0
+    
+    async def cleanup_old_indicators(self, days_to_keep: int = 30) -> int:
+        """Очистка старых индикаторов"""
+        try:
+            # Используем функцию из схемы
+            result = await self.db_manager.execute_query(
+                "SELECT cleanup_old_indicators($1)",
+                (days_to_keep,)
+            )
+            
+            return result[0]['cleanup_old_indicators'] if result else 0
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up old indicators: {e}")
+            return 0
+    
+    async def get_indicator_statistics(
+        self,
+        symbol: str,
+        indicator_type: IndicatorType,
+        period: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Получить статистику по индикатору"""
+        try:
+            query = """
+                SELECT 
+                    COUNT(*) as count,
+                    MIN(value) as min_value,
+                    MAX(value) as max_value,
+                    AVG(value) as avg_value,
+                    STDDEV(value) as stddev_value,
+                    MIN(timestamp) as first_timestamp,
+                    MAX(timestamp) as last_timestamp
+                FROM indicators
+                WHERE symbol = $1 AND indicator_type = $2
+            """
+            params = [symbol, indicator_type.value]
+            
+            if period is not None:
+                query += " AND period = $3"
+                params.append(period)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            if not rows or rows[0]['count'] == 0:
+                return {}
+            
+            row = rows[0]
+            return {
+                'count': int(row['count']),
+                'min_value': float(row['min_value']) if row['min_value'] is not None else None,
+                'max_value': float(row['max_value']) if row['max_value'] is not None else None,
+                'avg_value': float(row['avg_value']) if row['avg_value'] is not None else None,
+                'stddev_value': float(row['stddev_value']) if row['stddev_value'] is not None else None,
+                'first_timestamp': int(row['first_timestamp']) if row['first_timestamp'] is not None else None,
+                'last_timestamp': int(row['last_timestamp']) if row['last_timestamp'] is not None else None,
+                'time_range_hours': (
+                    (int(row['last_timestamp']) - int(row['first_timestamp'])) / (1000 * 60 * 60)
+                    if row['first_timestamp'] and row['last_timestamp'] else 0
+                )
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting indicator statistics: {e}")
+            return {}
+    
+    def _row_to_indicator(self, row: Dict[str, Any]) -> IndicatorData:
+        """Преобразовать строку БД в объект IndicatorData"""
+        try:
+            metadata = row.get('metadata', '{}')
+            if isinstance(metadata, str):
+                metadata = json.loads(metadata)
+            elif metadata is None:
+                metadata = {}
+            
+            return IndicatorData(
+                symbol=row['symbol'],
+                timestamp=int(row['timestamp']),
+                indicator_type=IndicatorType(row['indicator_type']),
+                value=float(row['value']),
+                period=row.get('period'),
+                level=IndicatorLevel(row.get('level', 'fast')),
+                metadata=metadata
+            )
+            
+        except Exception as e:
+            logger.error(f"Error converting row to IndicatorData: {e}")
+            logger.debug(f"Row data: {row}")
+            raise
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_order_book_repository.py`
+
+```python
+import asyncio
+import logging
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import json
+
+from src.domain.entities.order_book import OrderBook, OrderBookLevel
+from src.domain.repositories.i_order_book_repository import IOrderBookRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLOrderBookRepository(IOrderBookRepository):
+    """
+    PostgreSQL реализация репозитория стаканов заявок
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self._ensure_postgresql()
+    
+    def _ensure_postgresql(self):
+        """Проверяем, что используется PostgreSQL"""
+        if self.db_manager.db_type != 'postgresql':
+            raise ValueError("PostgreSQLOrderBookRepository requires PostgreSQL database")
+    
+    async def save_order_book(self, order_book: OrderBook) -> bool:
+        """Сохранить стакан заявок"""
+        try:
+            query = """
+                INSERT INTO order_books (
+                    symbol, timestamp, bids, asks, spread, 
+                    spread_percent, volume_imbalance
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (symbol, timestamp) 
+                DO UPDATE SET 
+                    bids = EXCLUDED.bids,
+                    asks = EXCLUDED.asks,
+                    spread = EXCLUDED.spread,
+                    spread_percent = EXCLUDED.spread_percent,
+                    volume_imbalance = EXCLUDED.volume_imbalance
+            """
+            
+            # Конвертируем уровни в JSON
+            bids_json = json.dumps([
+                [level.price, level.volume] for level in order_book.bids
+            ])
+            asks_json = json.dumps([
+                [level.price, level.volume] for level in order_book.asks
+            ])
+            
+            params = (
+                order_book.symbol,
+                order_book.timestamp,
+                bids_json,
+                asks_json,
+                float(order_book.spread) if order_book.spread else None,
+                float(order_book.spread_percent) if order_book.spread_percent else None,
+                float(order_book.volume_imbalance) if order_book.volume_imbalance else None
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving order book: {e}")
+            return False
+    
+    async def save_order_books_batch(self, order_books: List[OrderBook]) -> int:
+        """Сохранить пакет стаканов заявок"""
+        if not order_books:
+            return 0
+        
+        try:
+            query = """
+                INSERT INTO order_books (
+                    symbol, timestamp, bids, asks, spread, 
+                    spread_percent, volume_imbalance
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (symbol, timestamp) 
+                DO UPDATE SET 
+                    bids = EXCLUDED.bids,
+                    asks = EXCLUDED.asks,
+                    spread = EXCLUDED.spread,
+                    spread_percent = EXCLUDED.spread_percent,
+                    volume_imbalance = EXCLUDED.volume_imbalance
+            """
+            
+            params_list = []
+            for order_book in order_books:
+                # Конвертируем уровни в JSON
+                bids_json = json.dumps([
+                    [level.price, level.volume] for level in order_book.bids
+                ])
+                asks_json = json.dumps([
+                    [level.price, level.volume] for level in order_book.asks
+                ])
+                
+                params_list.append((
+                    order_book.symbol,
+                    order_book.timestamp,
+                    bids_json,
+                    asks_json,
+                    float(order_book.spread) if order_book.spread else None,
+                    float(order_book.spread_percent) if order_book.spread_percent else None,
+                    float(order_book.volume_imbalance) if order_book.volume_imbalance else None
+                ))
+            
+            await self.db_manager.execute_many(query, params_list)
+            return len(order_books)
+            
+        except Exception as e:
+            logger.error(f"Error saving order books batch: {e}")
+            return 0
+    
+    async def get_latest_order_book(self, symbol: str) -> Optional[OrderBook]:
+        """Получить последний стакан заявок"""
+        try:
+            query = """
+                SELECT symbol, timestamp, bids, asks, spread, 
+                       spread_percent, volume_imbalance, created_at
+                FROM order_books
+                WHERE symbol = $1
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """
+            
+            rows = await self.db_manager.execute_query(query, (symbol,))
+            
+            if not rows:
+                return None
+            
+            return self._row_to_order_book(rows[0])
+            
+        except Exception as e:
+            logger.error(f"Error getting latest order book: {e}")
+            return None
+    
+    async def get_order_book_at_time(
+        self,
+        symbol: str,
+        timestamp: int,
+        tolerance_ms: int = 5000
+    ) -> Optional[OrderBook]:
+        """Получить стакан заявок на определенное время"""
+        try:
+            query = """
+                SELECT symbol, timestamp, bids, asks, spread, 
+                       spread_percent, volume_imbalance, created_at
+                FROM order_books
+                WHERE symbol = $1 
+                  AND timestamp >= $2 - $3
+                  AND timestamp <= $2 + $3
+                ORDER BY ABS(timestamp - $2)
+                LIMIT 1
+            """
+            
+            rows = await self.db_manager.execute_query(
+                query,
+                (symbol, timestamp, tolerance_ms)
+            )
+            
+            if not rows:
+                return None
+            
+            return self._row_to_order_book(rows[0])
+            
+        except Exception as e:
+            logger.error(f"Error getting order book at time: {e}")
+            return None
+    
+    async def get_order_books_range(
+        self,
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int,
+        limit: Optional[int] = None
+    ) -> List[OrderBook]:
+        """Получить стаканы заявок за период"""
+        try:
+            query = """
+                SELECT symbol, timestamp, bids, asks, spread, 
+                       spread_percent, volume_imbalance, created_at
+                FROM order_books
+                WHERE symbol = $1 
+                  AND timestamp >= $2 
+                  AND timestamp <= $3
+                ORDER BY timestamp ASC
+            """
+            params = [symbol, start_timestamp, end_timestamp]
+            
+            if limit is not None:
+                query += " LIMIT $4"
+                params.append(limit)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_order_book(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting order books range: {e}")
+            return []
+    
+    async def get_order_book_spreads(
+        self,
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int
+    ) -> List[Dict[str, Any]]:
+        """Получить данные о спредах за период"""
+        try:
+            query = """
+                SELECT timestamp, spread, spread_percent, volume_imbalance
+                FROM order_books
+                WHERE symbol = $1 
+                  AND timestamp >= $2 
+                  AND timestamp <= $3
+                  AND spread IS NOT NULL
+                ORDER BY timestamp ASC
+            """
+            
+            rows = await self.db_manager.execute_query(
+                query,
+                (symbol, start_timestamp, end_timestamp)
+            )
+            
+            return [
+                {
+                    'timestamp': int(row['timestamp']),
+                    'spread': float(row['spread']),
+                    'spread_percent': float(row['spread_percent']) if row['spread_percent'] else None,
+                    'volume_imbalance': float(row['volume_imbalance']) if row['volume_imbalance'] else None
+                }
+                for row in rows
+            ]
+            
+        except Exception as e:
+            logger.error(f"Error getting order book spreads: {e}")
+            return []
+    
+    async def get_spread_statistics(
+        self,
+        symbol: str,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Получить статистику по спредам"""
+        try:
+            query = """
+                SELECT 
+                    COUNT(*) as count,
+                    MIN(spread) as min_spread,
+                    MAX(spread) as max_spread,
+                    AVG(spread) as avg_spread,
+                    STDDEV(spread) as stddev_spread,
+                    MIN(spread_percent) as min_spread_percent,
+                    MAX(spread_percent) as max_spread_percent,
+                    AVG(spread_percent) as avg_spread_percent,
+                    AVG(volume_imbalance) as avg_volume_imbalance
+                FROM order_books
+                WHERE symbol = $1 AND spread IS NOT NULL
+            """
+            params = [symbol]
+            
+            if start_timestamp is not None:
+                query += " AND timestamp >= $2"
+                params.append(start_timestamp)
+                
+                if end_timestamp is not None:
+                    query += " AND timestamp <= $3"
+                    params.append(end_timestamp)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            if not rows or rows[0]['count'] == 0:
+                return {}
+            
+            row = rows[0]
+            return {
+                'count': int(row['count']),
+                'min_spread': float(row['min_spread']) if row['min_spread'] is not None else None,
+                'max_spread': float(row['max_spread']) if row['max_spread'] is not None else None,
+                'avg_spread': float(row['avg_spread']) if row['avg_spread'] is not None else None,
+                'stddev_spread': float(row['stddev_spread']) if row['stddev_spread'] is not None else None,
+                'min_spread_percent': float(row['min_spread_percent']) if row['min_spread_percent'] is not None else None,
+                'max_spread_percent': float(row['max_spread_percent']) if row['max_spread_percent'] is not None else None,
+                'avg_spread_percent': float(row['avg_spread_percent']) if row['avg_spread_percent'] is not None else None,
+                'avg_volume_imbalance': float(row['avg_volume_imbalance']) if row['avg_volume_imbalance'] is not None else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting spread statistics: {e}")
+            return {}
+    
+    async def delete_old_order_books(
+        self,
+        symbol: str,
+        before_timestamp: int
+    ) -> int:
+        """Удалить старые стаканы заявок"""
+        try:
+            query = """
+                DELETE FROM order_books
+                WHERE symbol = $1 AND timestamp < $2
+            """
+            
+            return await self.db_manager.execute_command(query, (symbol, before_timestamp))
+            
+        except Exception as e:
+            logger.error(f"Error deleting old order books: {e}")
+            return 0
+    
+    async def cleanup_old_order_books(self, days_to_keep: int = 7) -> int:
+        """Очистка старых стаканов заявок"""
+        try:
+            query = """
+                DELETE FROM order_books
+                WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '%s days'
+            """
+            
+            return await self.db_manager.execute_command(query % days_to_keep)
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up old order books: {e}")
+            return 0
+    
+    async def get_liquidity_analysis(
+        self,
+        symbol: str,
+        depth_levels: int = 10,
+        latest_only: bool = True
+    ) -> Dict[str, Any]:
+        """Анализ ликвидности стакана"""
+        try:
+            if latest_only:
+                order_book = await self.get_latest_order_book(symbol)
+                if not order_book:
+                    return {}
+                
+                order_books = [order_book]
+            else:
+                # Получаем последние 100 стаканов для анализа
+                query = """
+                    SELECT symbol, timestamp, bids, asks, spread, 
+                           spread_percent, volume_imbalance, created_at
+                    FROM order_books
+                    WHERE symbol = $1
+                    ORDER BY timestamp DESC
+                    LIMIT 100
+                """
+                
+                rows = await self.db_manager.execute_query(query, (symbol,))
+                order_books = [self._row_to_order_book(row) for row in rows]
+            
+            if not order_books:
+                return {}
+            
+            # Анализируем ликвидность
+            total_bid_volume = 0
+            total_ask_volume = 0
+            spreads = []
+            
+            for ob in order_books:
+                # Суммируем объемы на указанной глубине
+                bid_volume = sum(level.volume for level in ob.bids[:depth_levels])
+                ask_volume = sum(level.volume for level in ob.asks[:depth_levels])
+                
+                total_bid_volume += bid_volume
+                total_ask_volume += ask_volume
+                
+                if ob.spread_percent is not None:
+                    spreads.append(ob.spread_percent)
+            
+            avg_bid_volume = total_bid_volume / len(order_books)
+            avg_ask_volume = total_ask_volume / len(order_books)
+            avg_spread = sum(spreads) / len(spreads) if spreads else 0
+            
+            return {
+                'symbol': symbol,
+                'samples_count': len(order_books),
+                'depth_levels': depth_levels,
+                'avg_bid_volume': avg_bid_volume,
+                'avg_ask_volume': avg_ask_volume,
+                'total_avg_volume': avg_bid_volume + avg_ask_volume,
+                'volume_imbalance': (avg_bid_volume - avg_ask_volume) / (avg_bid_volume + avg_ask_volume) if (avg_bid_volume + avg_ask_volume) > 0 else 0,
+                'avg_spread_percent': avg_spread,
+                'liquidity_score': self._calculate_liquidity_score(avg_bid_volume + avg_ask_volume, avg_spread)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing liquidity: {e}")
+            return {}
+    
+    def _calculate_liquidity_score(self, total_volume: float, spread_percent: float) -> float:
+        """Вычислить оценку ликвидности (0-100)"""
+        try:
+            if total_volume <= 0 or spread_percent <= 0:
+                return 0
+            
+            # Нормализуем объем (логарифмическая шкала)
+            volume_score = min(100, max(0, 50 + 10 * (total_volume / 1000)))
+            
+            # Инвертируем спред (меньше спред = лучше)
+            spread_score = max(0, 100 - spread_percent * 20)
+            
+            # Взвешенная оценка
+            return (volume_score * 0.6 + spread_score * 0.4)
+            
+        except Exception as e:
+            logger.error(f"Error calculating liquidity score: {e}")
+            return 0
+    
+    def _row_to_order_book(self, row: Dict[str, Any]) -> OrderBook:
+        """Преобразовать строку БД в объект OrderBook"""
+        try:
+            # Парсим JSON данные
+            bids_data = json.loads(row['bids']) if isinstance(row['bids'], str) else row['bids']
+            asks_data = json.loads(row['asks']) if isinstance(row['asks'], str) else row['asks']
+            
+            # Создаем объект OrderBook
+            order_book = OrderBook(
+                symbol=row['symbol'],
+                timestamp=int(row['timestamp']),
+                bids=bids_data,
+                asks=asks_data
+            )
+            
+            # Устанавливаем дополнительные поля если они есть
+            if row.get('spread') is not None:
+                order_book.spread = float(row['spread'])
+            if row.get('spread_percent') is not None:
+                order_book.spread_percent = float(row['spread_percent'])
+            if row.get('volume_imbalance') is not None:
+                order_book.volume_imbalance = float(row['volume_imbalance'])
+            
+            return order_book
+            
+        except Exception as e:
+            logger.error(f"Error converting row to OrderBook: {e}")
+            logger.debug(f"Row data: {row}")
+            raise
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_orders_repository.py`
+
+```python
+# infrastructure/repositories/postgresql/postgresql_orders_repository.py
+
+import logging
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+from src.domain.entities.order import Order
+from src.domain.repositories.i_orders_repository import IOrdersRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+class PostgreSQLOrdersRepository(IOrdersRepository):
+    """
+    PostgreSQL реализация репозитория для хранения ордеров.
+    """
+
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+
+    async def save(self, order: Order) -> None:
+        """Сохраняет или обновляет ордер в базе данных."""
+        query = """
+            INSERT INTO orders (
+                id, side, type, price, amount, status, created_at, closed_at, deal_id,
+                exchange_id, symbol, filled_amount, remaining_amount, average_price,
+                fees, fee_currency, time_in_force, client_order_id, exchange_timestamp,
+                last_update, error_message, retries, metadata, exchange_raw_data
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+                $17, $18, $19, $20, $21, $22, $23, $24
+            )
+            ON CONFLICT (id) DO UPDATE SET
+                side = EXCLUDED.side,
+                type = EXCLUDED.type,
+                price = EXCLUDED.price,
+                amount = EXCLUDED.amount,
+                status = EXCLUDED.status,
+                closed_at = EXCLUDED.closed_at,
+                exchange_id = EXCLUDED.exchange_id,
+                filled_amount = EXCLUDED.filled_amount,
+                remaining_amount = EXCLUDED.remaining_amount,
+                average_price = EXCLUDED.average_price,
+                fees = EXCLUDED.fees,
+                fee_currency = EXCLUDED.fee_currency,
+                last_update = EXCLUDED.last_update,
+                error_message = EXCLUDED.error_message,
+                retries = EXCLUDED.retries,
+                metadata = EXCLUDED.metadata,
+                exchange_raw_data = EXCLUDED.exchange_raw_data;
+        """
+        params = (
+            order.order_id, order.side, order.order_type, order.price, order.amount,
+            order.status, datetime.fromtimestamp(order.created_at / 1000),
+            datetime.fromtimestamp(order.closed_at / 1000) if order.closed_at else None,
+            order.deal_id, order.exchange_id, order.symbol, order.filled_amount,
+            order.remaining_amount, order.average_price, order.fees, order.fee_currency,
+            order.time_in_force, order.client_order_id,
+            datetime.fromtimestamp(order.exchange_timestamp / 1000) if order.exchange_timestamp else None,
+            datetime.fromtimestamp(order.last_update / 1000) if order.last_update else None,
+            order.error_message, order.retries, order.metadata, order.exchange_raw_data
+        )
+        try:
+            await self.db_manager.execute_command(query, params)
+            logger.info(f"Order {order.order_id} saved to PostgreSQL.")
+        except Exception as e:
+            logger.error(f"Failed to save order {order.order_id} to PostgreSQL: {e}")
+            raise
+
+    async def get_by_id(self, order_id: int) -> Optional[Order]:
+        query = "SELECT * FROM orders WHERE id = $1;"
+        try:
+            result = await self.db_manager.execute_query(query, (order_id,))
+            if result:
+                return self._map_row_to_order(result[0])
+        except Exception as e:
+            logger.error(f"Failed to get order {order_id} from PostgreSQL: {e}")
+        return None
+
+    async def get_by_exchange_id(self, exchange_id: str) -> Optional[Order]:
+        query = "SELECT * FROM orders WHERE exchange_id = $1;"
+        try:
+            result = await self.db_manager.execute_query(query, (exchange_id,))
+            if result:
+                return self._map_row_to_order(result[0])
+        except Exception as e:
+            logger.error(f"Failed to get order by exchange_id {exchange_id} from PostgreSQL: {e}")
+        return None
+
+    async def get_all_by_deal(self, deal_id: int) -> List[Order]:
+        query = "SELECT * FROM orders WHERE deal_id = $1;"
+        orders = []
+        try:
+            result = await self.db_manager.execute_query(query, (deal_id,))
+            if result:
+                orders = [self._map_row_to_order(row) for row in result]
+        except Exception as e:
+            logger.error(f"Failed to get orders for deal {deal_id} from PostgreSQL: {e}")
+        return orders
+
+    def _map_row_to_order(self, row: Dict[str, Any]) -> Order:
+        """Преобразует строку из базы данных в объект Order."""
+        return Order(
+            order_id=row['id'],
+            side=row['side'],
+            order_type=row['type'],
+            price=row['price'],
+            amount=row['amount'],
+            status=row['status'],
+            created_at=int(row['created_at'].timestamp() * 1000),
+            closed_at=int(row['closed_at'].timestamp() * 1000) if row['closed_at'] else None,
+            deal_id=row['deal_id'],
+            exchange_id=row['exchange_id'],
+            symbol=row['symbol'],
+            filled_amount=row['filled_amount'],
+            remaining_amount=row['remaining_amount'],
+            average_price=row['average_price'],
+            fees=row['fees'],
+            fee_currency=row['fee_currency'],
+            time_in_force=row['time_in_force'],
+            client_order_id=row['client_order_id'],
+            exchange_timestamp=int(row['exchange_timestamp'].timestamp() * 1000) if row['exchange_timestamp'] else None,
+            last_update=int(row['last_update'].timestamp() * 1000) if row['last_update'] else None,
+            error_message=row['error_message'],
+            retries=row['retries'],
+            metadata=row['metadata'],
+            exchange_raw_data=row['exchange_raw_data']
+        )
+
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_orders_repository_ccxt.py`
+
+```python
+# infrastructure/repositories/postgresql/postgresql_orders_repository_ccxt.py
+import json
+import logging
+from decimal import Decimal
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone
+import asyncpg
+from asyncpg import Connection, Pool
+
+from src.domain.entities.order import Order
+from src.domain.repositories.i_orders_repository import IOrdersRepository
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
+    """
+    🚀 CCXT COMPLIANT PostgreSQL Orders Repository
+    
+    Работает с новой CCXT-совместимой схемой БД (таблица ccxt_orders).
+    Полная совместимость с CCXT структурами данных.
+    """
+
+    def __init__(self, connection_pool: Pool):
+        self.pool = connection_pool
+
+    # ===== CORE CRUD OPERATIONS =====
+
+    async def save_order(self, order: Order) -> bool:
+        """
+        Сохранить ордер в CCXT-совместимую таблицу ccxt_orders
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                # Проверяем, существует ли ордер
+                existing = await self._get_order_by_id(conn, order.id)
+                
+                if existing:
+                    # Обновляем существующий ордер
+                    return await self._update_order_internal(conn, order)
+                else:
+                    # Создаем новый ордер
+                    return await self._insert_order_internal(conn, order)
+                    
+        except Exception as e:
+            logger.error(f"Failed to save order {order.id}: {str(e)}")
+            return False
+
+    async def get_order(self, order_id: str) -> Optional[Order]:
+        """
+        Получить ордер по CCXT ID (exchange order ID)
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                return await self._get_order_by_id(conn, order_id)
+        except Exception as e:
+            logger.error(f"Failed to get order {order_id}: {str(e)}")
+            return None
+
+    async def get_order_by_local_id(self, local_order_id: int) -> Optional[Order]:
+        """
+        Получить ордер по локальному AutoTrade ID
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE local_order_id = $1
+                """
+                row = await conn.fetchrow(query, local_order_id)
+                return self._row_to_order(row) if row else None
+        except Exception as e:
+            logger.error(f"Failed to get order by local_id {local_order_id}: {str(e)}")
+            return None
+
+    async def update_order(self, order: Order) -> bool:
+        """
+        Обновить существующий ордер
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                return await self._update_order_internal(conn, order)
+        except Exception as e:
+            logger.error(f"Failed to update order {order.id}: {str(e)}")
+            return False
+
+    async def delete_order(self, order_id: str) -> bool:
+        """
+        Удалить ордер (мягкое удаление - помечаем как отмененный)
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    UPDATE ccxt_orders 
+                    SET status = 'canceled', 
+                        updated_at = CURRENT_TIMESTAMP,
+                        error_message = 'Deleted'
+                    WHERE id = $1
+                """
+                result = await conn.execute(query, order_id)
+                return result == "UPDATE 1"
+        except Exception as e:
+            logger.error(f"Failed to delete order {order_id}: {str(e)}")
+            return False
+
+    # ===== QUERY OPERATIONS =====
+
+    async def get_all_orders(self) -> List[Order]:
+        """
+        Получить все ордера
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    ORDER BY created_at DESC
+                """
+                rows = await conn.fetch(query)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get all orders: {str(e)}")
+            return []
+
+    async def get_active_orders(self) -> List[Order]:
+        """
+        Получить активные ордера (CCXT статусы: open, pending, partial)
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE status IN ('open', 'pending', 'partial')
+                    ORDER BY created_at DESC
+                """
+                rows = await conn.fetch(query)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get active orders: {str(e)}")
+            return []
+
+    async def get_filled_orders(self) -> List[Order]:
+        """
+        Получить исполненные ордера (CCXT статус: closed)
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE status = 'closed'
+                    ORDER BY updated_at DESC
+                """
+                rows = await conn.fetch(query)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get filled orders: {str(e)}")
+            return []
+
+    async def get_orders_by_symbol(self, symbol: str) -> List[Order]:
+        """
+        Получить ордера по торговой паре
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE symbol = $1
+                    ORDER BY created_at DESC
+                """
+                rows = await conn.fetch(query, symbol)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get orders by symbol {symbol}: {str(e)}")
+            return []
+
+    async def get_orders_by_deal_id(self, deal_id: str) -> List[Order]:
+        """
+        Получить ордера по ID сделки
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE deal_id = $1
+                    ORDER BY created_at ASC
+                """
+                rows = await conn.fetch(query, deal_id)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get orders by deal_id {deal_id}: {str(e)}")
+            return []
+
+    async def get_orders_in_period(self, start_time: datetime, end_time: datetime) -> List[Order]:
+        """
+        Получить ордера за период
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE created_at BETWEEN $1 AND $2
+                    ORDER BY created_at DESC
+                """
+                rows = await conn.fetch(query, start_time, end_time)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get orders in period: {str(e)}")
+            return []
+
+    async def count_active_orders(self) -> int:
+        """
+        Подсчитать количество активных ордеров
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT COUNT(*) FROM ccxt_orders 
+                    WHERE status IN ('open', 'pending', 'partial')
+                """
+                count = await conn.fetchval(query)
+                return count or 0
+        except Exception as e:
+            logger.error(f"Failed to count active orders: {str(e)}")
+            return 0
+
+    async def count_orders_by_status(self, status: str) -> int:
+        """
+        Подсчитать ордера по статусу
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT COUNT(*) FROM ccxt_orders 
+                    WHERE status = $1
+                """
+                count = await conn.fetchval(query, status)
+                return count or 0
+        except Exception as e:
+            logger.error(f"Failed to count orders by status {status}: {str(e)}")
+            return 0
+
+    # ===== ADVANCED QUERY OPERATIONS =====
+
+    async def get_orders_by_side_and_symbol(self, side: str, symbol: str) -> List[Order]:
+        """
+        Получить ордера по стороне и символу
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE side = $1 AND symbol = $2
+                    ORDER BY created_at DESC
+                """
+                rows = await conn.fetch(query, side, symbol)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get orders by side {side} and symbol {symbol}: {str(e)}")
+            return []
+
+    async def get_recent_orders(self, limit: int = 100) -> List[Order]:
+        """
+        Получить последние ордера
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    ORDER BY created_at DESC
+                    LIMIT $1
+                """
+                rows = await conn.fetch(query, limit)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get recent orders: {str(e)}")
+            return []
+
+    async def get_orders_with_errors(self) -> List[Order]:
+        """
+        Получить ордера с ошибками
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT * FROM ccxt_orders 
+                    WHERE error_message IS NOT NULL AND error_message != ''
+                    ORDER BY updated_at DESC
+                """
+                rows = await conn.fetch(query)
+                return [self._row_to_order(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to get orders with errors: {str(e)}")
+            return []
+
+    # ===== BULK OPERATIONS =====
+
+    async def update_orders_batch(self, orders: List[Order]) -> int:
+        """
+        Массовое обновление ордеров
+        """
+        updated_count = 0
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.transaction():
+                    for order in orders:
+                        success = await self._update_order_internal(conn, order)
+                        if success:
+                            updated_count += 1
+        except Exception as e:
+            logger.error(f"Failed to update orders batch: {str(e)}")
+        
+        return updated_count
+
+    # ===== INTERNAL HELPER METHODS =====
+
+    async def _get_order_by_id(self, conn: Connection, order_id: str) -> Optional[Order]:
+        """
+        Внутренний метод получения ордера по ID
+        """
+        query = """
+            SELECT * FROM ccxt_orders 
+            WHERE id = $1
+        """
+        row = await conn.fetchrow(query, order_id)
+        return self._row_to_order(row) if row else None
+
+    async def _insert_order_internal(self, conn: Connection, order: Order) -> bool:
+        """
+        Внутренний метод вставки нового ордера
+        """
+        try:
+            query = """
+                INSERT INTO ccxt_orders (
+                    id, client_order_id, datetime, timestamp, last_trade_timestamp,
+                    status, symbol, type, time_in_force, side, price, amount,
+                    filled, remaining, cost, average, trades, fee, info,
+                    deal_id, local_order_id, created_at, updated_at,
+                    error_message, retries, metadata
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                    $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23,
+                    $24, $25, $26
+                )
+            """
+            
+            # Конвертируем данные для вставки
+            values = self._order_to_db_values(order)
+            
+            await conn.execute(query, *values)
+            logger.debug(f"Inserted order {order.id} into database")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to insert order {order.id}: {str(e)}")
+            return False
+
+    async def _update_order_internal(self, conn: Connection, order: Order) -> bool:
+        """
+        Внутренний метод обновления ордера
+        """
+        try:
+            query = """
+                UPDATE ccxt_orders SET
+                    client_order_id = $2, datetime = $3, timestamp = $4,
+                    last_trade_timestamp = $5, status = $6, symbol = $7,
+                    type = $8, time_in_force = $9, side = $10, price = $11,
+                    amount = $12, filled = $13, remaining = $14, cost = $15,
+                    average = $16, trades = $17, fee = $18, info = $19,
+                    deal_id = $20, local_order_id = $21, updated_at = $22,
+                    error_message = $23, retries = $24, metadata = $25
+                WHERE id = $1
+            """
+            
+            # Конвертируем данные для обновления (без created_at)
+            values = self._order_to_db_values(order, include_created_at=False)
+            
+            result = await conn.execute(query, *values)
+            success = result == "UPDATE 1"
+            
+            if success:
+                logger.debug(f"Updated order {order.id} in database")
+            else:
+                logger.warning(f"No rows updated for order {order.id}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Failed to update order {order.id}: {str(e)}")
+            return False
+
+    def _order_to_db_values(self, order: Order, include_created_at: bool = True) -> tuple:
+        """
+        Конвертирует Order в кортеж значений для БД
+        """
+        # Конвертируем datetime в PostgreSQL timestamp
+        created_at = None
+        updated_at = datetime.now(timezone.utc)
+        
+        if order.created_at:
+            created_at = datetime.fromtimestamp(order.created_at / 1000, timezone.utc)
+        
+        if order.datetime:
+            try:
+                # Парсим ISO datetime в PostgreSQL timestamp
+                order_datetime = datetime.fromisoformat(order.datetime.replace('Z', '+00:00'))
+            except:
+                order_datetime = created_at
+        else:
+            order_datetime = created_at
+
+        # Конвертируем JSON поля
+        trades_json = json.dumps(order.trades) if order.trades else '[]'
+        fee_json = json.dumps(order.fee) if order.fee else '{}'
+        info_json = json.dumps(order.info) if order.info else '{}'
+        metadata_json = json.dumps(order.metadata) if order.metadata else '{}'
+
+        # Конвертируем UUID
+        deal_id = str(order.deal_id) if order.deal_id else None
+
+        values = [
+            order.id,                                    # $1
+            order.clientOrderId,                         # $2
+            order_datetime,                              # $3
+            order.timestamp,                             # $4
+            order.lastTradeTimestamp,                    # $5
+            order.status,                                # $6
+            order.symbol,                                # $7
+            order.type,                                  # $8
+            order.timeInForce,                           # $9
+            order.side,                                  # $10
+            Decimal(str(order.price)) if order.price else None,  # $11
+            Decimal(str(order.amount)),                  # $12
+            Decimal(str(order.filled)),                  # $13
+            Decimal(str(order.remaining)) if order.remaining else None,  # $14
+            Decimal(str(order.cost)) if order.cost else None,     # $15
+            Decimal(str(order.average)) if order.average else None, # $16
+            trades_json,                                 # $17
+            fee_json,                                    # $18
+            info_json,                                   # $19
+            deal_id,                                     # $20
+            order.local_order_id,                        # $21
+        ]
+
+        if include_created_at:
+            values.extend([
+                created_at,                              # $22
+                updated_at,                              # $23
+                order.error_message,                     # $24
+                order.retries,                           # $25
+                metadata_json                            # $26
+            ])
+        else:
+            values.extend([
+                updated_at,                              # $22
+                order.error_message,                     # $23
+                order.retries,                           # $24
+                metadata_json                            # $25
+            ])
+
+        return tuple(values)
+
+    def _row_to_order(self, row) -> Order:
+        """
+        Конвертирует строку БД в объект Order
+        """
+        if not row:
+            return None
+
+        # Парсим JSON поля
+        trades = json.loads(row['trades']) if row['trades'] else []
+        fee = json.loads(row['fee']) if row['fee'] else {}
+        info = json.loads(row['info']) if row['info'] else {}
+        metadata = json.loads(row['metadata']) if row['metadata'] else {}
+
+        # Конвертируем datetime в ISO string
+        datetime_str = None
+        if row['datetime']:
+            datetime_str = row['datetime'].isoformat().replace('+00:00', 'Z')
+
+        # Конвертируем timestamp
+        created_at_timestamp = None
+        if row['created_at']:
+            created_at_timestamp = int(row['created_at'].timestamp() * 1000)
+
+        last_update_timestamp = None
+        if row['updated_at']:
+            last_update_timestamp = int(row['updated_at'].timestamp() * 1000)
+
+        # Конвертируем Decimal в float
+        price = float(row['price']) if row['price'] else None
+        amount = float(row['amount']) if row['amount'] else 0.0
+        filled = float(row['filled']) if row['filled'] else 0.0
+        remaining = float(row['remaining']) if row['remaining'] else None
+        cost = float(row['cost']) if row['cost'] else None
+        average = float(row['average']) if row['average'] else None
+
+        return Order(
+            # CCXT поля
+            id=row['id'],
+            clientOrderId=row['client_order_id'],
+            datetime=datetime_str,
+            timestamp=row['timestamp'],
+            lastTradeTimestamp=row['last_trade_timestamp'],
+            status=row['status'],
+            symbol=row['symbol'],
+            type=row['type'],
+            timeInForce=row['time_in_force'],
+            side=row['side'],
+            price=price,
+            amount=amount,
+            filled=filled,
+            remaining=remaining,
+            cost=cost,
+            average=average,
+            trades=trades,
+            fee=fee,
+            info=info,
+            
+            # AutoTrade поля
+            deal_id=int(row['deal_id']) if row['deal_id'] else None,
+            local_order_id=row['local_order_id'],
+            created_at=created_at_timestamp,
+            last_update=last_update_timestamp,
+            error_message=row['error_message'],
+            retries=row['retries'] or 0,
+            metadata=metadata
+        )
+
+    # ===== UTILITY METHODS =====
+
+    async def cleanup_old_orders(self, days_to_keep: int = 30) -> int:
+        """
+        Очистка старых ордеров
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    DELETE FROM ccxt_orders 
+                    WHERE created_at < CURRENT_TIMESTAMP - INTERVAL '%s days'
+                    AND status IN ('closed', 'canceled', 'rejected', 'expired')
+                """
+                result = await conn.execute(query % days_to_keep)
+                # Извлекаем количество удаленных строк из результата
+                deleted_count = int(result.split()[-1]) if result.startswith('DELETE') else 0
+                logger.info(f"Cleaned up {deleted_count} old orders")
+                return deleted_count
+        except Exception as e:
+            logger.error(f"Failed to cleanup old orders: {str(e)}")
+            return 0
+
+    async def get_order_statistics(self) -> Dict[str, Any]:
+        """
+        Получить статистику по ордерам
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                query = """
+                    SELECT 
+                        status,
+                        side,
+                        COUNT(*) as count,
+                        SUM(CASE WHEN cost IS NOT NULL THEN cost ELSE 0 END) as total_cost,
+                        AVG(CASE WHEN cost IS NOT NULL THEN cost ELSE 0 END) as avg_cost
+                    FROM ccxt_orders 
+                    GROUP BY status, side
+                    ORDER BY status, side
+                """
+                rows = await conn.fetch(query)
+                
+                statistics = {}
+                for row in rows:
+                    key = f"{row['status']}_{row['side']}"
+                    statistics[key] = {
+                        'count': row['count'],
+                        'total_cost': float(row['total_cost']) if row['total_cost'] else 0.0,
+                        'avg_cost': float(row['avg_cost']) if row['avg_cost'] else 0.0
+                    }
+                
+                return statistics
+        except Exception as e:
+            logger.error(f"Failed to get order statistics: {str(e)}")
+            return {}
+
+    async def health_check(self) -> Dict[str, Any]:
+        """
+        Проверка здоровья репозитория
+        """
+        try:
+            async with self.pool.acquire() as conn:
+                # Проверяем подключение
+                await conn.fetchval("SELECT 1")
+                
+                # Считаем общее количество ордеров
+                total_orders = await conn.fetchval("SELECT COUNT(*) FROM ccxt_orders")
+                
+                # Считаем активные ордера
+                active_orders = await conn.fetchval(
+                    "SELECT COUNT(*) FROM ccxt_orders WHERE status IN ('open', 'pending', 'partial')"
+                )
+                
+                return {
+                    'status': 'healthy',
+                    'total_orders': total_orders or 0,
+                    'active_orders': active_orders or 0,
+                    'connection_pool_size': self.pool.get_size(),
+                    'connection_pool_free': self.pool.get_size() - self.pool.get_busy_size()
+                }
+        except Exception as e:
+            return {
+                'status': 'unhealthy',
+                'error': str(e)
+            }
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_statistics_repository.py`
+
+```python
+import asyncio
+import logging
+from typing import List, Optional, Dict, Any, Union
+from datetime import datetime
+import json
+
+from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
+from src.domain.repositories.i_statistics_repository import IStatisticsRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLStatisticsRepository(IStatisticsRepository):
+    """
+    PostgreSQL реализация репозитория статистики
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self._ensure_postgresql()
+    
+    def _ensure_postgresql(self):
+        """Проверяем, что используется PostgreSQL"""
+        if self.db_manager.db_type != 'postgresql':
+            raise ValueError("PostgreSQLStatisticsRepository requires PostgreSQL database")
+    
+    async def save_statistic(self, statistic: Statistics) -> bool:
+        """Сохранить статистику"""
+        try:
+            query = """
+                INSERT INTO statistics (
+                    metric_id, metric_name, value, category, metric_type,
+                    symbol, timestamp, tags, description
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (metric_id) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    timestamp = EXCLUDED.timestamp,
+                    tags = EXCLUDED.tags,
+                    description = EXCLUDED.description
+            """
+            
+            params = (
+                statistic.metric_id,
+                statistic.metric_name,
+                str(statistic.value),
+                statistic.category.value,
+                statistic.metric_type.value,
+                statistic.symbol,
+                statistic.timestamp,
+                json.dumps(statistic.tags or {}),
+                statistic.description
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving statistic: {e}")
+            return False
+    
+    async def update_counter(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        increment: Union[int, float] = 1,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Обновить счетчик"""
+        try:
+            metric_id = self._generate_metric_id(metric_name, category, symbol, tags)
+            
+            # Пытаемся обновить существующий счетчик
+            query = """
+                UPDATE statistics 
+                SET value = (CAST(value AS NUMERIC) + $1)::TEXT,
+                    timestamp = $2,
+                    tags = $3
+                WHERE metric_id = $4
+            """
+            
+            current_timestamp = int(datetime.now().timestamp() * 1000)
+            result = await self.db_manager.execute_command(
+                query,
+                (increment, current_timestamp, json.dumps(tags or {}), metric_id)
+            )
+            
+            # Если строка не была обновлена, создаем новую
+            if result == 0:
+                new_statistic = Statistics(
+                    metric_id=metric_id,
+                    metric_name=metric_name,
+                    value=increment,
+                    category=category,
+                    metric_type=StatisticType.COUNTER,
+                    symbol=symbol,
+                    timestamp=current_timestamp,
+                    tags=tags
+                )
+                return await self.save_statistic(new_statistic)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating counter: {e}")
+            return False
+    
+    async def increment_counter(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Увеличить счетчик на 1"""
+        return await self.update_counter(metric_name, category, 1, symbol, tags)
+    
+    async def update_gauge(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        value: Union[int, float],
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        description: Optional[str] = None
+    ) -> bool:
+        """Обновить индикатор"""
+        try:
+            metric_id = self._generate_metric_id(metric_name, category, symbol, tags)
+            current_timestamp = int(datetime.now().timestamp() * 1000)
+            
+            # Обновляем или создаем индикатор
+            query = """
+                INSERT INTO statistics (
+                    metric_id, metric_name, value, category, metric_type,
+                    symbol, timestamp, tags, description
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (metric_id) 
+                DO UPDATE SET 
+                    value = EXCLUDED.value,
+                    timestamp = EXCLUDED.timestamp,
+                    tags = EXCLUDED.tags,
+                    description = EXCLUDED.description
+            """
+            
+            params = (
+                metric_id,
+                metric_name,
+                str(value),
+                category.value,
+                StatisticType.GAUGE.value,
+                symbol,
+                current_timestamp,
+                json.dumps(tags or {}),
+                description
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating gauge: {e}")
+            return False
+    
+    async def record_timing(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        duration_ms: float,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Записать время выполнения"""
+        try:
+            metric_id = self._generate_metric_id(metric_name, category, symbol, tags)
+            current_timestamp = int(datetime.now().timestamp() * 1000)
+            
+            # Сохраняем время как новую запись (не обновляем)
+            timing_id = f"{metric_id}_{current_timestamp}"
+            
+            statistic = Statistics(
+                metric_id=timing_id,
+                metric_name=metric_name,
+                value=duration_ms,
+                category=category,
+                metric_type=StatisticType.TIMING,
+                symbol=symbol,
+                timestamp=current_timestamp,
+                tags=tags,
+                description=f"Execution time: {duration_ms:.2f}ms"
+            )
+            
+            return await self.save_statistic(statistic)
+            
+        except Exception as e:
+            logger.error(f"Error recording timing: {e}")
+            return False
+    
+    async def get_statistic(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        symbol: Optional[str] = None
+    ) -> Optional[Statistics]:
+        """Получить статистику"""
+        try:
+            query = """
+                SELECT metric_id, metric_name, value, category, metric_type,
+                       symbol, timestamp, created_at, tags, description
+                FROM statistics
+                WHERE metric_name = $1 AND category = $2
+            """
+            params = [metric_name, category.value]
+            
+            if symbol is not None:
+                query += " AND symbol = $3"
+                params.append(symbol)
+            else:
+                query += " AND symbol IS NULL"
+            
+            query += " ORDER BY timestamp DESC LIMIT 1"
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            if not rows:
+                return None
+            
+            return self._row_to_statistic(rows[0])
+            
+        except Exception as e:
+            logger.error(f"Error getting statistic: {e}")
+            return None
+    
+    async def get_statistics_by_category(
+        self,
+        category: StatisticCategory,
+        symbol: Optional[str] = None,
+        limit: Optional[int] = None
+    ) -> List[Statistics]:
+        """Получить статистики по категории"""
+        try:
+            query = """
+                SELECT metric_id, metric_name, value, category, metric_type,
+                       symbol, timestamp, created_at, tags, description
+                FROM statistics
+                WHERE category = $1
+            """
+            params = [category.value]
+            param_index = 2
+            
+            if symbol is not None:
+                query += f" AND symbol = ${param_index}"
+                params.append(symbol)
+                param_index += 1
+            
+            query += " ORDER BY timestamp DESC"
+            
+            if limit is not None:
+                query += f" LIMIT ${param_index}"
+                params.append(limit)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_statistic(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting statistics by category: {e}")
+            return []
+    
+    async def get_statistics_range(
+        self,
+        start_timestamp: int,
+        end_timestamp: int,
+        category: Optional[StatisticCategory] = None,
+        metric_name: Optional[str] = None,
+        symbol: Optional[str] = None
+    ) -> List[Statistics]:
+        """Получить статистики за период"""
+        try:
+            query = """
+                SELECT metric_id, metric_name, value, category, metric_type,
+                       symbol, timestamp, created_at, tags, description
+                FROM statistics
+                WHERE timestamp >= $1 AND timestamp <= $2
+            """
+            params = [start_timestamp, end_timestamp]
+            param_index = 3
+            
+            if category is not None:
+                query += f" AND category = ${param_index}"
+                params.append(category.value)
+                param_index += 1
+            
+            if metric_name is not None:
+                query += f" AND metric_name = ${param_index}"
+                params.append(metric_name)
+                param_index += 1
+            
+            if symbol is not None:
+                query += f" AND symbol = ${param_index}"
+                params.append(symbol)
+                param_index += 1
+            
+            query += " ORDER BY timestamp ASC"
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_statistic(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting statistics range: {e}")
+            return []
+    
+    async def get_metric_summary(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        symbol: Optional[str] = None,
+        hours_back: int = 24
+    ) -> Dict[str, Any]:
+        """Получить сводку по метрике"""
+        try:
+            # Вычисляем период
+            current_time = int(datetime.now().timestamp() * 1000)
+            start_timestamp = current_time - (hours_back * 60 * 60 * 1000)
+            
+            query = """
+                SELECT 
+                    COUNT(*) as count,
+                    MIN(CAST(value AS NUMERIC)) as min_value,
+                    MAX(CAST(value AS NUMERIC)) as max_value,
+                    AVG(CAST(value AS NUMERIC)) as avg_value,
+                    STDDEV(CAST(value AS NUMERIC)) as stddev_value,
+                    SUM(CAST(value AS NUMERIC)) as sum_value
+                FROM statistics
+                WHERE metric_name = $1 AND category = $2 AND timestamp >= $3
+            """
+            params = [metric_name, category.value, start_timestamp]
+            
+            if symbol is not None:
+                query += " AND symbol = $4"
+                params.append(symbol)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            if not rows or rows[0]['count'] == 0:
+                return {}
+            
+            row = rows[0]
+            return {
+                'metric_name': metric_name,
+                'category': category.value,
+                'symbol': symbol,
+                'hours_analyzed': hours_back,
+                'count': int(row['count']),
+                'min_value': float(row['min_value']) if row['min_value'] is not None else None,
+                'max_value': float(row['max_value']) if row['max_value'] is not None else None,
+                'avg_value': float(row['avg_value']) if row['avg_value'] is not None else None,
+                'stddev_value': float(row['stddev_value']) if row['stddev_value'] is not None else None,
+                'sum_value': float(row['sum_value']) if row['sum_value'] is not None else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting metric summary: {e}")
+            return {}
+    
+    async def get_all_metrics(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Получить все доступные метрики сгруппированные по категориям"""
+        try:
+            query = """
+                SELECT DISTINCT 
+                    metric_name,
+                    category,
+                    metric_type,
+                    COUNT(*) as count,
+                    MAX(timestamp) as last_updated
+                FROM statistics
+                GROUP BY metric_name, category, metric_type
+                ORDER BY category, metric_name
+            """
+            
+            rows = await self.db_manager.execute_query(query)
+            
+            # Группируем по категориям
+            result = {}
+            for row in rows:
+                category = row['category']
+                if category not in result:
+                    result[category] = []
+                
+                result[category].append({
+                    'metric_name': row['metric_name'],
+                    'metric_type': row['metric_type'],
+                    'count': int(row['count']),
+                    'last_updated': int(row['last_updated'])
+                })
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting all metrics: {e}")
+            return {}
+    
+    async def delete_old_statistics(
+        self,
+        before_timestamp: int,
+        category: Optional[StatisticCategory] = None
+    ) -> int:
+        """Удалить старую статистику"""
+        try:
+            query = "DELETE FROM statistics WHERE timestamp < $1"
+            params = [before_timestamp]
+            
+            if category is not None:
+                query += " AND category = $2"
+                params.append(category.value)
+            
+            return await self.db_manager.execute_command(query, tuple(params))
+            
+        except Exception as e:
+            logger.error(f"Error deleting old statistics: {e}")
+            return 0
+    
+    async def cleanup_old_statistics(self, days_to_keep: int = 30) -> int:
+        """Очистка старой статистики"""
+        try:
+            # Вычисляем временную метку
+            current_time = int(datetime.now().timestamp() * 1000)
+            cutoff_timestamp = current_time - (days_to_keep * 24 * 60 * 60 * 1000)
+            
+            return await self.delete_old_statistics(cutoff_timestamp)
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up old statistics: {e}")
+            return 0
+    
+    async def reset_counter(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        symbol: Optional[str] = None
+    ) -> bool:
+        """Сбросить счетчик"""
+        return await self.update_gauge(metric_name, category, 0, symbol)
+    
+    def _generate_metric_id(
+        self,
+        metric_name: str,
+        category: StatisticCategory,
+        symbol: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Генерировать уникальный ID метрики"""
+        parts = [metric_name, category.value]
+        
+        if symbol:
+            parts.append(symbol)
+        
+        if tags:
+            # Сортируем теги для стабильности ID
+            sorted_tags = sorted(tags.items())
+            tag_str = "_".join(f"{k}:{v}" for k, v in sorted_tags)
+            parts.append(tag_str)
+        
+        return "_".join(parts)
+    
+    def _row_to_statistic(self, row: Dict[str, Any]) -> Statistics:
+        """Преобразовать строку БД в объект Statistics"""
+        try:
+            tags = row.get('tags', '{}')
+            if isinstance(tags, str):
+                tags = json.loads(tags)
+            elif tags is None:
+                tags = {}
+            
+            # Пытаемся преобразовать значение в число, если возможно
+            value = row['value']
+            try:
+                if '.' in str(value):
+                    value = float(value)
+                else:
+                    value = int(value)
+            except (ValueError, TypeError):
+                # Оставляем как строку
+                pass
+            
+            return Statistics(
+                metric_id=row['metric_id'],
+                metric_name=row['metric_name'],
+                value=value,
+                category=StatisticCategory(row['category']),
+                metric_type=StatisticType(row['metric_type']),
+                symbol=row.get('symbol'),
+                timestamp=int(row['timestamp']),
+                tags=tags,
+                description=row.get('description')
+            )
+            
+        except Exception as e:
+            logger.error(f"Error converting row to Statistics: {e}")
+            logger.debug(f"Row data: {row}")
+            raise
+```
+
+### 📄 `src\infrastructure\repositories\postgresql\postgresql_trading_signal_repository.py`
+
+```python
+import asyncio
+import logging
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+import json
+
+from src.domain.entities.trading_signal import TradingSignal, SignalType, SignalSource
+from src.domain.repositories.i_trading_signal_repository import ITradingSignalRepository
+from src.infrastructure.database.database_manager import DatabaseManager
+
+logger = logging.getLogger(__name__)
+
+
+class PostgreSQLTradingSignalRepository(ITradingSignalRepository):
+    """
+    PostgreSQL реализация репозитория торговых сигналов
+    """
+    
+    def __init__(self, db_manager: DatabaseManager):
+        self.db_manager = db_manager
+        self._ensure_postgresql()
+    
+    def _ensure_postgresql(self):
+        """Проверяем, что используется PostgreSQL"""
+        if self.db_manager.db_type != 'postgresql':
+            raise ValueError("PostgreSQLTradingSignalRepository requires PostgreSQL database")
+    
+    async def save_signal(self, signal: TradingSignal) -> bool:
+        """Сохранить торговый сигнал"""
+        try:
+            query = """
+                INSERT INTO trading_signals (
+                    signal_id, symbol, signal_type, source, strength, 
+                    confidence, price, timestamp, metadata
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (signal_id) 
+                DO UPDATE SET 
+                    signal_type = EXCLUDED.signal_type,
+                    strength = EXCLUDED.strength,
+                    confidence = EXCLUDED.confidence,
+                    price = EXCLUDED.price,
+                    metadata = EXCLUDED.metadata
+            """
+            
+            params = (
+                signal.signal_id,
+                signal.symbol,
+                signal.signal_type.value,
+                signal.source.value,
+                float(signal.strength),
+                float(signal.confidence),
+                float(signal.price) if signal.price else None,
+                signal.timestamp,
+                json.dumps(signal.metadata or {})
+            )
+            
+            await self.db_manager.execute_command(query, params)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving trading signal: {e}")
+            return False
+    
+    async def save_signals_batch(self, signals: List[TradingSignal]) -> int:
+        """Сохранить пакет торговых сигналов"""
+        if not signals:
+            return 0
+        
+        try:
+            query = """
+                INSERT INTO trading_signals (
+                    signal_id, symbol, signal_type, source, strength, 
+                    confidence, price, timestamp, metadata
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (signal_id) 
+                DO UPDATE SET 
+                    signal_type = EXCLUDED.signal_type,
+                    strength = EXCLUDED.strength,
+                    confidence = EXCLUDED.confidence,
+                    price = EXCLUDED.price,
+                    metadata = EXCLUDED.metadata
+            """
+            
+            params_list = []
+            for signal in signals:
+                params_list.append((
+                    signal.signal_id,
+                    signal.symbol,
+                    signal.signal_type.value,
+                    signal.source.value,
+                    float(signal.strength),
+                    float(signal.confidence),
+                    float(signal.price) if signal.price else None,
+                    signal.timestamp,
+                    json.dumps(signal.metadata or {})
+                ))
+            
+            await self.db_manager.execute_many(query, params_list)
+            return len(signals)
+            
+        except Exception as e:
+            logger.error(f"Error saving signals batch: {e}")
+            return 0
+    
+    async def get_signal_by_id(self, signal_id: str) -> Optional[TradingSignal]:
+        """Получить сигнал по ID"""
+        try:
+            query = """
+                SELECT signal_id, symbol, signal_type, source, strength, 
+                       confidence, price, timestamp, created_at, metadata
+                FROM trading_signals
+                WHERE signal_id = $1
+            """
+            
+            rows = await self.db_manager.execute_query(query, (signal_id,))
+            
+            if not rows:
+                return None
+            
+            return self._row_to_signal(rows[0])
+            
+        except Exception as e:
+            logger.error(f"Error getting signal by ID: {e}")
+            return None
+    
+    async def get_latest_signals(
+        self,
+        symbol: str,
+        source: Optional[SignalSource] = None,
+        signal_type: Optional[SignalType] = None,
+        limit: int = 50
+    ) -> List[TradingSignal]:
+        """Получить последние сигналы"""
+        try:
+            query = """
+                SELECT signal_id, symbol, signal_type, source, strength, 
+                       confidence, price, timestamp, created_at, metadata
+                FROM trading_signals
+                WHERE symbol = $1
+            """
+            params = [symbol]
+            param_index = 2
+            
+            if source is not None:
+                query += f" AND source = ${param_index}"
+                params.append(source.value)
+                param_index += 1
+            
+            if signal_type is not None:
+                query += f" AND signal_type = ${param_index}"
+                params.append(signal_type.value)
+                param_index += 1
+            
+            query += f" ORDER BY timestamp DESC LIMIT ${param_index}"
+            params.append(limit)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_signal(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting latest signals: {e}")
+            return []
+    
+    async def get_signals_range(
+        self,
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int,
+        source: Optional[SignalSource] = None,
+        signal_type: Optional[SignalType] = None,
+        min_strength: Optional[float] = None,
+        min_confidence: Optional[float] = None
+    ) -> List[TradingSignal]:
+        """Получить сигналы за период"""
+        try:
+            query = """
+                SELECT signal_id, symbol, signal_type, source, strength, 
+                       confidence, price, timestamp, created_at, metadata
+                FROM trading_signals
+                WHERE symbol = $1 AND timestamp >= $2 AND timestamp <= $3
+            """
+            params = [symbol, start_timestamp, end_timestamp]
+            param_index = 4
+            
+            if source is not None:
+                query += f" AND source = ${param_index}"
+                params.append(source.value)
+                param_index += 1
+            
+            if signal_type is not None:
+                query += f" AND signal_type = ${param_index}"
+                params.append(signal_type.value)
+                param_index += 1
+            
+            if min_strength is not None:
+                query += f" AND strength >= ${param_index}"
+                params.append(min_strength)
+                param_index += 1
+            
+            if min_confidence is not None:
+                query += f" AND confidence >= ${param_index}"
+                params.append(min_confidence)
+                param_index += 1
+            
+            query += " ORDER BY timestamp ASC"
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            return [self._row_to_signal(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting signals range: {e}")
+            return []
+    
+    async def get_strong_signals(
+        self,
+        symbol: str,
+        min_strength: float = 0.7,
+        min_confidence: float = 0.6,
+        hours_back: int = 24,
+        limit: int = 100
+    ) -> List[TradingSignal]:
+        """Получить сильные сигналы за период"""
+        try:
+            # Вычисляем начальную временную метку
+            current_time = int(datetime.now().timestamp() * 1000)
+            start_timestamp = current_time - (hours_back * 60 * 60 * 1000)
+            
+            query = """
+                SELECT signal_id, symbol, signal_type, source, strength, 
+                       confidence, price, timestamp, created_at, metadata
+                FROM trading_signals
+                WHERE symbol = $1 
+                  AND timestamp >= $2
+                  AND strength >= $3 
+                  AND confidence >= $4
+                ORDER BY strength DESC, confidence DESC, timestamp DESC
+                LIMIT $5
+            """
+            
+            rows = await self.db_manager.execute_query(
+                query,
+                (symbol, start_timestamp, min_strength, min_confidence, limit)
+            )
+            
+            return [self._row_to_signal(row) for row in rows]
+            
+        except Exception as e:
+            logger.error(f"Error getting strong signals: {e}")
+            return []
+    
+    async def get_signal_consensus(
+        self,
+        symbol: str,
+        time_window_minutes: int = 30
+    ) -> Dict[str, Any]:
+        """Получить консенсус сигналов за временное окно"""
+        try:
+            # Вычисляем временное окно
+            current_time = int(datetime.now().timestamp() * 1000)
+            start_timestamp = current_time - (time_window_minutes * 60 * 1000)
+            
+            query = """
+                SELECT 
+                    signal_type,
+                    source,
+                    COUNT(*) as count,
+                    AVG(strength) as avg_strength,
+                    AVG(confidence) as avg_confidence,
+                    MAX(strength) as max_strength,
+                    MAX(confidence) as max_confidence
+                FROM trading_signals
+                WHERE symbol = $1 AND timestamp >= $2
+                GROUP BY signal_type, source
+                ORDER BY avg_strength DESC, avg_confidence DESC
+            """
+            
+            rows = await self.db_manager.execute_query(
+                query,
+                (symbol, start_timestamp)
+            )
+            
+            # Анализируем консенсус
+            buy_signals = []
+            sell_signals = []
+            total_signals = 0
+            
+            for row in rows:
+                signal_data = {
+                    'signal_type': row['signal_type'],
+                    'source': row['source'],
+                    'count': int(row['count']),
+                    'avg_strength': float(row['avg_strength']),
+                    'avg_confidence': float(row['avg_confidence']),
+                    'max_strength': float(row['max_strength']),
+                    'max_confidence': float(row['max_confidence'])
+                }
+                
+                total_signals += signal_data['count']
+                
+                if row['signal_type'] in ['buy', 'strong_buy', 'weak_buy']:
+                    buy_signals.append(signal_data)
+                elif row['signal_type'] in ['sell', 'strong_sell', 'weak_sell']:
+                    sell_signals.append(signal_data)
+            
+            # Вычисляем общий консенсус
+            buy_weight = sum(s['count'] * s['avg_strength'] * s['avg_confidence'] for s in buy_signals)
+            sell_weight = sum(s['count'] * s['avg_strength'] * s['avg_confidence'] for s in sell_signals)
+            
+            total_weight = buy_weight + sell_weight
+            consensus_direction = 'hold'
+            consensus_strength = 0.0
+            
+            if total_weight > 0:
+                if buy_weight > sell_weight:
+                    consensus_direction = 'buy'
+                    consensus_strength = buy_weight / total_weight
+                elif sell_weight > buy_weight:
+                    consensus_direction = 'sell'
+                    consensus_strength = sell_weight / total_weight
+            
+            return {
+                'symbol': symbol,
+                'time_window_minutes': time_window_minutes,
+                'total_signals': total_signals,
+                'buy_signals': buy_signals,
+                'sell_signals': sell_signals,
+                'consensus_direction': consensus_direction,
+                'consensus_strength': consensus_strength,
+                'buy_weight': buy_weight,
+                'sell_weight': sell_weight
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting signal consensus: {e}")
+            return {}
+    
+    async def get_source_performance(
+        self,
+        source: SignalSource,
+        symbol: Optional[str] = None,
+        days_back: int = 30
+    ) -> Dict[str, Any]:
+        """Получить статистику производительности источника сигналов"""
+        try:
+            # Вычисляем период
+            current_time = int(datetime.now().timestamp() * 1000)
+            start_timestamp = current_time - (days_back * 24 * 60 * 60 * 1000)
+            
+            query = """
+                SELECT 
+                    COUNT(*) as total_signals,
+                    AVG(strength) as avg_strength,
+                    AVG(confidence) as avg_confidence,
+                    MIN(strength) as min_strength,
+                    MAX(strength) as max_strength,
+                    MIN(confidence) as min_confidence,
+                    MAX(confidence) as max_confidence,
+                    COUNT(CASE WHEN signal_type IN ('buy', 'strong_buy', 'weak_buy') THEN 1 END) as buy_signals,
+                    COUNT(CASE WHEN signal_type IN ('sell', 'strong_sell', 'weak_sell') THEN 1 END) as sell_signals,
+                    COUNT(CASE WHEN signal_type = 'hold' THEN 1 END) as hold_signals
+                FROM trading_signals
+                WHERE source = $1 AND timestamp >= $2
+            """
+            params = [source.value, start_timestamp]
+            
+            if symbol is not None:
+                query += " AND symbol = $3"
+                params.append(symbol)
+            
+            rows = await self.db_manager.execute_query(query, tuple(params))
+            
+            if not rows or rows[0]['total_signals'] == 0:
+                return {}
+            
+            row = rows[0]
+            total = int(row['total_signals'])
+            
+            return {
+                'source': source.value,
+                'symbol': symbol,
+                'days_analyzed': days_back,
+                'total_signals': total,
+                'avg_strength': float(row['avg_strength']),
+                'avg_confidence': float(row['avg_confidence']),
+                'min_strength': float(row['min_strength']),
+                'max_strength': float(row['max_strength']),
+                'min_confidence': float(row['min_confidence']),
+                'max_confidence': float(row['max_confidence']),
+                'buy_signals': int(row['buy_signals']),
+                'sell_signals': int(row['sell_signals']),
+                'hold_signals': int(row['hold_signals']),
+                'buy_ratio': int(row['buy_signals']) / total,
+                'sell_ratio': int(row['sell_signals']) / total,
+                'hold_ratio': int(row['hold_signals']) / total
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting source performance: {e}")
+            return {}
+    
+    async def delete_old_signals(
+        self,
+        symbol: str,
+        before_timestamp: int
+    ) -> int:
+        """Удалить старые сигналы"""
+        try:
+            query = """
+                DELETE FROM trading_signals
+                WHERE symbol = $1 AND timestamp < $2
+            """
+            
+            return await self.db_manager.execute_command(query, (symbol, before_timestamp))
+            
+        except Exception as e:
+            logger.error(f"Error deleting old signals: {e}")
+            return 0
+    
+    async def cleanup_old_signals(self, days_to_keep: int = 14) -> int:
+        """Очистка старых торговых сигналов"""
+        try:
+            # Используем функцию из схемы
+            result = await self.db_manager.execute_query(
+                "SELECT cleanup_old_trading_signals($1)",
+                (days_to_keep,)
+            )
+            
+            return result[0]['cleanup_old_trading_signals'] if result else 0
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up old signals: {e}")
+            return 0
+    
+    async def delete_signals_by_source(
+        self,
+        source: SignalSource,
+        symbol: Optional[str] = None
+    ) -> int:
+        """Удалить сигналы по источнику"""
+        try:
+            query = "DELETE FROM trading_signals WHERE source = $1"
+            params = [source.value]
+            
+            if symbol is not None:
+                query += " AND symbol = $2"
+                params.append(symbol)
+            
+            return await self.db_manager.execute_command(query, tuple(params))
+            
+        except Exception as e:
+            logger.error(f"Error deleting signals by source: {e}")
+            return 0
+    
+    def _row_to_signal(self, row: Dict[str, Any]) -> TradingSignal:
+        """Преобразовать строку БД в объект TradingSignal"""
+        try:
+            metadata = row.get('metadata', '{}')
+            if isinstance(metadata, str):
+                metadata = json.loads(metadata)
+            elif metadata is None:
+                metadata = {}
+            
+            return TradingSignal(
+                signal_id=row['signal_id'],
+                symbol=row['symbol'],
+                signal_type=SignalType(row['signal_type']),
+                source=SignalSource(row['source']),
+                strength=float(row['strength']),
+                confidence=float(row['confidence']),
+                price=float(row['price']) if row.get('price') is not None else None,
+                timestamp=int(row['timestamp']),
+                metadata=metadata
+            )
+            
+        except Exception as e:
+            logger.error(f"Error converting row to TradingSignal: {e}")
+            logger.debug(f"Row data: {row}")
+            raise
+```
+
+### 📄 `src\infrastructure\repositories\stream\in_memory_stream_data_repository.py`
+
+```python
+import asyncio
+import json
+import time
+from typing import List, Optional, Dict, Any, Union
+from collections import defaultdict, deque
+import numpy as np
+import logging
+
+from src.domain.repositories.i_stream_data_repository import IStreamDataRepository
+
+logger = logging.getLogger(__name__)
+
+
+class InMemoryStreamDataRepository(IStreamDataRepository):
+    """
+    In-Memory реализация StreamDataRepository для высокочастотных данных
+    Оптимизирована для работы с JSON-массивами напрямую
+    """
+    
+    def __init__(self):
+        # Хранилища данных как JSON-массивы для производительности
+        self._ticker_data: Dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
+        self._orderbook_data: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+        
+        # Буферы индикаторов для быстрых вычислений
+        self._indicator_buffers: Dict[str, Dict[str, deque]] = defaultdict(lambda: defaultdict(lambda: deque(maxlen=100)))
+        
+        # Кэши для оптимизации
+        self._price_cache: Dict[str, List[float]] = defaultdict(list)
+        self._latest_ticker_cache: Dict[str, Dict[str, Any]] = {}
+        self._latest_orderbook_cache: Dict[str, Dict[str, Any]] = {}
+        
+        # Статистика производительности
+        self._stats = {
+            "ticker_appends": 0,
+            "orderbook_appends": 0,
+            "cache_hits": 0,
+            "cache_misses": 0
+        }
+    
+    async def append_ticker_data(
+        self, 
+        symbol: str, 
+        ticker_data: Dict[str, Any],
+        max_history_size: int = 1000
+    ) -> None:
+        """Добавить данные тикера в JSON-массив с оптимизацией"""
+        try:
+            # Валидация основных полей
+            if 'timestamp' not in ticker_data or 'close' not in ticker_data:
+                logger.warning(f"Invalid ticker data for {symbol}: missing timestamp or close")
+                return
+            
+            # Обновляем размер буфера если нужно
+            if self._ticker_data[symbol].maxlen != max_history_size:
+                new_deque = deque(self._ticker_data[symbol], maxlen=max_history_size)
+                self._ticker_data[symbol] = new_deque
+            
+            # Добавляем данные
+            self._ticker_data[symbol].append(ticker_data.copy())
+            
+            # Обновляем кэш цен для быстрого доступа
+            price = float(ticker_data['close'])
+            price_cache = self._price_cache[symbol]
+            price_cache.append(price)
+            
+            # Ограничиваем размер кэша цен
+            if len(price_cache) > max_history_size:
+                price_cache.pop(0)
+            
+            # Обновляем кэш последнего тикера
+            self._latest_ticker_cache[symbol] = ticker_data.copy()
+            
+            self._stats["ticker_appends"] += 1
+            
+        except Exception as e:
+            logger.error(f"Error appending ticker data for {symbol}: {e}")
+    
+    async def get_ticker_history(
+        self, 
+        symbol: str, 
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """Получить историю тикеров как список словарей"""
+        try:
+            if symbol not in self._ticker_data:
+                return []
+            
+            data = list(self._ticker_data[symbol])
+            if limit > 0:
+                data = data[-limit:]
+            
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error getting ticker history for {symbol}: {e}")
+            return []
+    
+    async def get_latest_ticker(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """Получить последний тикер из кэша"""
+        if symbol in self._latest_ticker_cache:
+            self._stats["cache_hits"] += 1
+            return self._latest_ticker_cache[symbol].copy()
+        
+        if symbol in self._ticker_data and self._ticker_data[symbol]:
+            self._stats["cache_misses"] += 1
+            latest = self._ticker_data[symbol][-1]
+            self._latest_ticker_cache[symbol] = latest.copy()
+            return latest.copy()
+        
+        return None
+    
+    async def get_price_history(
+        self, 
+        symbol: str, 
+        limit: int = 200
+    ) -> List[float]:
+        """Получить только историю цен для вычисления индикаторов"""
+        try:
+            if symbol in self._price_cache:
+                prices = self._price_cache[symbol]
+                if limit > 0:
+                    return prices[-limit:]
+                return prices.copy()
+            
+            # Если кэша нет, извлекаем из тикеров
+            if symbol not in self._ticker_data:
+                return []
+            
+            prices = []
+            ticker_data = list(self._ticker_data[symbol])
+            if limit > 0:
+                ticker_data = ticker_data[-limit:]
+            
+            for ticker in ticker_data:
+                if 'close' in ticker:
+                    prices.append(float(ticker['close']))
+            
+            # Обновляем кэш
+            self._price_cache[symbol] = prices.copy()
+            
+            return prices
+            
+        except Exception as e:
+            logger.error(f"Error getting price history for {symbol}: {e}")
+            return []
+    
+    async def append_orderbook_snapshot(
+        self, 
+        symbol: str, 
+        orderbook_data: Dict[str, Any],
+        max_history_size: int = 100
+    ) -> None:
+        """Добавить снимок стакана заявок"""
+        try:
+            # Валидация данных стакана
+            if 'bids' not in orderbook_data or 'asks' not in orderbook_data:
+                logger.warning(f"Invalid orderbook data for {symbol}: missing bids or asks")
+                return
+            
+            # Обновляем размер буфера если нужно
+            if self._orderbook_data[symbol].maxlen != max_history_size:
+                new_deque = deque(self._orderbook_data[symbol], maxlen=max_history_size)
+                self._orderbook_data[symbol] = new_deque
+            
+            # Добавляем timestamp если его нет
+            if 'timestamp' not in orderbook_data:
+                orderbook_data['timestamp'] = int(time.time() * 1000)
+            
+            self._orderbook_data[symbol].append(orderbook_data.copy())
+            self._latest_orderbook_cache[symbol] = orderbook_data.copy()
+            
+            self._stats["orderbook_appends"] += 1
+            
+        except Exception as e:
+            logger.error(f"Error appending orderbook data for {symbol}: {e}")
+    
+    async def get_orderbook_history(
+        self, 
+        symbol: str, 
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """Получить историю стаканов"""
+        try:
+            if symbol not in self._orderbook_data:
+                return []
+            
+            data = list(self._orderbook_data[symbol])
+            if limit > 0:
+                data = data[-limit:]
+            
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error getting orderbook history for {symbol}: {e}")
+            return []
+    
+    async def get_latest_orderbook(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """Получить последний стакан заявок из кэша"""
+        if symbol in self._latest_orderbook_cache:
+            self._stats["cache_hits"] += 1
+            return self._latest_orderbook_cache[symbol].copy()
+        
+        if symbol in self._orderbook_data and self._orderbook_data[symbol]:
+            self._stats["cache_misses"] += 1
+            latest = self._orderbook_data[symbol][-1]
+            self._latest_orderbook_cache[symbol] = latest.copy()
+            return latest.copy()
+        
+        return None
+    
+    async def calculate_sma(
+        self, 
+        symbol: str, 
+        period: int
+    ) -> Optional[float]:
+        """Вычислить SMA напрямую из кэшированных цен"""
+        try:
+            prices = await self.get_price_history(symbol, period)
+            
+            if len(prices) < period:
+                return None
+            
+            # Используем numpy для быстрых вычислений
+            return float(np.mean(prices[-period:]))
+            
+        except Exception as e:
+            logger.error(f"Error calculating SMA for {symbol}: {e}")
+            return None
+    
+    async def calculate_price_change(
+        self, 
+        symbol: str, 
+        periods: int = 1
+    ) -> Optional[Dict[str, float]]:
+        """Вычислить изменение цены за N периодов"""
+        try:
+            prices = await self.get_price_history(symbol, periods + 1)
+            
+            if len(prices) < periods + 1:
+                return None
+            
+            current_price = prices[-1]
+            old_price = prices[-(periods + 1)]
+            
+            absolute_change = current_price - old_price
+            percent_change = (absolute_change / old_price) * 100 if old_price != 0 else 0
+            
+            return {
+                "absolute": absolute_change,
+                "percent": percent_change,
+                "current_price": current_price,
+                "old_price": old_price
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating price change for {symbol}: {e}")
+            return None
+    
+    async def get_volatility(
+        self, 
+        symbol: str, 
+        periods: int = 20
+    ) -> Optional[float]:
+        """Вычислить волатильность за N периодов"""
+        try:
+            prices = await self.get_price_history(symbol, periods)
+            
+            if len(prices) < periods:
+                return None
+            
+            # Вычисляем волатильность как стандартное отклонение
+            prices_array = np.array(prices[-periods:])
+            returns = np.diff(prices_array) / prices_array[:-1]
+            
+            return float(np.std(returns) * 100)  # В процентах
+            
+        except Exception as e:
+            logger.error(f"Error calculating volatility for {symbol}: {e}")
+            return None
+    
+    async def cleanup_old_data(
+        self, 
+        symbol: str, 
+        keep_ticker_count: int = 1000,
+        keep_orderbook_count: int = 100
+    ) -> Dict[str, int]:
+        """Очистить старые данные, оставить только последние N записей"""
+        try:
+            removed_tickers = 0
+            removed_orderbooks = 0
+            
+            # Очистка тикеров
+            if symbol in self._ticker_data:
+                current_len = len(self._ticker_data[symbol])
+                if current_len > keep_ticker_count:
+                    # Пересоздаем deque с новым размером
+                    new_data = deque(
+                        list(self._ticker_data[symbol])[-keep_ticker_count:], 
+                        maxlen=keep_ticker_count
+                    )
+                    removed_tickers = current_len - len(new_data)
+                    self._ticker_data[symbol] = new_data
+                    
+                    # Обновляем кэш цен
+                    if symbol in self._price_cache:
+                        self._price_cache[symbol] = self._price_cache[symbol][-keep_ticker_count:]
+            
+            # Очистка стаканов
+            if symbol in self._orderbook_data:
+                current_len = len(self._orderbook_data[symbol])
+                if current_len > keep_orderbook_count:
+                    new_data = deque(
+                        list(self._orderbook_data[symbol])[-keep_orderbook_count:], 
+                        maxlen=keep_orderbook_count
+                    )
+                    removed_orderbooks = current_len - len(new_data)
+                    self._orderbook_data[symbol] = new_data
+            
+            return {
+                "removed_tickers": removed_tickers,
+                "removed_orderbooks": removed_orderbooks
+            }
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up old data for {symbol}: {e}")
+            return {"removed_tickers": 0, "removed_orderbooks": 0}
+    
+    async def get_data_stats(self, symbol: str) -> Dict[str, Any]:
+        """Получить статистику данных"""
+        ticker_count = len(self._ticker_data.get(symbol, []))
+        orderbook_count = len(self._orderbook_data.get(symbol, []))
+        
+        return {
+            "symbol": symbol,
+            "ticker_count": ticker_count,
+            "orderbook_count": orderbook_count,
+            "has_price_cache": symbol in self._price_cache,
+            "price_cache_size": len(self._price_cache.get(symbol, [])),
+            "has_latest_ticker": symbol in self._latest_ticker_cache,
+            "has_latest_orderbook": symbol in self._latest_orderbook_cache,
+            "global_stats": self._stats.copy()
+        }
+    
+    async def bulk_append_tickers(
+        self, 
+        symbol: str, 
+        ticker_batch: List[Dict[str, Any]],
+        max_history_size: int = 1000
+    ) -> None:
+        """Добавить пакет тикеров за один раз"""
+        try:
+            if not ticker_batch:
+                return
+            
+            # Обновляем размер буфера если нужно
+            if self._ticker_data[symbol].maxlen != max_history_size:
+                new_deque = deque(self._ticker_data[symbol], maxlen=max_history_size)
+                self._ticker_data[symbol] = new_deque
+            
+            # Добавляем все тикеры
+            for ticker_data in ticker_batch:
+                if 'timestamp' in ticker_data and 'close' in ticker_data:
+                    self._ticker_data[symbol].append(ticker_data.copy())
+                    
+                    # Обновляем кэш цен
+                    price = float(ticker_data['close'])
+                    self._price_cache[symbol].append(price)
+            
+            # Ограничиваем размер кэша цен
+            if len(self._price_cache[symbol]) > max_history_size:
+                self._price_cache[symbol] = self._price_cache[symbol][-max_history_size:]
+            
+            # Обновляем кэш последнего тикера
+            if ticker_batch:
+                self._latest_ticker_cache[symbol] = ticker_batch[-1].copy()
+            
+            self._stats["ticker_appends"] += len(ticker_batch)
+            
+        except Exception as e:
+            logger.error(f"Error bulk appending tickers for {symbol}: {e}")
+    
+    async def get_ticker_subset(
+        self, 
+        symbol: str, 
+        start_index: int, 
+        count: int
+    ) -> List[Dict[str, Any]]:
+        """Получить подмножество тикеров по индексам"""
+        try:
+            if symbol not in self._ticker_data:
+                return []
+            
+            data = list(self._ticker_data[symbol])
+            end_index = start_index + count
+            
+            return data[start_index:end_index]
+            
+        except Exception as e:
+            logger.error(f"Error getting ticker subset for {symbol}: {e}")
+            return []
+    
+    async def get_tickers_by_time_range(
+        self, 
+        symbol: str,
+        start_timestamp: int,
+        end_timestamp: int
+    ) -> List[Dict[str, Any]]:
+        """Получить тикеры за временной интервал"""
+        try:
+            if symbol not in self._ticker_data:
+                return []
+            
+            result = []
+            for ticker in self._ticker_data[symbol]:
+                if 'timestamp' in ticker:
+                    timestamp = ticker['timestamp']
+                    if start_timestamp <= timestamp <= end_timestamp:
+                        result.append(ticker.copy())
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting tickers by time range for {symbol}: {e}")
+            return []
+    
+    async def compress_old_data(
+        self, 
+        symbol: str, 
+        older_than_timestamp: int
+    ) -> int:
+        """Сжать старые данные (агрегировать минутные данные в часовые)"""
+        # В in-memory реализации просто удаляем старые данные
+        try:
+            if symbol not in self._ticker_data:
+                return 0
+            
+            original_count = len(self._ticker_data[symbol])
+            filtered_data = deque(maxlen=self._ticker_data[symbol].maxlen)
+            
+            for ticker in self._ticker_data[symbol]:
+                if 'timestamp' in ticker and ticker['timestamp'] >= older_than_timestamp:
+                    filtered_data.append(ticker)
+            
+            self._ticker_data[symbol] = filtered_data
+            
+            # Обновляем кэш цен
+            if symbol in self._price_cache:
+                new_prices = []
+                for ticker in filtered_data:
+                    if 'close' in ticker:
+                        new_prices.append(float(ticker['close']))
+                self._price_cache[symbol] = new_prices
+            
+            return original_count - len(filtered_data)
+            
+        except Exception as e:
+            logger.error(f"Error compressing old data for {symbol}: {e}")
+            return 0
+    
+    async def export_to_json(
+        self, 
+        symbol: str, 
+        file_path: str,
+        start_timestamp: Optional[int] = None,
+        end_timestamp: Optional[int] = None
+    ) -> bool:
+        """Экспортировать данные в JSON файл"""
+        try:
+            data_to_export = {
+                "symbol": symbol,
+                "export_timestamp": int(time.time() * 1000),
+                "tickers": [],
+                "orderbooks": []
+            }
+            
+            # Экспорт тикеров
+            if symbol in self._ticker_data:
+                for ticker in self._ticker_data[symbol]:
+                    if start_timestamp is None and end_timestamp is None:
+                        data_to_export["tickers"].append(ticker)
+                    elif 'timestamp' in ticker:
+                        timestamp = ticker['timestamp']
+                        if (start_timestamp is None or timestamp >= start_timestamp) and \
+                           (end_timestamp is None or timestamp <= end_timestamp):
+                            data_to_export["tickers"].append(ticker)
+            
+            # Экспорт стаканов
+            if symbol in self._orderbook_data:
+                for orderbook in self._orderbook_data[symbol]:
+                    if start_timestamp is None and end_timestamp is None:
+                        data_to_export["orderbooks"].append(orderbook)
+                    elif 'timestamp' in orderbook:
+                        timestamp = orderbook['timestamp']
+                        if (start_timestamp is None or timestamp >= start_timestamp) and \
+                           (end_timestamp is None or timestamp <= end_timestamp):
+                            data_to_export["orderbooks"].append(orderbook)
+            
+            with open(file_path, 'w') as f:
+                json.dump(data_to_export, f, indent=2)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error exporting data for {symbol}: {e}")
+            return False
+    
+    async def import_from_json(
+        self, 
+        symbol: str, 
+        file_path: str,
+        append: bool = True
+    ) -> int:
+        """Импортировать данные из JSON файла"""
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            
+            imported_count = 0
+            
+            # Если не добавляем, очищаем существующие данные
+            if not append:
+                if symbol in self._ticker_data:
+                    self._ticker_data[symbol].clear()
+                if symbol in self._orderbook_data:
+                    self._orderbook_data[symbol].clear()
+                self._price_cache.pop(symbol, None)
+                self._latest_ticker_cache.pop(symbol, None)
+                self._latest_orderbook_cache.pop(symbol, None)
+            
+            # Импорт тикеров
+            if "tickers" in data:
+                for ticker in data["tickers"]:
+                    await self.append_ticker_data(symbol, ticker)
+                    imported_count += 1
+            
+            # Импорт стаканов
+            if "orderbooks" in data:
+                for orderbook in data["orderbooks"]:
+                    await self.append_orderbook_snapshot(symbol, orderbook)
+            
+            return imported_count
+            
+        except Exception as e:
+            logger.error(f"Error importing data for {symbol}: {e}")
+            return 0
+    
+    async def get_all_symbols(self) -> List[str]:
+        """Получить все символы, для которых есть данные"""
+        symbols = set()
+        symbols.update(self._ticker_data.keys())
+        symbols.update(self._orderbook_data.keys())
+        return list(symbols)
+    
+    async def delete_symbol_data(self, symbol: str) -> bool:
+        """Удалить все данные для символа"""
+        try:
+            deleted = False
+            
+            if symbol in self._ticker_data:
+                del self._ticker_data[symbol]
+                deleted = True
+            
+            if symbol in self._orderbook_data:
+                del self._orderbook_data[symbol]
+                deleted = True
+            
+            # Очистка кэшей
+            self._price_cache.pop(symbol, None)
+            self._latest_ticker_cache.pop(symbol, None)
+            self._latest_orderbook_cache.pop(symbol, None)
+            
+            if symbol in self._indicator_buffers:
+                del self._indicator_buffers[symbol]
+                deleted = True
+            
+            return deleted
+            
+        except Exception as e:
+            logger.error(f"Error deleting data for {symbol}: {e}")
+            return False
+    
+    # Методы для работы с индикаторными буферами
+    
+    async def update_indicator_buffer(
+        self, 
+        symbol: str, 
+        indicator_name: str,
+        value: float,
+        max_buffer_size: int = 100
+    ) -> None:
+        """Обновить буфер индикатора"""
+        try:
+            if symbol not in self._indicator_buffers:
+                self._indicator_buffers[symbol] = defaultdict(lambda: deque(maxlen=max_buffer_size))
+            
+            # Обновляем размер буфера если нужно
+            if self._indicator_buffers[symbol][indicator_name].maxlen != max_buffer_size:
+                new_deque = deque(
+                    self._indicator_buffers[symbol][indicator_name], 
+                    maxlen=max_buffer_size
+                )
+                self._indicator_buffers[symbol][indicator_name] = new_deque
+            
+            self._indicator_buffers[symbol][indicator_name].append(value)
+            
+        except Exception as e:
+            logger.error(f"Error updating indicator buffer {indicator_name} for {symbol}: {e}")
+    
+    async def get_indicator_buffer(
+        self, 
+        symbol: str, 
+        indicator_name: str,
+        limit: int = 50
+    ) -> List[float]:
+        """Получить буфер индикатора"""
+        try:
+            if symbol not in self._indicator_buffers or indicator_name not in self._indicator_buffers[symbol]:
+                return []
+            
+            buffer = list(self._indicator_buffers[symbol][indicator_name])
+            if limit > 0:
+                buffer = buffer[-limit:]
+            
+            return buffer
+            
+        except Exception as e:
+            logger.error(f"Error getting indicator buffer {indicator_name} for {symbol}: {e}")
+            return []
+    
+    async def clear_indicator_buffers(self, symbol: str) -> int:
+        """Очистить все буферы индикаторов для символа"""
+        try:
+            if symbol not in self._indicator_buffers:
+                return 0
+            
+            count = len(self._indicator_buffers[symbol])
+            del self._indicator_buffers[symbol]
+            
+            return count
+            
+        except Exception as e:
+            logger.error(f"Error clearing indicator buffers for {symbol}: {e}")
+            return 0
+```
+
 ### 📄 `src\infrastructure\repositories\tickers_repository.py`
 
 ```python
@@ -10248,6 +27131,146 @@ class InMemoryTickerRepository:
 ```
 
 ## 📄 TXT файлы
+
+### 📄 `AutoTrade Миграция Данных и Управле.txt`
+
+```text
+AutoTrade: Миграция Данных и Управление Состоянием
+Отличная задача! Создание такого подробного технического задания, основанного на существующей архитектуре и планах, поможет максимально эффективно направить его усилия и обеспечить соответствие высоким стандартам разработки. Ваш проект AutoTrade v2.4.0 уже демонстрирует впечатляющее понимание принципов архитектуры и управления рисками [1-3].
+Данное ТЗ будет сфокусировано на одной из высокоприоритетных задач (#17) из вашей дорожной карты: миграции с текущего хранения данных в JSON-файлах на надежную базу данных (PostgreSQL или SQLite) и доработки репозиториев, которая также включает в себя управление состоянием (#16) [4-7].
+--------------------------------------------------------------------------------
+Техническое Задани: Миграция Хранения Данных и Управление Состоянием в AutoTrade v2.4.0
+I. Общая Информация и Контекст Проекта
+1. Название проекта: AutoTrade v2.4.0 "Smart Risk Management & Infrastructure" [2, 3].
+2. Описание: Интеллектуальная система автоматической торговли криптовалютами с асинхронным жизненным циклом сделок и умным риск-менеджментом [1-3]. Система построена на архитектуре Domain-Driven Design (DDD) и чистой архитектуре [1, 3, 8-12].
+3. Основная цель: Выполнение прибыльных сделок с минимальными рисками через поэтапное исполнение BUY→SELL ордеров и трёхуровневую систему защиты от убытков [2, 13].
+4. Текущая Проблема:
+    ◦ Существующая система хранения данных реализована в виде кэшей в памяти, которые записывают данные в файлы JSON (deals.json, orders.json) [12, 14-16].
+    ◦ Это решение является временным [14].
+    ◦ В текущей архитектуре имеются "проблемы" с неполными репозиториями [17].
+    ◦ Отсутствуют репозитории для критически важных данных, таких как: * Индикаторы [17, 18]. * Данные стакана заявок (OrderBook данные) [17, 18]. * Статистика [17, 18]. * Кэши [17, 18]. * Конфигурация [17, 18].
+    ◦ Ряд существующих сервисов (таких как TickerService, OrderService, CachedIndicatorService, OrderBookAnalyzer, StopLossMonitor, BuyOrderMonitor) нарушают принцип единственной ответственности (SRP), совмещая бизнес-логику с обязанностями по хранению данных, кэшированию и вычислению [17, 19-22]. Например, TickerService хранит price_history_cache и cached_indicators, а CachedIndicatorService является "чистым хранилищем данных, а не бизнес-логикой" [19, 21].
+    ◦ Текущий подход с JSON-файлами и in-memory кэшами может приводить к потерям данных при перезапуске и неэффективному потреблению памяти, а также затрудняет масштабирование и отладку [21, 23, 24].
+5. Приоритет: Данная задача является высокоприоритетной (#17) и критически важна для Фазы 3: Готовность к продакшену [4-7, 16]. Также напрямую связана с задачей #16 "Управление состоянием" – "грациозный" перезапуск без потери контекста [4-7, 16].
+II. Цель и Задачи Данного ТЗ
+Цель: Полная миграция всех персистентных данных проекта AutoTrade v2.4.0 с временного JSON-хранения на надежную систему управления базами данных (PostgreSQL как основная, SQLite как опция для локальной разработки/тестирования) с соблюдением принципов SOLID, DDD и Чистой Архитектуры, а также обеспечение полноценного сохранения и восстановления состояния приложения.
+Задачи:
+1. Разработать и внедрить унифицированную систему репозиториев для всех типов персистентных данных, включая существующие (Deal, Order, Ticker) и новые (OrderBook, IndicatorData, TradingSignal, Statistics, Configuration, Caches) [17, 18, 25].
+2. Рефакторинг существующих доменных сервисов для строгого соблюдения принципа единственной ответственности (SRP), делегируя все операции по сохранению, извлечению и кэшированию данных в соответствующие репозитории [17, 19-22, 25, 26].
+3. Обеспечить постоянное и надежное хранение состояния приложения через миграцию на СУБД, что позволит системе корректно восстанавливать свое состояние (включая открытые сделки, исторические данные, кэши) после перезапуска [4-7, 16].
+4. Повысить производительность и эффективность использования памяти за счет оптимизированного доступа к данным и отказа от избыточного создания объектов в памяти для потоковых данных [23, 24].
+III. Требования к Реализации
+A. Архитектурные Принципы
+AI ассистент должен строго следовать следующим архитектурным принципам:
+1. SOLID Принципы:
+    ◦ Принцип Единственной Ответственности (SRP): Каждый класс или модуль должен иметь только одну причину для изменения. Это означает, что TickerService, OrderService, CachedIndicatorService, OrderBookAnalyzer, StopLossMonitor и BuyOrderMonitor должны быть разделены на более мелкие, специализированные сервисы, каждый из которых отвечает за одну конкретную операцию (например, TickerProcessor для обработки тикеров, OrderPlacementService для размещения ордеров, IndicatorCalcService для расчета индикаторов) [17, 19-22, 25].
+    ◦ Принцип Открытости/Закрытости (OCP): Сущности программного обеспечения (классы, модули, функции и т.д.) должны быть открыты для расширения, но закрыты для модификации. Это будет достигаться через использование интерфейсов репозиториев, позволяющих легко переключаться между In-Memory, JSON (для обратной совместимости или тестирования) и PostgreSQL реализациями без изменения клиентского кода [25].
+    ◦ Принцип Подстановки Барбары Лисков (LSP): Объекты в программе должны быть заменяемы экземплярами их подтипов без изменения правильности выполнения программы. Реализации репозиториев (например, PostgreSQLDealsRepository и InMemoryDealsRepository) должны быть полностью взаимозаменяемы.
+    ◦ Принцип Разделения Интерфейса (ISP): Клиенты не должны зависеть от методов, которые они не используют. Создать узконаправленные интерфейсы для каждого типа репозитория (e.g., IDealsRepository, IOrdersRepository, ITickersRepository и т.д.) [25, 27].
+    ◦ Принцип Инверсии Зависимостей (DIP): Модули высокого уровня не должны зависеть от модулей низкого уровня. Оба должны зависеть от абстракций. Абстракции не должны зависеть от деталей. Детали должны зависеть от абстракций. Это подразумевает использование внедрения зависимостей (Dependency Injection) для предоставления репозиториев сервисам.
+2. Domain-Driven Design (DDD):
+    ◦ Продолжить следовать принципам DDD, сохраняя бизнес-логику в доменном слое (src/domain/) [1, 9, 10, 12, 28, 29].
+    ◦ Репозитории должны служить для абстрагирования механизма сохранения и извлечения сущностей домена [12, 28-31].
+    ◦ Фабрики должны использоваться для создания сложных объектов (например, DealFactory, OrderFactory) [8, 12, 28, 29, 32].
+3. Чистая Архитектура (Clean Architecture):
+    ◦ Поддерживать четкое разделение слоев: domain (бизнес-логика), application (сценарии использования), infrastructure (внешние интеграции) и config [1, 8-12, 33, 34]. Новые репозитории и их реализации должны быть расположены в слое infrastructure [8, 12, 30, 31].
+B. Структура Данных (Новые и Измененные Компоненты)
+1. Существующие Сущности (доработка):
+    ◦ Deal, Order, CurrencyPair, Ticker [8, 12, 17, 30-32, 35].
+    ◦ Сущность Ticker должна быть переработана для работы со StreamDataRepository, чтобы избежать создания объектов для каждого тика, работая напрямую с JSON-массивами данных для оптимизации [23, 36].
+2. Новые Доменные Сущности (Entities):
+    ◦ OrderBook: Сущность для представления данных стакана заявок (timestamp, bids/asks, spread, volume) [18, 37].
+    ◦ IndicatorData: Сущность для хранения вычисленных индикаторов (timestamp, symbol, indicator_type, value) [18, 37].
+    ◦ TradingSignal: Сущность для торговых сигналов (timestamp, symbol, signal_type, strength) [18, 37].
+    ◦ Statistics: Сущность для метрик производительности и статистики торговли (metric_name, value, timestamp, category) [18, 37].
+    ◦ Configuration: Сущность для управления динамической конфигурацией (key, value, category, description) [18, 37].
+3. Новые Интерфейсы Репозиториев (в src/domain/repositories/):
+    ◦ IIndicatorRepository: Для сохранения и извлечения IndicatorData [25].
+    ◦ IOrderBookRepository: Для сохранения и извлечения OrderBook данных [25].
+    ◦ IStatisticsRepository: Для сохранения и извлечения Statistics [25].
+    ◦ IConfigurationRepository: Для управления Configuration [25].
+    ◦ ICacheRepository: Для общего кэширования, возможно, с поддержкой Redis в будущем [25, 38].
+4. Новые Реализации Репозиториев (в src/infrastructure/repositories/):
+    ◦ PostgreSQL Реализации: Для всех вышеперечисленных интерфейсов, а также для существующих DealsRepository, OrdersRepository, TickersRepository. Должны поддерживать: * Сохранение (Save) [25, 31]. * Получение по ID (Get by ID) [25, 31]. * Получение списка (Get all, Get open deals etc.) [25, 31]. * Удаление (Delete) (при необходимости).
+    ◦ In-Memory Реализации: Для всех интерфейсов (для модульного тестирования и, возможно, для временных, некритичных данных) [25].
+    ◦ JSON Реализации: Для существующих DealsRepository, OrdersRepository (для обратной совместимости на переходный период) [12, 14].
+5. StreamDataRepository (для высокочастотных данных):
+    ◦ Создать специализированный StreamDataRepository для Ticker и OrderBook данных, который будет работать с JSON-массивами напрямую в целях производительности и снижения потребления памяти. Это позволит избежать создания объектов Python для каждой точки данных [23, 24, 36].
+    ◦ Этот репозиторий будет отвечать за хранение потоковых данных и предоставление методов для их эффективного извлечения (например, получение последних N тиков/состояний стакана) [23, 24, 36].
+6. Схемы Базы Данных:
+    ◦ Разработать SQL-схемы для PostgreSQL/SQLite для всех персистентных сущностей (Deal, Order, CurrencyPair, Ticker, OrderBook, IndicatorData, TradingSignal, Statistics, Configuration).
+C. Модификация Существующих Сервисов
+1. TickerService (src/domain/services/market_data/ticker_service.py):
+    ◦ Проблема: В настоящее время хранит price_history_cache, cached_indicators, напрямую обрабатывает JSON-данные тикеров, вычисляет индикаторы и сигналы, создает Ticker объекты для каждого тика [19].
+    ◦ Решение: * Переложить ответственность за хранение price_history на StreamDataRepository. * Делегировать вычисление индикаторов новому IndicatorCalculationService и хранение их результатов в IIndicatorRepository. * Делегировать создание сигналов новому SignalGenerationService и хранение их в ITradingSignalRepository. * TickerService должен фокусироваться исключительно на получении и первичной обработке (валидации) тикеров, сохраняя их в ITickersRepository (или StreamDataRepository).
+2. OrderService (src/domain/services/orders/order_service.py):
+    ◦ Проблема: Монолитный сервис, отвечающий за создание, размещение, отмену, валидацию ордеров, проверку балансов, синхронизацию с биржей, обработку ошибок, статистику [20].
+    ◦ Решение: Разделить на более специализированные сервисы, соблюдая SRP: * OrderPlacementService: Только размещение ордеров на бирже. * OrderMonitoringService: Только мониторинг статусов ордеров. * BalanceService: Только проверка балансов. * OrderValidationService: Только валидация ордеров. * ErrorHandlingService (задача #14): Централизованная обработка ошибок и повторных попыток [4-7]. * Все эти новые сервисы будут взаимодействовать с IOrdersRepository для сохранения и извлечения данных ордеров.
+3. CachedIndicatorService (src/domain/services/indicators/cached_indicator_service.py):
+    ◦ Проблема: Является "чистым хранилищем данных, а не бизнес-логикой", содержит различные кэши и буферы для SMA-индикаторов [21].
+    ◦ Решение: Удалить или значительно упростить этот сервис. Его функциональность по кэшированию индикаторов должна быть интегрирована в новый IndicatorCalculationService (который будет вычислять индикаторы) с последующим сохранением результатов в IIndicatorRepository (для персистентности) и ICacheRepository (для быстрого доступа).
+4. BuyOrderMonitor (src/domain/services/orders/buy_order_monitor.py), OrderBookAnalyzer (src/domain/services/market_data/orderbook_analyzer.py), StopLossMonitor (src/domain/services/risk/stop_loss_monitor.py):
+    ◦ Проблема: Эти сервисы также могут иметь "проблемы" с хранением состояния/статистики внутри себя [17, 22].
+    ◦ Решение: Делегировать сохранение любых статистических данных, промежуточных состояний или кэшей в соответствующие новые репозитории (IOrderBookRepository, IStatisticsRepository, ICacheRepository) [25]. OrderBookAnalyzer должен использовать IOrderBookRepository для получения данных стакана вместо прямого доступа к кэшу или JSON-файлам.
+D. Сохранение Состояния и Перезапуск (Задача #16)
+1. StateManagementService: Реализовать централизованный сервис для сохранения и восстановления всего необходимого состояния приложения при его штатном или нештатном завершении/перезапуске [4-7].
+    ◦ Сохраняемое состояние: Открытые сделки (Deals), активные ордера (Orders), последние данные тикеров, состояние индикаторов, любые внутренние буферы и кэши, лимиты позиций, состояние SignalCooldownManager и т.д.
+    ◦ Механизм: StateManagementService будет использовать вновь созданные и унифицированные репозитории (DealsRepository, OrdersRepository, TickersRepository, IndicatorRepository, OrderBookRepository и т.д.) для сохранения и загрузки данных из PostgreSQL/SQLite.
+E. Производительность и Память
+1. Оптимизация обработки тикеров: Замена Ticker Entity на StreamDataRepository для работы с JSON-массивами напрямую позволит достичь заявленных +200% скорости обработки тикеров (за счет отсутствия создания объектов) и -50% потребления памяти (JSON вместо объектов) [23, 24].
+2. Централизованное кэширование: Внедрение ICacheRepository (с потенциальной поддержкой Redis) для централизованного управления кэшами вместо разрозненных кэшей внутри сервисов.
+3. Минимизация In-Memory хранения: PostgreSQL будет использоваться как основной источник истины, что сократит потребление оперативной памяти за счет уменьшения объема данных, постоянно хранимых в памяти.
+F. Тестирование
+1. Новая модульная архитектура значительно упростит модульное тестирование каждого компонента в отдельности. AI ассистент должен подготовить структуру для модульных тестов, в дополнение к уже существующему интеграционному тестированию [6, 16, 21, 30, 38].
+2. Провести бэктесты для подтверждения эффективности стратегий после рефакторинга [6, 16].
+G. Безопасность
+1. API ключи продолжают храниться в отдельной папке (binance_keys/) и через .env файлы, которые не коммитятся в репозиторий [28, 39-47].
+2. Рассмотреть возможность шифрования чувствительных данных в базе данных (Задача #13 в дорожной карте) [48].
+IV. Этапы Выполнения (по Дорожной Карте Проекта)
+AI ассистент должен следовать детальному плану рефакторинга из autotrade_complete_code.md [26, 27], интегрируя его с задачами Фазы 3 дорожной карты:
+1. Этап 1: Создание Недостающих Сущностей и Репозиториев (Неделя 1-2)
+    ◦ Создать новые доменные сущности: OrderBook, IndicatorData, TradingSignal, Statistics, Configuration [26, 37].
+    ◦ Создать интерфейсы для новых репозиториев: IIndicatorRepository, IOrderBookRepository, IStatisticsRepository, IConfigurationRepository, ICacheRepository [25, 26].
+    ◦ Внедрить StreamDataRepository и модифицировать Ticker Entity для работы с JSON-массивами вместо создания объектов. Начать с обновления TickerService для использования StreamDataRepository [23, 33, 36].
+    ◦ Упростить CachedIndicatorService или перенести его функциональность [21, 33].
+    ◦ Это должно исправить критические нарушения архитектуры и оптимизировать производительность обработки тикеров [23, 24].
+2. Этап 2: Разделение Монолитных Сервисов (Неделя 2-3)
+    ◦ Разделить OrderService на специализированные компоненты (e.g., OrderPlacementService, OrderMonitoringService, BalanceService, OrderValidationService) [20, 25, 26].
+    ◦ Аналогично, продолжить разделение других "проблемных" сервисов, таких как OrderBookAnalyzer, StopLossMonitor, BuyOrderMonitor, обеспечивая их фокус на единственной ответственности и делегирование хранения данных в соответствующие репозитории [17, 22, 25].
+3. Этап 3: Унификация Репозиториев (Неделя 3-4)
+    ◦ Унифицировать интерфейсы всех репозиториев, обеспечив единообразный доступ к данным [27].
+    ◦ Создать In-Memory реализации для всех новых репозиториев для облегчения тестирования.
+4. Этап 4: Подготовка к PostgreSQL (Неделя 4-5)
+    ◦ Создать SQL-схемы для всех персистентных данных.
+    ◦ Разработать PostgreSQL реализации для всех интерфейсов репозиториев [25, 27].
+5. Этап 5: Внедрение и Миграция (Неделя 5+)
+    ◦ Создать фасад для обратной совместимости, чтобы обеспечить плавный переход.
+    ◦ Поэтапная миграция данных и кода на новую архитектуру с БД [27].
+    ◦ Внедрить StateManagementService (Задача #16) для обеспечения грациозного перезапуска и восстановления состояния [4-7].
+    ◦ Работать над ErrorHandlingService (Задача #14) параллельно для повышения стабильности [4-7].
+V. Ожидаемые Результаты
+• Краткосрочные (1-2 недели):
+    ◦ Замена Ticker Entity на StreamDataRepository для прямой работы с JSON-массивами [23].
+    ◦ Оптимизация производительности обработки тикеров и снижение потребления памяти [23, 24].
+    ◦ Исправление критических нарушений архитектуры (SRP) в TickerService [23].
+• Среднесрочные (3-4 недели):
+    ◦ Унификация всех репозиториев и подготовка к миграции на PostgreSQL [23].
+    ◦ Повышение производительности в 2-3 раза (устранение создания объектов) [23, 24].
+    ◦ Сокращение потребления памяти на 50% (JSON вместо объектов) [23, 24].
+    ◦ Упрощение тестирования за счет модульности [21, 23].
+• Долгосрочные (1-2 месяца):
+    ◦ Полная миграция на PostgreSQL для всех персистентных данных [38].
+    ◦ Внедрение StateManagementService, обеспечивающего надежное сохранение/восстановление состояния [4-7].
+    ◦ Модульная архитектура, способствующая легкому расширению и горизонтальному масштабированию [21, 24, 38].
+    ◦ Значительное повышение стабильности и надежности системы за счет устойчивого хранения данных и улучшенной обработки ошибок.
+VI. Критерии Приемки
+1. Функциональность: Все персистентные данные (Deal, Order, Ticker, OrderBook, IndicatorData, TradingSignal, Statistics, Configuration) успешно сохраняются и извлекаются из выбранной СУБД (PostgreSQL/SQLite) без потери информации [4-6].
+2. Архитектура: Все модифицированные и новые сервисы/репозитории строго соответствуют принципам SOLID, DDD и Чистой Архитектуры, с четким разделением ответственности [17, 19-22, 25].
+3. Управление Состоянием: Система корректно сохраняет и восстанавливает свое состояние при плановом и нештатном перезапуске, без потери открытых сделок или других критически важных данных [4-6].
+4. Производительность: Метрики производительности (скорость обработки тиков, потребление памяти) соответствуют или превосходят ожидаемые результаты, указанные в разделе V [23, 24].
+5. Тестирование: Внедрена структура для модульного тестирования, и все новые компоненты покрыты тестами. Существующие интеграционные тесты проходят успешно [16, 30].
+6. Конфигурация: Возможность легкого переключения между PostgreSQL и SQLite реализациями через конфигурацию.
+```
 
 ### 📄 `exchange_analysis_report.txt`
 
@@ -11127,6 +28150,8 @@ pytest-asyncio>=1.0.0
 pytest-cov>=5.0.0
 cryptography>=45.0.5
 python-dotenv>=1.0.0
+aiosqlite>=0.20.0
+asyncpg>=0.29.0
 
 
 ```
@@ -11443,4 +28468,28 @@ jobs:
             echo "| **Type** | ${{ steps.version.outputs.increment_type }} |" >> $GITHUB_STEP_SUMMARY
             echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
           fi
+```
+
+### 📄 `docker-compose.yml`
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: autotrade-postgres
+    environment:
+      POSTGRES_DB: autotrade
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres-data:
+
 ```

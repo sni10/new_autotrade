@@ -55,11 +55,10 @@ class InMemoryStateRepository(IStateRepository):
     async def save_system_snapshot(self, snapshot: SystemSnapshot) -> bool:
         """Сохранить снимок системы"""
         try:
-            snapshot_id = f"snapshot_{snapshot.timestamp}_{len(self._system_snapshots)}"
-            self._system_snapshots[snapshot_id] = snapshot
-            self._snapshot_order.append(snapshot_id)
+            self._system_snapshots[snapshot.snapshot_id] = snapshot
+            self._snapshot_order.append(snapshot.snapshot_id)
             
-            logger.debug(f"📸 System snapshot saved: {snapshot_id}")
+            logger.debug(f"📸 System snapshot saved: {snapshot.snapshot_id}")
             return True
             
         except Exception as e:

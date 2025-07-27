@@ -3,17 +3,18 @@ import pytest
 import asyncio
 from typing import Dict
 
-from domain.entities.currency_pair import CurrencyPair
-from domain.factories.deal_factory import DealFactory
-from domain.factories.order_factory import OrderFactory
-from infrastructure.repositories.deals_repository import InMemoryDealsRepository
-from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
-from domain.services.deals.deal_service import DealService
-from domain.services.orders.order_service import OrderService
-from domain.services.orders.order_execution_service import OrderExecutionService
-from domain.services.orders.buy_order_monitor import BuyOrderMonitor
-from domain.services.orders.filled_buy_order_handler import FilledBuyOrderHandler
-from domain.services.deals.deal_completion_monitor import DealCompletionMonitor
+from src.domain.entities.currency_pair import CurrencyPair
+from src.domain.factories.deal_factory import DealFactory
+from src.domain.factories.order_factory import OrderFactory
+from src.infrastructure.repositories.deals_repository import InMemoryDealsRepository
+from src.infrastructure.repositories.orders_repository import InMemoryOrdersRepository
+from src.domain.services.deals.deal_service import DealService
+from src.domain.services.orders.unified_order_service import UnifiedOrderService
+from src.domain.services.orders.order_execution_service import OrderExecutionService
+from src.domain.services.orders.balance_service import BalanceService
+from src.domain.services.orders.buy_order_monitor import BuyOrderMonitor
+from src.domain.services.orders.filled_buy_order_handler import FilledBuyOrderHandler
+from src.domain.services.deals.deal_completion_monitor import DealCompletionMonitor
 from tests.mocks.mock_exchange_connector import MockCcxtExchangeConnector
 
 import pytest_asyncio
@@ -26,17 +27,21 @@ async def market_info():
     """Фикстура с информацией о рынке для тестов."""
     return {
         "THE/USDT": {
+            "id": "THEUSDT",
             "symbol": "THE/USDT",
-            "min_qty": 0.1,
-            "max_qty": 10000.0,
-            "step_size": 0.1,
-            "min_price": 0.0001,
-            "max_price": 100.0,
-            "tick_size": 0.0001,
-            "min_notional": 10.0,
-            "fees": {"maker": 0.001, "taker": 0.001},
-            "precision": {"amount": 0.1, "price": 0.0001},
-            "last_price": 0.4000 # Начальная цена для тестов
+            "base": "THE",
+            "quote": "USDT",
+            "baseId": "THE",
+            "quoteId": "USDT",
+            "active": True,
+            "type": "spot",
+            "limits": {
+                "amount": {"min": 0.1, "max": 10000.0},
+                "price": {"min": 0.0001, "max": 100.0},
+                "cost": {"min": 10.0}
+            },
+            "precision": {"amount": 1, "price": 4},
+            "info": {"last_price": 0.4000} # Начальная цена для тестов
         }
     }
 
@@ -47,12 +52,19 @@ async def setup_services(market_info):
     """Фикстура для настройки всех необходимых сервисов с моками."""
     # --- Mocks and Repositories ---
     mock_exchange = MockCcxtExchangeConnector(market_info)
+    mock_exchange.set_balance("USDT", 10000.0)
     deals_repo = InMemoryDealsRepository()
     orders_repo = InMemoryOrdersRepository()
     order_factory = OrderFactory()
     
     # --- Services ---
-    order_service = OrderService(orders_repo, order_factory, mock_exchange)
+    initial_balance = {
+        'free': {"USDT": 10000.0, "BTC": 10.0, "ETH": 100.0, "THE": 5000.0},
+        'used': {"USDT": 0.0, "BTC": 0.0, "ETH": 0.0, "THE": 0.0},
+        'total': {"USDT": 10000.0, "BTC": 10.0, "ETH": 100.0, "THE": 5000.0}
+    }
+    balance_service = BalanceService(mock_exchange, initial_balance=initial_balance)
+    order_service = UnifiedOrderService(orders_repo, order_factory, mock_exchange, balance_service)
     deal_service = DealService(deals_repo, order_service, DealFactory(order_factory), mock_exchange)
     order_execution_service = OrderExecutionService(order_service, deal_service, mock_exchange)
     
@@ -79,7 +91,8 @@ async def setup_services(market_info):
         "order_execution_service": order_execution_service,
         "buy_order_monitor": buy_order_monitor,
         "filled_buy_handler": filled_buy_handler,
-        "deal_completion_monitor": deal_completion_monitor
+        "deal_completion_monitor": deal_completion_monitor,
+        "order_service": order_service
     }
 
 async def test_happy_path_deal_lifecycle(setup_services: Dict):
@@ -91,6 +104,7 @@ async def test_happy_path_deal_lifecycle(setup_services: Dict):
     completion_monitor = services["deal_completion_monitor"]
     orders_repo = services["orders_repo"]
     deals_repo = services["deals_repo"]
+    order_service = services["order_service"]
 
     currency_pair = CurrencyPair(
         symbol="THE/USDT",
@@ -121,7 +135,7 @@ async def test_happy_path_deal_lifecycle(setup_services: Dict):
     # --- ACTION 2: Fill BUY order ---
     mock_exchange.fill_order(buy_order.exchange_id, fill_price=0.4000)
     # Обновляем статус в локальном репо (это делает `sync_orders_with_exchange` в реальной жизни)
-    updated_buy_order = await oes.order_service.get_order_status(buy_order)
+    updated_buy_order = await order_service.get_order_status(buy_order)
     assert updated_buy_order.is_filled()
 
     # --- ACTION 3: Run FilledBuyOrderHandler ---
@@ -134,7 +148,7 @@ async def test_happy_path_deal_lifecycle(setup_services: Dict):
 
     # --- ACTION 4: Fill SELL order ---
     mock_exchange.fill_order(updated_sell_order.exchange_id, fill_price=0.4060)
-    await oes.order_service.get_order_status(updated_sell_order)
+    await order_service.get_order_status(updated_sell_order)
 
     # --- ACTION 5: Run DealCompletionMonitor ---
     await completion_monitor.check_deals_completion()
@@ -154,6 +168,7 @@ async def test_stale_order_deal_lifecycle(setup_services: Dict):
     completion_monitor = services["deal_completion_monitor"]
     orders_repo = services["orders_repo"]
     deals_repo = services["deals_repo"]
+    order_service = services["order_service"]
 
     currency_pair = CurrencyPair(
         symbol="THE/USDT",
@@ -168,10 +183,10 @@ async def test_stale_order_deal_lifecycle(setup_services: Dict):
     report = await oes.execute_trading_strategy(currency_pair, strategy_result)
     original_buy_order = report.buy_order
     original_sell_order = report.sell_order
-    original_sell_price = original_sell_order.price # <--- ИСПРАВЛЕНО: Запоминаем цену здесь
+    original_sell_price = original_sell_order.price if original_sell_order else None if original_sell_order else None
 
     # --- ASSERT 1: Initial state is correct ---
-    assert original_buy_order.status == "OPEN"
+    assert original_buy_order and original_buy_order.status == "OPEN"
     assert original_sell_order.status == "PENDING"
 
     # --- ACTION 2: Make the order stale and run monitor ---
@@ -199,7 +214,7 @@ async def test_stale_order_deal_lifecycle(setup_services: Dict):
     # --- ACTION 3 & ASSERT 3: Complete the lifecycle ---
     # Исполняем новый BUY
     mock_exchange.fill_order(new_buy_order.exchange_id)
-    await oes.order_service.get_order_status(new_buy_order)
+    await order_service.get_order_status(new_buy_order)
     assert new_buy_order.is_filled()
 
     # Запускаем обработчик, который разместит обновленный SELL
@@ -208,7 +223,7 @@ async def test_stale_order_deal_lifecycle(setup_services: Dict):
 
     # Исполняем SELL
     mock_exchange.fill_order(updated_sell_order.exchange_id)
-    await oes.order_service.get_order_status(updated_sell_order)
+    await order_service.get_order_status(updated_sell_order)
     assert updated_sell_order.is_filled()
 
     # Запускаем монитор завершения

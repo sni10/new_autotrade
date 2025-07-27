@@ -3,9 +3,9 @@
 from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-from infrastructure.repositories.deals_repository import DealsRepository
-from domain.services.orders.order_service import OrderService
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
+from src.infrastructure.repositories.deals_repository import DealsRepository
+from domain.services.orders.unified_order_service import UnifiedOrderService
 from typing import List, Optional
 import logging
 
@@ -17,10 +17,10 @@ class DealService:
     Сервис для управления сделками:
     - Создание сделок через DealFactory,
     - Обновление и управление статусами сделок,
-    - Взаимодействие с OrderService для управления ордерами.
+    - Взаимодействие с UnifiedOrderService для управления ордерами.
     """
 
-    def __init__(self, deals_repo: DealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
+    def __init__(self, deals_repo: DealsRepository, order_service: UnifiedOrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
         self.deals_repo = deals_repo
         self.order_service = order_service
         self.deal_factory = deal_factory

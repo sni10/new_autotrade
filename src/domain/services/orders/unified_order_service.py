@@ -38,6 +38,7 @@ class UnifiedOrderService:
         orders_repo: OrdersRepository,
         order_factory: OrderFactory,
         exchange_connector: CcxtExchangeConnector,
+        balance_service: BalanceService,  # ❗️ ИНЪЕКЦИЯ ЗАВИСИМОСТИ
         statistics_repo: Optional[IStatisticsRepository] = None,
         currency_pair_symbol: Optional[str] = None
     ):
@@ -48,8 +49,15 @@ class UnifiedOrderService:
         self.currency_pair_symbol = currency_pair_symbol
         
         # Инициализация специализированных сервисов
+        # BalanceService теперь передается извне
+        self.balance_service = balance_service
+        
         self.placement_service = OrderPlacementService(
-            orders_repo, order_factory, exchange_connector, statistics_repo
+            self.balance_service, # ❗️ ПЕРЕДАЕМ СЕРВИС БАЛАНСА
+            orders_repo, 
+            order_factory, 
+            exchange_connector, 
+            statistics_repo
         )
         
         self.monitoring_service = OrderMonitoringService(
@@ -57,11 +65,9 @@ class UnifiedOrderService:
         )
         
         self.validation_service = OrderValidationService(
-            exchange_connector, statistics_repo
-        )
-        
-        self.balance_service = BalanceService(
-            exchange_connector, statistics_repo
+            self.balance_service, # ❗️ ПЕРЕДАЕМ СЕРВИС БАЛАНСА
+            exchange_connector, 
+            statistics_repo
         )
         
         self.cancellation_service = OrderCancellationService(
@@ -281,14 +287,14 @@ class UnifiedOrderService:
     # ОТМЕНА ОРДЕРОВ
     # ================================
     
-    async def cancel_order(self, order: Order, reason: str = "User request") -> bool:
+    async def cancel_order(self, order: Order, reason: str = "User request") -> Optional[Order]:
         """Отмена ордера"""
         try:
             return await self.cancellation_service.cancel_order(order, reason)
         except Exception as e:
             logger.error(f"❌ Error cancelling order: {e}")
             self._stats['delegation_errors'] += 1
-            return False
+            return None
     
     async def emergency_cancel_all_orders(self, symbol: Optional[str] = None) -> int:
         """Экстренная отмена всех ордеров"""

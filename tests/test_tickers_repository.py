@@ -1,10 +1,5 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
-from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
-from domain.entities.ticker import Ticker
+from src.infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+from src.domain.entities.ticker import Ticker
 
 
 def test_save_and_get_last_n_with_cache():

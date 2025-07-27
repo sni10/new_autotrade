@@ -38,7 +38,7 @@ class OrderCancellationService:
             'emergency_cancellations': 0
         }
     
-    async def cancel_order(self, order: Order, reason: str = "User request") -> bool:
+    async def cancel_order(self, order: Order, reason: str = "User request") -> Optional[Order]:
         """
         Отмена отдельного ордера
         
@@ -47,12 +47,12 @@ class OrderCancellationService:
             reason: Причина отмены
             
         Returns:
-            True если ордер успешно отменен, False иначе
+            Обновленный ордер в случае успеха, иначе None
         """
         try:
             if not order.is_open():
                 logger.warning(f"⚠️ Order {order.order_id} is not open ({order.status})")
-                return False
+                return None
             
             logger.info(f"❌ Cancelling order {order.order_id}: {reason}")
             
@@ -66,9 +66,9 @@ class OrderCancellationService:
         except Exception as e:
             logger.error(f"❌ Error cancelling order {order.order_id}: {e}")
             await self._update_cancellation_statistics(False, order, "error")
-            return False
+            return None
     
-    async def _cancel_order_on_exchange(self, order: Order, reason: str) -> bool:
+    async def _cancel_order_on_exchange(self, order: Order, reason: str) -> Optional[Order]:
         """Отмена ордера на бирже"""
         try:
             logger.info(f"❌ Cancelling order {order.exchange_id} on exchange")
@@ -90,7 +90,7 @@ class OrderCancellationService:
             logger.info(f"✅ Order {order.order_id} cancelled successfully")
             await self._update_cancellation_statistics(True, order, "exchange")
             
-            return True
+            return order
             
         except ccxt.OrderNotFound:
             # Ордер не найден на бирже - возможно, уже исполнен или отменен
@@ -103,7 +103,7 @@ class OrderCancellationService:
             self._stats['orders_not_found'] += 1
             await self._update_cancellation_statistics(True, order, "not_found")
             
-            return True  # Считаем успешным - цель достигнута
+            return order  # Считаем успешным - цель достигнута
             
         except Exception as e:
             logger.error(f"❌ Error cancelling order {order.order_id} on exchange: {e}")
@@ -116,9 +116,9 @@ class OrderCancellationService:
             self._stats['failed_cancellations'] += 1
             await self._update_cancellation_statistics(False, order, "failed")
             
-            return False
+            return None
     
-    async def _cancel_order_locally(self, order: Order, reason: str) -> bool:
+    async def _cancel_order_locally(self, order: Order, reason: str) -> Optional[Order]:
         """Локальная отмена ордера (без обращения к бирже)"""
         try:
             order.cancel(reason)
@@ -128,17 +128,17 @@ class OrderCancellationService:
             logger.warning(f"⚠️ Order {order.order_id} cancelled locally: {reason}")
             
             await self._update_cancellation_statistics(True, order, "local")
-            return True
+            return order
             
         except Exception as e:
             logger.error(f"❌ Error cancelling order locally: {e}")
-            return False
+            return None
     
     async def cancel_multiple_orders(
         self,
         orders: List[Order],
         reason: str = "Batch cancellation"
-    ) -> Dict[int, bool]:
+    ) -> Dict[int, Optional[Order]]: # Изменен тип возвращаемого значения
         """
         Отмена нескольких ордеров параллельно
         
@@ -147,7 +147,7 @@ class OrderCancellationService:
             reason: Причина отмены
             
         Returns:
-            Словарь {order_id: success_status}
+            Словарь {order_id: updated_order_or_None}
         """
         if not orders:
             return {}
@@ -170,18 +170,18 @@ class OrderCancellationService:
                 order_id = orders[i].order_id
                 if isinstance(result, Exception):
                     logger.error(f"Error cancelling order {order_id}: {result}")
-                    result_dict[order_id] = False
+                    result_dict[order_id] = None
                 else:
-                    result_dict[order_id] = result
+                    result_dict[order_id] = result # result теперь Optional[Order]
             
-            success_count = sum(1 for success in result_dict.values() if success)
+            success_count = sum(1 for success in result_dict.values() if success is not None) # Проверяем на None
             logger.info(f"❌ Batch cancellation completed: {success_count}/{len(orders)} successful")
             
             return result_dict
             
         except Exception as e:
             logger.error(f"❌ Error in batch cancellation: {e}")
-            return {order.order_id: False for order in orders}
+            return {order.order_id: None for order in orders}
     
     async def cancel_orders_by_deal(self, deal_id: int, reason: str = "Deal cancellation") -> int:
         """
@@ -207,7 +207,7 @@ class OrderCancellationService:
             
             # Отменяем все ордера
             results = await self.cancel_multiple_orders(open_orders, reason)
-            cancelled_count = sum(1 for success in results.values() if success)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
             
             logger.info(f"❌ Deal {deal_id} cancellation: {cancelled_count}/{len(open_orders)} orders cancelled")
             return cancelled_count
@@ -247,7 +247,7 @@ class OrderCancellationService:
             
             # Отменяем все ордера
             results = await self.cancel_multiple_orders(symbol_orders, reason)
-            cancelled_count = sum(1 for success in results.values() if success)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
             
             logger.info(f"❌ Symbol {symbol} cancellation: {cancelled_count}/{len(symbol_orders)} orders cancelled")
             return cancelled_count
@@ -290,7 +290,7 @@ class OrderCancellationService:
             
             # Отменяем все ордера
             results = await self.cancel_multiple_orders(open_orders, f"🚨 {reason}")
-            cancelled_count = sum(1 for success in results.values() if success)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
             
             self._stats['emergency_cancellations'] += cancelled_count
             
@@ -341,7 +341,7 @@ class OrderCancellationService:
             
             # Отменяем устаревшие ордера
             results = await self.cancel_multiple_orders(stale_orders, reason)
-            cancelled_count = sum(1 for success in results.values() if success)
+            cancelled_count = sum(1 for success in results.values() if success is not None) # Проверяем на None
             
             logger.info(f"❌ Stale order cleanup: {cancelled_count}/{len(stale_orders)} orders cancelled")
             return cancelled_count
@@ -356,7 +356,9 @@ class OrderCancellationService:
         order: Order,
         cancellation_type: str
     ) -> None:
-        """Обновление статистики отмены ордеров"""
+        """
+        Обновление статистики отмены ордеров
+        """
         if not self.statistics_repo:
             return
         
@@ -388,7 +390,9 @@ class OrderCancellationService:
             logger.error(f"Error updating cancellation statistics: {e}")
     
     async def _update_emergency_statistics(self, cancelled: int, total: int) -> None:
-        """Обновление статистики экстренных отмен"""
+        """
+        Обновление статистики экстренных отмен
+        """
         if not self.statistics_repo:
             return
         
@@ -408,11 +412,15 @@ class OrderCancellationService:
             logger.error(f"Error updating emergency statistics: {e}")
     
     def get_stats(self) -> Dict[str, Any]:
-        """Получение статистики сервиса"""
+        """
+        Получение статистики сервиса
+        """
         return self._stats.copy()
     
     def reset_stats(self) -> None:
-        """Сброс статистики"""
+        """
+        Сброс статистики
+        """
         self._stats = {
             'orders_cancelled': 0,
             'orders_not_found': 0,

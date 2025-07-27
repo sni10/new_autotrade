@@ -4,7 +4,7 @@ from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
 from infrastructure.repositories.deals_repository import DealsRepository
-from domain.services.orders.order_service import OrderService
+from domain.services.orders.unified_order_service import UnifiedOrderService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ class TradingService:
     def __init__(
         self,
         deals_repo: DealsRepository,
-        order_service: OrderService,
+        order_service: UnifiedOrderService,
         deal_factory: DealFactory
     ):
         self.deals_repo = deals_repo

@@ -19,14 +19,15 @@ class BalanceService:
     def __init__(
         self,
         exchange_connector: CcxtExchangeConnector,
-        statistics_repo: Optional[IStatisticsRepository] = None
+        statistics_repo: Optional[IStatisticsRepository] = None,
+        initial_balance: Optional[Dict[str, Dict[str, float]]] = None
     ):
         self.exchange_connector = exchange_connector
         self.statistics_repo = statistics_repo
         
         # Кэш балансов для избежания частых запросов к API
-        self._balance_cache: Dict[str, Dict[str, float]] = {}
-        self._cache_timestamp = 0
+        self._balance_cache: Dict[str, Dict[str, float]] = initial_balance or {}
+        self._cache_timestamp = self._get_current_timestamp() if initial_balance else 0
         self._cache_ttl = 30  # секунд
         
         self._stats = {
@@ -74,6 +75,10 @@ class BalanceService:
             # Получаем баланс
             balance_info = await self._get_balance(required_currency)
             available_balance = balance_info.get('free', 0.0)
+            if not isinstance(available_balance, (float, int)):
+                raise TypeError(f"available_balance is not a float/int, it is {type(available_balance)}. balance_info was: {balance_info}")
+            if not isinstance(available_balance, (float, int)):
+                raise TypeError(f"available_balance is not a float/int, it is {type(available_balance)}. balance_info was: {balance_info}")
             
             # Проверяем достаточность
             is_sufficient = available_balance >= required_amount
@@ -234,18 +239,22 @@ class BalanceService:
     async def _get_balance(self, currency: str) -> Dict[str, float]:
         """Получение баланса конкретной валюты с использованием кэша"""
         # Проверяем кэш
-        if self._is_cache_valid() and currency in self._balance_cache:
+        if not self._is_cache_valid():
+            # Обновляем весь баланс, если кэш невалиден
+            await self.get_account_balance(force_refresh=True)
+        else:
             self._stats['cache_hits'] += 1
-            return self._balance_cache[currency]
-        
-        # Обновляем весь баланс
-        await self.get_account_balance(force_refresh=True)
-        
-        return self._balance_cache.get(currency, {
-            'free': 0.0,
-            'used': 0.0,
-            'total': 0.0
-        })
+
+        # Теперь, когда кэш актуален, извлекаем данные для конкретной валюты
+        free = self._balance_cache.get('free', {}).get(currency, 0.0)
+        used = self._balance_cache.get('used', {}).get(currency, 0.0)
+        total = self._balance_cache.get('total', {}).get(currency, 0.0)
+
+        return {
+            'free': free,
+            'used': used,
+            'total': total
+        }
     
     def _parse_symbol(self, symbol: str) -> Tuple[str, str]:
         """

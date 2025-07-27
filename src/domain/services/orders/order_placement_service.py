@@ -6,6 +6,7 @@ from decimal import ROUND_DOWN, ROUND_UP
 from src.domain.entities.order import Order, OrderValidationResult, OrderExecutionResult
 from src.domain.factories.order_factory import OrderFactory
 from src.domain.services.utils.decimal_rounding_service import DecimalRoundingService
+from src.domain.services.orders.balance_service import BalanceService
 from src.infrastructure.repositories.orders_repository import OrdersRepository
 from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from src.domain.repositories.i_statistics_repository import IStatisticsRepository
@@ -23,11 +24,13 @@ class OrderPlacementService:
     
     def __init__(
         self,
+        balance_service: BalanceService,
         orders_repo: OrdersRepository,
         order_factory: OrderFactory,
         exchange_connector: CcxtExchangeConnector,
         statistics_repo: Optional[IStatisticsRepository] = None
     ):
+        self.balance_service = balance_service
         self.orders_repo = orders_repo
         self.order_factory = order_factory
         self.exchange_connector = exchange_connector

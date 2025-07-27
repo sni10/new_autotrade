@@ -2,6 +2,7 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 
 from src.domain.entities.order import Order, OrderValidationResult
+from src.domain.services.orders.balance_service import BalanceService
 from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from src.domain.repositories.i_statistics_repository import IStatisticsRepository
 from src.domain.entities.statistics import Statistics, StatisticCategory, StatisticType
@@ -18,6 +19,7 @@ class OrderValidationService:
     
     def __init__(
         self,
+        balance_service: BalanceService,
         exchange_connector: CcxtExchangeConnector,
         statistics_repo: Optional[IStatisticsRepository] = None
     ):

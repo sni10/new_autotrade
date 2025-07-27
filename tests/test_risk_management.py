@@ -1,16 +1,11 @@
-# tests/test_risk_management.py
 import asyncio
 import unittest
 from unittest.mock import MagicMock, AsyncMock
 
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from domain.entities.currency_pair import CurrencyPair
-from domain.services.deals.deal_service import DealService
-from domain.services.risk.stop_loss_monitor import StopLossMonitor
-from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
+from src.domain.entities.currency_pair import CurrencyPair
+from src.domain.services.deals.deal_service import DealService
+from src.domain.services.risk.stop_loss_monitor import StopLossMonitor
+from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
 
 
 class TestRiskManagement(unittest.TestCase):

@@ -1,0 +1,18 @@
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: /mnt/f/HOME/new_autotrade                  │
+╰───────────────────────────────────────────────────╯
+● Compact summary (ctrl+r to expand)
+  ⎿  Read tests/ccxt_compliance/test_ccxt_integration.py (536 lines)
+  ⎿  Read tests/ccxt_compliance/test_ccxt_exchange_compliance.py (536 lines)
+  ⎿  Read tests/ccxt_compliance/test_ccxt_order_compliance.py (401 lines)
+  ⎿  Read src/domain/services/market_data/ccxt_market_service.py (588 lines)
+  ⎿  Read src/domain/entities/ccxt_currency_pair.py (618 lines)
+  ⎿  Todo list read (8 items)
+  ⎿  Claude usage limit reached. Your limit will reset at 5pm (Europe/Kiev).
+
+      • /upgrade to increase your usage limit.
+

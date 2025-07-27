@@ -4,12 +4,7 @@
 """
 import asyncio
 import logging
-import sys
-import os
 from unittest.mock import Mock, AsyncMock
-
-# Добавляем src в путь для импорта
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from src.domain.services.risk.stop_loss_monitor import StopLossMonitor
 from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer, OrderBookMetrics, OrderBookSignal

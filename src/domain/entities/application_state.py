@@ -49,6 +49,7 @@ class TradingSessionState:
 @dataclass
 class SystemSnapshot:
     """Снимок состояния системы"""
+    snapshot_id: str
     timestamp: int
     application_state: ApplicationState
     trading_sessions: List[TradingSessionState] = field(default_factory=list)
