@@ -64,7 +64,7 @@ class OrderMonitoringService:
             
             # Обновляем локальный ордер данными с биржи
             old_status = order.status
-            order.update_from_exchange(exchange_order)
+            order.update_from_ccxt_response(exchange_order)
             
             # Сохраняем обновления
             self.orders_repo.save(order)
@@ -179,7 +179,7 @@ class OrderMonitoringService:
                         # Ордер есть на бирже и открыт - обновляем статус
                         exchange_data = exchange_open_orders_map[order.exchange_id]
                         old_status = order.status
-                        order.update_from_exchange(exchange_data)
+                        order.update_from_ccxt_response(exchange_data)
                         self.orders_repo.save(order)
                         updated_orders.append(order)
                         
@@ -214,9 +214,9 @@ class OrderMonitoringService:
                 order.exchange_id,
                 order.symbol
             )
-            
+
             old_status = order.status
-            order.update_from_exchange(full_exchange_order)
+            order.update_from_ccxt_response(full_exchange_order)
             self.orders_repo.save(order)
             updated_orders.append(order)
             

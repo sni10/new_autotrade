@@ -278,9 +278,8 @@ class Order:
 
     def validate_ccxt_compliance(self) -> tuple[bool, List[str]]:
         """Валидирует Order на соответствие CCXT стандарту"""
-        errors = []
-        
-        # Обязательные поля для размещения на бирже
+        errors: List[str] = []
+
         if not self.symbol:
             errors.append("symbol is required")
         if not self.side:
@@ -289,15 +288,21 @@ class Order:
             errors.append("type is required")
         if self.amount <= 0:
             errors.append("amount must be positive")
-        if self.type == self.TYPE_LIMIT and (not self.price or self.price <= 0):
+        if self.type == self.TYPE_LIMIT and (self.price is None or self.price <= 0):
             errors.append("price is required for limit orders")
-        
-        # Валидация значений
+
         if self.side not in [self.SIDE_BUY, self.SIDE_SELL]:
             errors.append(f"invalid side: {self.side}")
         if self.type not in [self.TYPE_LIMIT, self.TYPE_MARKET, self.TYPE_STOP, self.TYPE_STOP_LIMIT]:
             errors.append(f"invalid type: {self.type}")
-        
+
+        if not isinstance(self.timestamp, int):
+            errors.append("timestamp must be an integer")
+        if self.price is not None and not isinstance(self.price, (int, float)):
+            errors.append("price must be a number")
+        if not isinstance(self.amount, (int, float)):
+            errors.append("amount must be a number")
+
         return len(errors) == 0, errors
 
     def validate_for_exchange_placement(self) -> tuple[bool, str]:
@@ -482,30 +487,31 @@ def create_order_from_ccxt(
 
 
 def validate_ccxt_order_structure(data: Dict[str, Any]) -> tuple[bool, List[str]]:
-    """
-    Валидирует структуру данных на соответствие CCXT Order Structure
-    """
+    """Проверяет словарь на соответствие структуре CCXT Order."""
+
     required_fields = ['id', 'datetime', 'timestamp', 'status', 'symbol', 'type', 'side', 'amount']
     optional_fields = [
-        'clientOrderId', 'lastTradeTimestamp', 'timeInForce', 'price', 
+        'clientOrderId', 'lastTradeTimestamp', 'timeInForce', 'price',
         'filled', 'remaining', 'cost', 'average', 'trades', 'fee', 'info'
     ]
-    
-    errors = []
-    
-    # Проверка обязательных полей
+
+    errors: List[str] = []
+
     for field in required_fields:
-        if field not in data:
+        if field not in data or data.get(field) is None:
             errors.append(f"Missing required field: {field}")
-    
-    # Проверка типов данных
-    if 'amount' in data and not isinstance(data['amount'], (int, float)):
-        errors.append("amount must be a number")
-    
-    if 'filled' in data and not isinstance(data['filled'], (int, float)):
-        errors.append("filled must be a number")
-    
+
     if 'timestamp' in data and not isinstance(data['timestamp'], int):
         errors.append("timestamp must be an integer")
-    
+
+    numeric_fields = ['amount', 'filled', 'remaining', 'price', 'cost', 'average']
+    for field in numeric_fields:
+        if field in data and data[field] is not None and not isinstance(data[field], (int, float)):
+            errors.append(f"{field} must be a number")
+
+    if 'trades' in data and data['trades'] is not None and not isinstance(data['trades'], list):
+        errors.append("trades must be a list")
+    if 'fee' in data and data['fee'] is not None and not isinstance(data['fee'], dict):
+        errors.append("fee must be a dict")
+
     return len(errors) == 0, errors

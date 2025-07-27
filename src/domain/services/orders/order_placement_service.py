@@ -272,7 +272,7 @@ class OrderPlacementService:
                 )
                 
                 # Обновляем ордер данными с биржи
-                order.mark_as_placed(
+                order.mark_as_placed_on_exchange(
                     exchange_id=exchange_response['id'],
                     exchange_timestamp=exchange_response.get('timestamp')
                 )
@@ -283,7 +283,7 @@ class OrderPlacementService:
                         order.exchange_id,
                         order.symbol
                     )
-                    order.update_from_exchange(full_order_data)
+                    order.update_from_ccxt_response(full_order_data)
                 
                 # Сохраняем обновленный ордер
                 self.orders_repo.save(order)

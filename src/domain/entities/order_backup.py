@@ -1,4 +1,13 @@
-# domain/entities/order.py.new - ENHANCED для реальной торговли
+# domain/entities/order_backup.py - legacy version
+
+"""DEPRECATED
+================
+
+This module contains the legacy ``Order`` entity that predates the CCXT
+compliant implementation found in :mod:`order.py`.  It is kept for historical
+reasons and should not be used for new code.  Fields such as ``order_id`` and
+``exchange_id`` remain here to document the previous API.
+"""
 import time
 from typing import Optional, Dict, Any
 from dataclasses import dataclass, field

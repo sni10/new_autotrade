@@ -80,9 +80,9 @@ class OrderCancellationService:
             )
             
             # Обновляем статус ордера
-            order.cancel(reason)
+            order.cancel_order(reason)
             if exchange_response:
-                order.update_from_exchange(exchange_response)
+                order.update_from_ccxt_response(exchange_response)
             
             self.orders_repo.save(order)
             self._stats['orders_cancelled'] += 1
@@ -121,7 +121,7 @@ class OrderCancellationService:
     async def _cancel_order_locally(self, order: Order, reason: str) -> Optional[Order]:
         """Локальная отмена ордера (без обращения к бирже)"""
         try:
-            order.cancel(reason)
+            order.cancel_order(reason)
             self.orders_repo.save(order)
             
             self._stats['local_cancellations'] += 1
