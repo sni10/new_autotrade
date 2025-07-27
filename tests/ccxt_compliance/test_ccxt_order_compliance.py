@@ -395,6 +395,15 @@ class TestCCXTOrderCompliance:
         for field in ccxt_fields:
             assert original_ccxt[field] == restored_ccxt[field]
 
+    def test_ccxt_dict_roundtrip(self, ccxt_standard_order):
+        """Roundtrip Order through CCXT dict serialization"""
+        original_order = Order.from_ccxt_response(ccxt_standard_order)
+
+        ccxt_dict = original_order.to_ccxt_dict()
+        restored = Order.from_ccxt_response(ccxt_dict)
+
+        assert restored.to_ccxt_dict() == ccxt_dict
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

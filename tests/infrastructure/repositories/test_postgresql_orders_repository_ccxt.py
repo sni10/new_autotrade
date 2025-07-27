@@ -2,6 +2,7 @@
 import pytest
 import asyncio
 import asyncpg
+import json
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
@@ -120,6 +121,46 @@ class TestPostgreSQLOrdersRepositoryCCXT:
         assert order.status == "open"
         assert order.deal_id == 1
         assert order.local_order_id == 1001
+
+    def test_json_fields_round_trip(self, repository, sample_order):
+        """Проверяем сериализацию и десериализацию JSONB полей"""
+        repo, _ = repository
+
+        values = repo._order_to_db_values(sample_order)
+        row = {
+            'id': values[0],
+            'client_order_id': values[1],
+            'datetime': datetime.fromisoformat(sample_order.datetime.replace('Z', '+00:00')),
+            'timestamp': values[3],
+            'last_trade_timestamp': values[4],
+            'status': values[5],
+            'symbol': values[6],
+            'type': values[7],
+            'time_in_force': values[8],
+            'side': values[9],
+            'price': values[10],
+            'amount': values[11],
+            'filled': values[12],
+            'remaining': values[13],
+            'cost': values[14],
+            'average': values[15],
+            'trades': values[16],
+            'fee': values[17],
+            'info': values[18],
+            'deal_id': str(sample_order.deal_id),
+            'local_order_id': values[20],
+            'created_at': datetime.now(timezone.utc),
+            'updated_at': datetime.now(timezone.utc),
+            'error_message': None,
+            'retries': 0,
+            'metadata': values[-1],
+        }
+
+        loaded = repo._row_to_order(row)
+        assert loaded.trades == sample_order.trades
+        assert loaded.fee == sample_order.fee
+        assert loaded.info == sample_order.info
+        assert loaded.metadata == sample_order.metadata
 
     @pytest.mark.asyncio
     async def test_save_order_new(self, repository, sample_order):
@@ -344,6 +385,18 @@ class TestPostgreSQLOrdersRepositoryCCXT:
         assert stats['open_buy']['count'] == 10
         assert stats['closed_sell']['count'] == 5
 
+    @pytest.mark.asyncio
+    async def test_save_orders_batch(self, repository, sample_order):
+        repo, conn = repository
+
+        conn.fetchrow.return_value = None
+        conn.execute.return_value = "INSERT 0 1"
+
+        result = await repo.save_orders_batch([sample_order])
+
+        assert result == 1
+        assert conn.execute.call_count == 1
+
     def test_validate_ccxt_compliance(self, sample_order):
         """Тест валидации CCXT соответствия"""
         is_valid, errors = sample_order.validate_ccxt_compliance()
@@ -393,6 +446,63 @@ class TestPostgreSQLOrdersRepositoryCCXT:
         assert order.symbol == 'BTC/USDT'
         assert order.deal_id == 1
         assert order.status == 'open'
+
+    def test_jsonb_fields_roundtrip(self, repository):
+        """Ensure JSONB fields are serialized and restored correctly"""
+        repo, _ = repository
+        order = Order(
+            id="json1",
+            symbol="BTC/USDT",
+            type=Order.TYPE_LIMIT,
+            side=Order.SIDE_BUY,
+            amount=0.01,
+            price=50000.0,
+            trades=[{"id": "t1", "price": 50000.0}],
+            fee={"cost": 0.1, "currency": "USDT"},
+            info={"extra": True},
+            metadata={"note": "test"},
+        )
+
+        values = repo._order_to_db_values(order)
+        assert values[16] == json.dumps(order.trades)
+        assert values[17] == json.dumps(order.fee)
+        assert values[18] == json.dumps(order.info)
+        assert values[25] == json.dumps(order.metadata)
+
+        row = {
+            "id": "json1",
+            "client_order_id": None,
+            "datetime": datetime.now(timezone.utc),
+            "timestamp": order.timestamp,
+            "last_trade_timestamp": None,
+            "status": "open",
+            "symbol": "BTC/USDT",
+            "type": "limit",
+            "time_in_force": "GTC",
+            "side": "buy",
+            "price": 50000.0,
+            "amount": 0.01,
+            "filled": 0.0,
+            "remaining": 0.01,
+            "cost": None,
+            "average": None,
+            "trades": values[16],
+            "fee": values[17],
+            "info": values[18],
+            "deal_id": None,
+            "local_order_id": None,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "error_message": None,
+            "retries": 0,
+            "metadata": values[25],
+        }
+
+        restored = repo._row_to_order(row)
+        assert restored.trades == order.trades
+        assert restored.fee == order.fee
+        assert restored.info == order.info
+        assert restored.metadata == order.metadata
 
 
 if __name__ == "__main__":

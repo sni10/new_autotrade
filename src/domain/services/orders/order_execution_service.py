@@ -14,9 +14,11 @@ from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnect
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class TradingContext:
     """Контекст для выполнения торговых операций"""
+
     currency_pair: CurrencyPair
     current_price: float
     budget: float
@@ -24,9 +26,11 @@ class TradingContext:
     deal: Optional[Deal] = None
     metadata: Optional[Dict[str, Any]] = None
 
+
 @dataclass
 class ExecutionReport:
     """Отчет о выполнении торговой операции"""
+
     success: bool
     deal_id: Optional[int] = None
     buy_order: Optional[Order] = None
@@ -38,10 +42,11 @@ class ExecutionReport:
     error_message: Optional[str] = None
     warnings: List[str] = None
 
+
 class OrderExecutionService:
     """
     🚀 ГЛАВНЫЙ сервис для выполнения торговых операций (Issue #7)
-    
+
     Это высокоуровневый сервис, который:
     - Координирует создание сделок и ордеров
     - Выполняет полные торговые стратегии
@@ -52,24 +57,24 @@ class OrderExecutionService:
 
     def __init__(
         self,
-        order_service: 'UnifiedOrderService',
+        order_service: "UnifiedOrderService",
         deal_service: DealService,
-        exchange_connector: CcxtExchangeConnector
+        exchange_connector: CcxtExchangeConnector,
     ):
         self.order_service = order_service
         self.deal_service = deal_service
         self.exchange_connector = exchange_connector
-        
+
         # Статистика
         self.execution_stats = {
-            'total_executions': 0,
-            'successful_executions': 0,
-            'failed_executions': 0,
-            'total_volume': 0.0,
-            'total_fees': 0.0,
-            'average_execution_time_ms': 0.0
+            "total_executions": 0,
+            "successful_executions": 0,
+            "failed_executions": 0,
+            "total_volume": 0.0,
+            "total_fees": 0.0,
+            "average_execution_time_ms": 0.0,
         }
-        
+
         # Настройки выполнения
         self.max_execution_time_sec = 30.0  # Максимальное время выполнения
         self.enable_risk_checks = True
@@ -82,84 +87,91 @@ class OrderExecutionService:
         self,
         currency_pair: CurrencyPair,
         strategy_result: Any,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> ExecutionReport:
         """
         🎯 ГЛАВНЫЙ метод выполнения торговой стратегии
-        
+
         Принимает результат расчета стратегии и выполняет полную торговую операцию:
         1. Создает сделку
         2. Размещает BUY ордер на бирже
         3. Размещает SELL ордер на бирже
         4. Связывает все компоненты
         5. Возвращает детальный отчет
-        
+
         Args:
             currency_pair: Торговая пара
             strategy_result: Результат расчета стратегии (из ticker_service)
             metadata: Дополнительная информация
-            
+
         Returns:
             ExecutionReport с результатами выполнения
         """
         start_time = datetime.now()
         execution_id = f"exec_{int(start_time.timestamp() * 1000)}"
-        
-        logger.info(f"🚀 [{execution_id}] Starting strategy execution for {currency_pair.symbol}")
-        
+
+        logger.info(
+            f"🚀 [{execution_id}] Starting strategy execution for {currency_pair.symbol}"
+        )
+
         try:
             # 1. Валидация входных данных
-            validation_result = self._validate_strategy_input(currency_pair, strategy_result)
+            validation_result = self._validate_strategy_input(
+                currency_pair, strategy_result
+            )
             if not validation_result[0]:
                 return ExecutionReport(
                     success=False,
-                    error_message=f"Input validation failed: {validation_result[1]}"
+                    error_message=f"Input validation failed: {validation_result[1]}",
                 )
-            
+
             # 2. Парсинг результатов стратегии
             strategy_data = self._parse_strategy_result(strategy_result)
             if not strategy_data:
                 return ExecutionReport(
-                    success=False,
-                    error_message="Failed to parse strategy result"
+                    success=False, error_message="Failed to parse strategy result"
                 )
-            
+
             # 3. Создание контекста торговли
             context = TradingContext(
                 currency_pair=currency_pair,
-                current_price=strategy_data['buy_price'],
+                current_price=strategy_data["buy_price"],
                 budget=currency_pair.deal_quota,
                 strategy_result=strategy_result,
-                metadata=metadata or {}
+                metadata=metadata or {},
             )
-            
+
             # 4. Pre-execution проверки
-            pre_check_result = await self._perform_pre_execution_checks(context, strategy_data)
+            pre_check_result = await self._perform_pre_execution_checks(
+                context, strategy_data
+            )
             if not pre_check_result[0]:
                 return ExecutionReport(
                     success=False,
                     error_message=f"Pre-execution checks failed: {pre_check_result[1]}",
-                    warnings=pre_check_result[2] if len(pre_check_result) > 2 else []
+                    warnings=pre_check_result[2] if len(pre_check_result) > 2 else [],
                 )
-            
+
             # 5. Создание сделки
             deal = self.deal_service.create_new_deal(currency_pair)
             context.deal = deal
-            
+
             logger.info(f"✅ [{execution_id}] Deal #{deal.deal_id} created")
-            
+
             # 6. Выполнение BUY ордера
             buy_result = await self._execute_buy_order(context, strategy_data)
             if not buy_result.success:
                 return ExecutionReport(
                     success=False,
                     deal_id=deal.deal_id,
-                    error_message=f"BUY order failed: {buy_result.error_message}"
+                    error_message=f"BUY order failed: {buy_result.error_message}",
                 )
-            
+
             buy_order = buy_result.order
-            logger.info(f"✅ [{execution_id}] BUY order placed: {buy_order.exchange_id}")
-            
+            logger.info(
+                f"✅ [{execution_id}] BUY order placed: {buy_order.exchange_id}"
+            )
+
             # 7. Создание ЛОКАЛЬНОГО SELL ордера (без размещения на бирже)
             sell_result = await self._create_local_sell_order(context, strategy_data)
             if not sell_result.success:
@@ -169,12 +181,14 @@ class OrderExecutionService:
                     success=False,
                     deal_id=deal.deal_id,
                     buy_order=buy_order,
-                    error_message=f"Local SELL order creation failed: {sell_result.error_message}"
+                    error_message=f"Local SELL order creation failed: {sell_result.error_message}",
                 )
-            
+
             sell_order = sell_result.order
-            logger.info(f"✅ [{execution_id}] Local SELL order created with status PENDING.")
-            
+            logger.info(
+                f"✅ [{execution_id}] Local SELL order created with status PENDING."
+            )
+
             # 8. Связывание ордеров со сделкой
             deal.attach_orders(buy_order, sell_order)
             self.deal_service.deals_repo.save(deal)
@@ -182,11 +196,11 @@ class OrderExecutionService:
             # 9. Расчет финансовых пока��ателей (на основе ожидаемых данных)
             total_cost = buy_order.amount * buy_order.price
             expected_profit = (sell_order.amount * sell_order.price) - total_cost
-            
+
             # 10. Обновление статистики
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
             self._update_execution_stats(True, total_cost, 0, execution_time)
-            
+
             # 11. Формирование отчета
             report = ExecutionReport(
                 success=True,
@@ -195,58 +209,64 @@ class OrderExecutionService:
                 sell_order=sell_order,
                 total_cost=total_cost,
                 expected_profit=expected_profit,
-                fees=0, # Комиссии будут известны после исполнения
-                execution_time_ms=execution_time
+                fees=0,  # Комиссии будут известны после исполнения
+                execution_time_ms=execution_time,
             )
-            
-            logger.info(f"🎉 [{execution_id}] Strategy executed successfully! BUY order placed, SELL order is PENDING.")
+
+            logger.info(
+                f"🎉 [{execution_id}] Strategy executed successfully! BUY order placed, SELL order is PENDING."
+            )
             logger.info(f"   💰 Cost: {total_cost:.4f} USDT")
             logger.info(f"   📈 Expected profit: {expected_profit:.4f} USDT")
             logger.info(f"   ⏱️ Execution time: {execution_time:.1f}ms")
-            
+
             return report
-            
+
         except Exception as e:
             execution_time = (datetime.now() - start_time).total_seconds() * 1000
             self._update_execution_stats(False, 0.0, 0.0, execution_time)
-            
+
             logger.error(f"❌ [{execution_id}] Strategy execution failed: {e}")
             return ExecutionReport(
                 success=False,
                 error_message=f"Unexpected error: {str(e)}",
-                execution_time_ms=execution_time
+                execution_time_ms=execution_time,
             )
 
     # 🔧 ВНУТРЕННИЕ МЕТОДЫ ВЫПОЛНЕНИЯ
 
     def _validate_strategy_input(
-        self, 
-        currency_pair: CurrencyPair, 
-        strategy_result: Any
+        self, currency_pair: CurrencyPair, strategy_result: Any
     ) -> Tuple[bool, str]:
         """Валидация входных данных для стратегии"""
         try:
             if not currency_pair:
                 return False, "Currency pair is required"
-            
+
             if not currency_pair.symbol:
                 return False, "Currency pair symbol is required"
-            
+
             if currency_pair.deal_quota <= 0:
                 return False, "Deal quota must be positive"
-            
+
             if not strategy_result:
                 return False, "Strategy result is required"
-            
+
             # Проверяем формат strategy_result
             if isinstance(strategy_result, dict) and "comment" in strategy_result:
-                return False, f"Strategy calculation error: {strategy_result['comment']}"
-            
-            if not isinstance(strategy_result, (tuple, list)) or len(strategy_result) < 5:
+                return (
+                    False,
+                    f"Strategy calculation error: {strategy_result['comment']}",
+                )
+
+            if (
+                not isinstance(strategy_result, (tuple, list))
+                or len(strategy_result) < 5
+            ):
                 return False, "Invalid strategy result format"
-            
+
             return True, "Valid"
-            
+
         except Exception as e:
             return False, f"Validation error: {str(e)}"
 
@@ -255,116 +275,146 @@ class OrderExecutionService:
         try:
             if isinstance(strategy_result, dict) and "comment" in strategy_result:
                 return None  # Ошибка в стратегии
-            
+
             # Распаковываем tuple результат
             if isinstance(strategy_result, (tuple, list)) and len(strategy_result) >= 5:
-                buy_price, buy_amount, sell_price, sell_amount, info_dict = strategy_result[:5]
-                
+                buy_price, buy_amount, sell_price, sell_amount, info_dict = (
+                    strategy_result[:5]
+                )
+
                 return {
-                    'buy_price': float(buy_price),
-                    'buy_amount': float(buy_amount),
-                    'sell_price': float(sell_price),
-                    'sell_amount': float(sell_amount),
-                    'info': info_dict if isinstance(info_dict, dict) else {}
+                    "buy_price": float(buy_price),
+                    "buy_amount": float(buy_amount),
+                    "sell_price": float(sell_price),
+                    "sell_amount": float(sell_amount),
+                    "info": info_dict if isinstance(info_dict, dict) else {},
                 }
-            
+
             return None
-            
+
         except Exception as e:
             logger.error(f"❌ Error parsing strategy result: {e}")
             return None
 
     async def _perform_pre_execution_checks(
-        self, 
-        context: TradingContext, 
-        strategy_data: Dict[str, Any]
+        self, context: TradingContext, strategy_data: Dict[str, Any]
     ) -> Tuple[bool, str, List[str]]:
         """Предварительные проверки перед выполнением"""
         warnings = []
-        
+
         try:
             # 1. Проверка баланса
             if self.enable_balance_checks:
                 balance_check = await self.exchange_connector.check_sufficient_balance(
                     context.currency_pair.symbol,
-                    'buy',
-                    strategy_data['buy_amount'],
-                    strategy_data['buy_price']
+                    "buy",
+                    strategy_data["buy_amount"],
+                    strategy_data["buy_price"],
                 )
-                
+
                 if not balance_check[0]:
-                    return False, f"Insufficient balance: need {strategy_data['buy_amount'] * strategy_data['buy_price']:.4f} {balance_check[1]}, have {balance_check[2]:.4f}", warnings
-                
+                    return (
+                        False,
+                        f"Insufficient balance: need {strategy_data['buy_amount'] * strategy_data['buy_price']:.4f} {balance_check[1]}, have {balance_check[2]:.4f}",
+                        warnings,
+                    )
+
                 # Предупреждение если баланс близок к лимиту
-                required = strategy_data['buy_amount'] * strategy_data['buy_price']
+                required = strategy_data["buy_amount"] * strategy_data["buy_price"]
                 if balance_check[2] < required * 1.1:
                     warnings.append("Balance is close to required amount")
-            
+
             # 2. Проверка цен на разумность
-            ticker = await self.exchange_connector.fetch_ticker(context.currency_pair.symbol)
-            current_market_price = ticker['last']
-            
-            buy_price_diff = abs(strategy_data['buy_price'] - current_market_price) / current_market_price
+            ticker = await self.exchange_connector.fetch_ticker(
+                context.currency_pair.symbol
+            )
+            current_market_price = ticker["last"]
+
+            buy_price_diff = (
+                abs(strategy_data["buy_price"] - current_market_price)
+                / current_market_price
+            )
             if buy_price_diff > 0.05:  # 5% отклонение
-                warnings.append(f"BUY price differs from market by {buy_price_diff*100:.1f}%")
-            
-            sell_price_diff = abs(strategy_data['sell_price'] - current_market_price) / current_market_price  
+                warnings.append(
+                    f"BUY price differs from market by {buy_price_diff*100:.1f}%"
+                )
+
+            sell_price_diff = (
+                abs(strategy_data["sell_price"] - current_market_price)
+                / current_market_price
+            )
             if sell_price_diff > 0.10:  # 10% отклонение
-                warnings.append(f"SELL price differs from market by {sell_price_diff*100:.1f}%")
-            
-            # 3. Проверка объемов
-            symbol_info = await self.exchange_connector.get_symbol_info(context.currency_pair.symbol)
-            if strategy_data['buy_amount'] < symbol_info.min_qty:
-                return False, f"BUY amount {strategy_data['buy_amount']} below minimum {symbol_info.min_qty}", warnings
-            
-            if strategy_data['sell_amount'] < symbol_info.min_qty:
-                return False, f"SELL amount {strategy_data['sell_amount']} below minimum {symbol_info.min_qty}", warnings
-            
+                warnings.append(
+                    f"SELL price differs from market by {sell_price_diff*100:.1f}%"
+                )
+
+            # 3. Проверка активности рынка и объемов
+            market_info = await self.exchange_connector.get_market_info(
+                context.currency_pair.symbol
+            )
+            if not market_info.get("active", True):
+                return (
+                    False,
+                    f"Symbol {context.currency_pair.symbol} is not active",
+                    warnings,
+                )
+
+            symbol_info = await self.exchange_connector.get_symbol_info(
+                context.currency_pair.symbol
+            )
+            if strategy_data["buy_amount"] < symbol_info.min_qty:
+                return (
+                    False,
+                    f"BUY amount {strategy_data['buy_amount']} below minimum {symbol_info.min_qty}",
+                    warnings,
+                )
+
+            if strategy_data["sell_amount"] < symbol_info.min_qty:
+                return (
+                    False,
+                    f"SELL amount {strategy_data['sell_amount']} below minimum {symbol_info.min_qty}",
+                    warnings,
+                )
+
             return True, "Checks passed", warnings
-            
+
         except Exception as e:
             return False, f"Pre-execution check error: {str(e)}", warnings
 
     async def _execute_buy_order(
-        self, 
-        context: TradingContext, 
-        strategy_data: Dict[str, Any]
+        self, context: TradingContext, strategy_data: Dict[str, Any]
     ) -> OrderExecutionResult:
         """Выполнение BUY ордера"""
         try:
             return await self.order_service.create_and_place_buy_order(
                 symbol=context.currency_pair.symbol,
-                amount=strategy_data['buy_amount'],
-                price=strategy_data['buy_price'],
+                amount=strategy_data["buy_amount"],
+                price=strategy_data["buy_price"],
                 deal_id=context.deal.deal_id,
-                order_type=Order.TYPE_LIMIT # Возвращено на LIMIT
+                order_type=Order.TYPE_LIMIT,  # Возвращено на LIMIT
             )
         except Exception as e:
             logger.error(f"❌ Error executing BUY order: {e}")
             return OrderExecutionResult(
-                success=False,
-                error_message=f"BUY execution error: {str(e)}"
+                success=False, error_message=f"BUY execution error: {str(e)}"
             )
 
     async def _create_local_sell_order(
-        self,
-        context: TradingContext,
-        strategy_data: Dict[str, Any]
+        self, context: TradingContext, strategy_data: Dict[str, Any]
     ) -> OrderExecutionResult:
         """Выполнение SELL ордера"""
         try:
             return await self.order_service.create_local_sell_order(
                 symbol=context.currency_pair.symbol,
-                amount=strategy_data['sell_amount'],
-                price=strategy_data['sell_price'],
+                amount=strategy_data["sell_amount"],
+                price=strategy_data["sell_price"],
                 deal_id=context.deal.deal_id,
-                order_type=Order.TYPE_LIMIT
+                order_type=Order.TYPE_LIMIT,
             )
         except Exception as e:
             logger.error(f"❌ Error creating local SELL order: {e}")
             return OrderExecutionResult(
-                success=False,
-                error_message=f"SELL local creation error: {str(e)}"
+                success=False, error_message=f"SELL local creation error: {str(e)}"
             )
 
     async def _emergency_cancel_buy_order(self, buy_order: Order) -> bool:
@@ -377,26 +427,27 @@ class OrderExecutionService:
             return False
 
     def _update_execution_stats(
-        self, 
-        success: bool, 
-        volume: float, 
-        fees: float, 
-        execution_time_ms: float
+        self, success: bool, volume: float, fees: float, execution_time_ms: float
     ):
         """Обновление статистики выполнения"""
-        self.execution_stats['total_executions'] += 1
-        
+        self.execution_stats["total_executions"] += 1
+
         if success:
-            self.execution_stats['successful_executions'] += 1
-            self.execution_stats['total_volume'] += volume
-            self.execution_stats['total_fees'] += fees
+            self.execution_stats["successful_executions"] += 1
+            self.execution_stats["total_volume"] += volume
+            self.execution_stats["total_fees"] += fees
         else:
-            self.execution_stats['failed_executions'] += 1
-        
+            self.execution_stats["failed_executions"] += 1
+
         # Обновляем среднее время выполнения
-        total_time = (self.execution_stats['average_execution_time_ms'] * 
-                     (self.execution_stats['total_executions'] - 1) + execution_time_ms)
-        self.execution_stats['average_execution_time_ms'] = total_time / self.execution_stats['total_executions']
+        total_time = (
+            self.execution_stats["average_execution_time_ms"]
+            * (self.execution_stats["total_executions"] - 1)
+            + execution_time_ms
+        )
+        self.execution_stats["average_execution_time_ms"] = (
+            total_time / self.execution_stats["total_executions"]
+        )
 
     # 📊 МЕТОДЫ МОНИТОРИНГА И УПРАВЛЕНИЯ
 
@@ -407,12 +458,12 @@ class OrderExecutionService:
         try:
             # Синхронизируем ордера с биржей
             updated_orders = await self.order_service.sync_orders_with_exchange()
-            
+
             # Группируем по статусам
             open_orders = []
             partially_filled = []
             filled_orders = []
-            
+
             for order in updated_orders:
                 if order.is_open():
                     open_orders.append(order)
@@ -420,73 +471,85 @@ class OrderExecutionService:
                     partially_filled.append(order)
                 elif order.is_filled():
                     filled_orders.append(order)
-            
+
             return {
-                'open_orders': len(open_orders),
-                'partially_filled': len(partially_filled),
-                'filled_orders': len(filled_orders),
-                'total_monitored': len(updated_orders),
-                'orders': {
-                    'open': [order.to_dict() for order in open_orders],
-                    'partially_filled': [order.to_dict() for order in partially_filled],
-                    'filled': [order.to_dict() for order in filled_orders]
-                }
+                "open_orders": len(open_orders),
+                "partially_filled": len(partially_filled),
+                "filled_orders": len(filled_orders),
+                "total_monitored": len(updated_orders),
+                "orders": {
+                    "open": [order.to_dict() for order in open_orders],
+                    "partially_filled": [order.to_dict() for order in partially_filled],
+                    "filled": [order.to_dict() for order in filled_orders],
+                },
             }
-            
+
         except Exception as e:
             logger.error(f"❌ Error monitoring orders: {e}")
-            return {'error': str(e)}
+            return {"error": str(e)}
 
     async def emergency_stop_all_trading(self, symbol: str = None) -> Dict[str, Any]:
         """
         🚨 Экстренная остановка всей торговли
         """
         logger.warning("🚨 EMERGENCY STOP - Cancelling all orders")
-        
+
         try:
             # Отменяем все ордера через order_service
-            cancelled_count = await self.order_service.emergency_cancel_all_orders(symbol)
-            
+            cancelled_count = await self.order_service.emergency_cancel_all_orders(
+                symbol
+            )
+
             # Получаем статистику
             open_orders = self.order_service.get_open_orders()
             open_deals = self.deal_service.get_open_deals()
-            
+
             return {
-                'cancelled_orders': cancelled_count,
-                'remaining_open_orders': len(open_orders),
-                'open_deals': len(open_deals),
-                'timestamp': datetime.now().isoformat(),
-                'symbol': symbol or 'ALL'
+                "cancelled_orders": cancelled_count,
+                "remaining_open_orders": len(open_orders),
+                "open_deals": len(open_deals),
+                "timestamp": datetime.now().isoformat(),
+                "symbol": symbol or "ALL",
             }
-            
+
         except Exception as e:
             logger.error(f"❌ Error during emergency stop: {e}")
-            return {'error': str(e), 'cancelled_orders': 0}
+            return {"error": str(e), "cancelled_orders": 0}
 
     def get_execution_statistics(self) -> Dict[str, Any]:
         """📊 Получение статистики выполнения"""
         stats = self.execution_stats.copy()
-        
-        if stats['total_executions'] > 0:
-            stats['success_rate'] = (stats['successful_executions'] / stats['total_executions']) * 100
-            stats['average_volume_per_execution'] = stats['total_volume'] / stats['successful_executions'] if stats['successful_executions'] > 0 else 0
-            stats['average_fees_per_execution'] = stats['total_fees'] / stats['successful_executions'] if stats['successful_executions'] > 0 else 0
+
+        if stats["total_executions"] > 0:
+            stats["success_rate"] = (
+                stats["successful_executions"] / stats["total_executions"]
+            ) * 100
+            stats["average_volume_per_execution"] = (
+                stats["total_volume"] / stats["successful_executions"]
+                if stats["successful_executions"] > 0
+                else 0
+            )
+            stats["average_fees_per_execution"] = (
+                stats["total_fees"] / stats["successful_executions"]
+                if stats["successful_executions"] > 0
+                else 0
+            )
         else:
-            stats['success_rate'] = 0
-            stats['average_volume_per_execution'] = 0
-            stats['average_fees_per_execution'] = 0
-        
+            stats["success_rate"] = 0
+            stats["average_volume_per_execution"] = 0
+            stats["average_fees_per_execution"] = 0
+
         return stats
 
     def reset_statistics(self):
         """🔄 Сброс статистики"""
         self.execution_stats = {
-            'total_executions': 0,
-            'successful_executions': 0,
-            'failed_executions': 0,
-            'total_volume': 0.0,
-            'total_fees': 0.0,
-            'average_execution_time_ms': 0.0
+            "total_executions": 0,
+            "successful_executions": 0,
+            "failed_executions": 0,
+            "total_volume": 0.0,
+            "total_fees": 0.0,
+            "average_execution_time_ms": 0.0,
         }
 
     # ⚙️ НАСТРОЙКИ
@@ -496,7 +559,7 @@ class OrderExecutionService:
         max_execution_time_sec: float = None,
         enable_risk_checks: bool = None,
         enable_balance_checks: bool = None,
-        enable_slippage_protection: bool = None
+        enable_slippage_protection: bool = None,
     ):
         """⚙️ Настройка параметров выполнения"""
         if max_execution_time_sec is not None:
@@ -507,25 +570,22 @@ class OrderExecutionService:
             self.enable_balance_checks = enable_balance_checks
         if enable_slippage_protection is not None:
             self.enable_slippage_protection = enable_slippage_protection
-        
+
         logger.info(f"⚙️ Execution settings updated")
 
     def get_current_settings(self) -> Dict[str, Any]:
         """⚙️ Получение текущих настроек"""
         return {
-            'max_execution_time_sec': self.max_execution_time_sec,
-            'enable_risk_checks': self.enable_risk_checks,
-            'enable_balance_checks': self.enable_balance_checks,
-            'enable_slippage_protection': self.enable_slippage_protection
+            "max_execution_time_sec": self.max_execution_time_sec,
+            "enable_risk_checks": self.enable_risk_checks,
+            "enable_balance_checks": self.enable_balance_checks,
+            "enable_slippage_protection": self.enable_slippage_protection,
         }
 
     # 🚨 РИСК-МЕНЕДЖМЕНТ МЕТОДЫ
 
     async def create_market_sell_order(
-        self, 
-        currency_pair_id: str, 
-        amount: float, 
-        deal_id: int
+        self, currency_pair_id: str, amount: float, deal_id: int
     ) -> Optional[Order]:
         """🚨 Создание маркет-ордера на продажу для стоп-лосса"""
         try:
@@ -533,18 +593,17 @@ class OrderExecutionService:
             logger.info(f"   Пара: {currency_pair_id}")
             logger.info(f"   Количество: {amount}")
             logger.info(f"   Deal ID: {deal_id}")
-            
+
             # Получаем текущую цену для логирования
             ticker = await self.exchange_connector.fetch_ticker(currency_pair_id)
-            current_price = ticker['last']
+            current_price = ticker["last"]
             logger.info(f"   Текущая цена: {current_price}")
-            
+
             # Создаем маркет-ордер на продажу
             order_result = await self.exchange_connector.create_market_sell_order(
-                currency_pair_id, 
-                amount
+                currency_pair_id, amount
             )
-            
+
             if order_result and order_result.success:
                 # Создаем объект Order
                 order = Order(
@@ -559,23 +618,25 @@ class OrderExecutionService:
                     filled_amount=order_result.filled_amount or amount,
                     average_price=order_result.average_price or current_price,
                     fees=order_result.fees or 0.0,
-                    status="FILLED" if order_result.filled_amount else "OPEN"
+                    status="FILLED" if order_result.filled_amount else "OPEN",
                 )
-                
+
                 # Сохраняем в репозиторий
                 self.order_service.save_order(order)
-                
+
                 logger.info(f"✅ Маркет SELL ордер #{order.order_id} создан успешно")
                 logger.info(f"   Exchange ID: {order_result.exchange_order_id}")
                 logger.info(f"   Исполнено: {order_result.filled_amount or 'N/A'}")
                 logger.info(f"   Средняя цена: {order_result.average_price or 'N/A'}")
-                
+
                 return order
-                
+
             else:
-                logger.error(f"❌ Не удалось создать маркет SELL ордер: {order_result.error_message if order_result else 'Unknown error'}")
+                logger.error(
+                    f"❌ Не удалось создать маркет SELL ордер: {order_result.error_message if order_result else 'Unknown error'}"
+                )
                 return None
-                
+
         except Exception as e:
             logger.error(f"❌ Ошибка при создании маркет SELL ордера: {e}")
             return None
@@ -585,10 +646,9 @@ class OrderExecutionService:
         try:
             if order.exchange_order_id:
                 result = await self.exchange_connector.cancel_order(
-                    order.exchange_order_id, 
-                    order.currency_pair_id
+                    order.exchange_order_id, order.currency_pair_id
                 )
-                
+
                 if result:
                     order.status = "CANCELED"
                     self.order_service.save_order(order)
@@ -598,9 +658,11 @@ class OrderExecutionService:
                     logger.error(f"❌ Не удалось отменить ордер #{order.order_id}")
                     return False
             else:
-                logger.warning(f"⚠️ Нет exchange_order_id для отмены ордера #{order.order_id}")
+                logger.warning(
+                    f"⚠️ Нет exchange_order_id для отмены ордера #{order.order_id}"
+                )
                 return False
-                
+
         except Exception as e:
             logger.error(f"❌ Ошибка при отмене ордера #{order.order_id}: {e}")
             return False

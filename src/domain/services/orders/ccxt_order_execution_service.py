@@ -155,6 +155,9 @@ class CCXTOrderExecutionService:
 
             # 6. Обновление локального ордера данными с биржи
             local_order.update_from_ccxt_response(ccxt_result)
+            fee_info = Order._calculate_fee_from_trades(local_order.trades)
+            if fee_info['cost'] > 0 and local_order.fee.get('cost', 0) == 0:
+                local_order.fee = fee_info
             local_order.mark_as_placed_on_exchange(
                 ccxt_result['id'],
                 ccxt_result.get('timestamp')
@@ -165,7 +168,7 @@ class CCXTOrderExecutionService:
 
             # 8. Обновление статистики
             execution_time = (time.time() - start_time) * 1000
-            self._update_execution_stats(True, amount * (price or 0), 0, execution_time)
+            self._update_execution_stats(True, amount * (price or 0), local_order.fee.get('cost', 0.0), execution_time)
 
             logger.info(f"✅ [{execution_id}] CCXT order executed successfully: {ccxt_result['id']}")
 
@@ -326,9 +329,12 @@ class CCXTOrderExecutionService:
 
             # Отменяем на бирже
             ccxt_result = await self.exchange_connector.cancel_order(order.id, order.symbol)
-            
+
             # Обновляем локальный ордер
             order.update_from_ccxt_response(ccxt_result)
+            fee_info = Order._calculate_fee_from_trades(order.trades)
+            if fee_info['cost'] > 0 and order.fee.get('cost', 0) == 0:
+                order.fee = fee_info
             order.cancel_order("Cancelled by user")
             
             # Сохраняем изменения
@@ -352,9 +358,12 @@ class CCXTOrderExecutionService:
 
             # Получаем актуальные данные с биржи
             ccxt_order = await self.exchange_connector.fetch_order(order.id, order.symbol)
-            
+
             # Обновляем локальный ордер
             order.update_from_ccxt_response(ccxt_order)
+            fee_info = Order._calculate_fee_from_trades(order.trades)
+            if fee_info['cost'] > 0 and order.fee.get('cost', 0) == 0:
+                order.fee = fee_info
             
             # Сохраняем изменения
             await self.orders_repository.update_order(order)
