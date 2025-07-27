@@ -1,9 +1,4 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
-from domain.entities.currency_pair import CurrencyPair
+from src.domain.entities.currency_pair import CurrencyPair
 
 
 def test_currency_pair_defaults_and_repr():

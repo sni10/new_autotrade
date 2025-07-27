@@ -52,21 +52,21 @@ async def test_smart_stop_loss():
     # Создаем тестовую сделку
     pair = CurrencyPair(symbol="BTC/USDT", base_currency="BTC", quote_currency="USDT")
     buy_order = Order(
-        order_id=1,
+        local_order_id=1,
         deal_id=1,
         symbol="BTC/USDT",
         side=Order.SIDE_BUY,
-        order_type=Order.TYPE_LIMIT,
+        type=Order.TYPE_LIMIT,
         price=10000,
         amount=1,
         status=Order.STATUS_FILLED
     )
     sell_order = Order(
-        order_id=2,
+        local_order_id=2,
         deal_id=1,
         symbol="BTC/USDT",
         side=Order.SIDE_SELL,
-        order_type=Order.TYPE_LIMIT,
+        type=Order.TYPE_LIMIT,
         price=10500,
         amount=1,
         status=Order.STATUS_OPEN
@@ -117,11 +117,11 @@ async def test_smart_stop_loss():
     
     # Мокаем создание маркет-ордера
     mock_market_order = Order(
-        order_id=3,
+        local_order_id=3,
         deal_id=1,
         symbol="TURBOUSDT",
         side="SELL",
-        order_type="MARKET",
+        type="MARKET",
         price=0.005265,
         amount=4274.0,
         status="FILLED"

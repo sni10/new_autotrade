@@ -47,7 +47,7 @@ async def market_info():
 
 import pytest_asyncio
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def setup_services(market_info):
     """Фикстура для настройки всех необходимых сервисов с моками."""
     # --- Mocks and Repositories ---
@@ -96,7 +96,7 @@ async def setup_services(market_info):
     }
 
 async def test_happy_path_deal_lifecycle(setup_services: Dict):
-    services = await setup_services
+    services = setup_services
     # --- ARRANGE ---
     oes = services["order_execution_service"]
     mock_exchange = services["mock_exchange"]
@@ -159,7 +159,7 @@ async def test_happy_path_deal_lifecycle(setup_services: Dict):
 
 
 async def test_stale_order_deal_lifecycle(setup_services: Dict):
-    services = await setup_services
+    services = setup_services
     # --- ARRANGE ---
     oes = services["order_execution_service"]
     mock_exchange = services["mock_exchange"]

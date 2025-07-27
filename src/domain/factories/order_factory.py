@@ -66,17 +66,17 @@ class OrderFactory:
 
         # Создаем ордер с расширенными параметрами
         order = Order(
-            order_id=_next_id(),
+            local_order_id=_next_id(),
             side=side,
-            order_type=order_type,
+            type=order_type,
             price=price,
             amount=amount,
             status=Order.STATUS_PENDING,  # Начинаем с PENDING
             deal_id=deal_id,
             symbol=symbol,
-            remaining_amount=amount,  # Изначально весь объем остается
-            client_order_id=client_order_id,
-            time_in_force=time_in_force,
+            remaining=amount,  # Изначально весь объем остается
+            clientOrderId=client_order_id,
+            timeInForce=time_in_force,
             metadata=metadata or {}
         )
 

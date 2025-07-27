@@ -1,10 +1,5 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
-
-from domain.factories.order_factory import OrderFactory
-from domain.entities.order import ExchangeInfo, Order
+from src.domain.factories.order_factory import OrderFactory
+from src.domain.entities.order import ExchangeInfo, Order
 
 
 def _make_info():

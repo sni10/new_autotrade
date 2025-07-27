@@ -40,7 +40,7 @@ async def test_execute_trading_strategy_success():
 
     async def make_buy_order(symbol, amount, price, deal_id, order_type):
         order = order_factory.create_buy_order(symbol, amount, price, deal_id=deal_id)
-        order.mark_as_placed('ex-buy')
+        order.mark_as_placed_on_exchange('ex-buy')
         return OrderExecutionResult(success=True, order=order)
 
     async def make_sell_order(symbol, amount, price, deal_id, order_type):
@@ -111,7 +111,7 @@ async def test_execute_trading_strategy_sell_failure_triggers_cancel():
 
     async def make_buy_order(symbol, amount, price, deal_id, order_type):
         order = order_factory.create_buy_order(symbol, amount, price, deal_id=deal_id)
-        order.mark_as_placed('ex-buy')
+        order.mark_as_placed_on_exchange('ex-buy')
         return OrderExecutionResult(success=True, order=order)
 
     async def fail_sell(symbol, amount, price, deal_id, order_type):

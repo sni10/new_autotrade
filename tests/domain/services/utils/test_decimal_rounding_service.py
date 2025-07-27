@@ -1,12 +1,8 @@
 
-import sys
-import os
 from decimal import Decimal
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../src')))
-
-from domain.services.utils.decimal_rounding_service import DecimalRoundingService
+from src.domain.services.utils.decimal_rounding_service import DecimalRoundingService
 
 @pytest.mark.parametrize("number, precision, expected", [
     (123.456, 2, Decimal('123.46')),
