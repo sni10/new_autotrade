@@ -21,6 +21,11 @@ class IOrdersRepository(ABC):
         pass
 
     @abstractmethod
+    async def save_orders_batch(self, orders: List[Order]) -> int:
+        """Сохранить несколько ордеров за один запрос"""
+        pass
+
+    @abstractmethod
     async def get_order(self, order_id: str) -> Optional[Order]:
         """Получить ордер по CCXT ID (exchange order ID)"""
         pass
