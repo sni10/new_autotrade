@@ -2,15 +2,19 @@ import time
 from typing import Optional
 import logging
 
+from .ccxt_monitoring import CcxtMonitoring
+
 logger = logging.getLogger(__name__)
 
 
 class PerformanceLogger:
-    def __init__(self, log_interval_seconds: int = 5):
+    def __init__(self, log_interval_seconds: int = 5, ccxt_monitor: Optional[CcxtMonitoring] = None):
         self.tick_count = 0
         self.last_log_time = time.time()
         self.log_interval = log_interval_seconds
         self.start_time = time.time()
+
+        self.ccxt_monitor = ccxt_monitor
 
         # Статистика производительности
         self.total_processing_time = 0
@@ -58,12 +62,21 @@ class PerformanceLogger:
         uptime = time.time() - self.start_time
         tps = self.tick_count / uptime if uptime > 0 else 0  # Ticks per second
 
-        logger.info(
+        message = (
             f"📊 Тик {self.tick_count} | Цена: {price:.8f} | "
             f"Сигналов: {signals_count} | TPS: {tps:.1f} | "
             f"Среднее время: {avg_time*1000:.1f}ms | "
             f"Мин/Макс: {self.min_tick_time*1000:.1f}/{self.max_tick_time*1000:.1f}ms"
         )
+
+        if self.ccxt_monitor:
+            ccxt_stats = self.ccxt_monitor.get_metrics()
+            message += (
+                f" | CCXT: {ccxt_stats['avg_duration_ms']:.1f}ms avg, "
+                f"{ccxt_stats['error_rate']*100:.1f}% errors"
+            )
+
+        logger.info(message)
 
     def log_cache_update(self, cache_type: str, tick_count: int):
         """Логирует обновления кеша"""
