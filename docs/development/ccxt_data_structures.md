@@ -44,6 +44,40 @@
 }
 ```
 
+### 📌 Примеры базового использования CCXT
+
+```python
+import ccxt
+
+# Инициализация биржи и включение режима песочницы
+exchange = ccxt.binance()
+exchange.set_sandbox_mode(True)
+
+# Загрузка рынков
+exchange.load_markets()
+
+# Получение тикера
+ticker = exchange.fetch_ticker('BTC/USDT')
+print(ticker['last'])
+
+# Создание рыночного ордера
+order = exchange.create_market_buy_order('BTC/USDT', 0.001)
+print(order['id'])
+```
+
+### ⚠️ Обработка ошибок и rate limits
+
+```python
+try:
+    ticker = exchange.fetch_ticker('BTC/USDT')
+except ccxt.NetworkError as e:
+    print(f'Network error: {e}')
+except ccxt.ExchangeError as e:
+    print(f'Exchange error: {e}')
+
+import time
+time.sleep(exchange.rateLimit / 1000)
+```
 ### `load_markets()` (Market Structure)
 
 Структура, описывающая торговую пару и её правила.
