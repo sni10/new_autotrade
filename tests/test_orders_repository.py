@@ -7,9 +7,9 @@ from src.infrastructure.repositories.orders_repository import InMemoryOrdersRepo
 
 def make_order(order_id, status=Order.STATUS_OPEN, symbol="BTCUSDT"):
     return Order(
-        order_id=order_id,
+        local_order_id=order_id,
         side=Order.SIDE_BUY,
-        order_type=Order.TYPE_LIMIT,
+        type=Order.TYPE_LIMIT,
         price=100.0,
         amount=1.0,
         status=status,

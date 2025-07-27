@@ -18,10 +18,12 @@ class TestPostgreSQLOrdersRepositoryCCXT:
     @pytest.fixture
     async def mock_pool(self):
         """Мок пула соединений"""
-        pool = AsyncMock()
+        pool = MagicMock()
         conn = AsyncMock()
-        pool.acquire.return_value.__aenter__ = AsyncMock(return_value=conn)
-        pool.acquire.return_value.__aexit__ = AsyncMock(return_value=None)
+        acquire_ctx = AsyncMock()
+        acquire_ctx.__aenter__.return_value = conn
+        acquire_ctx.__aexit__.return_value = None
+        pool.acquire.return_value = acquire_ctx
         return pool, conn
 
     @pytest.fixture

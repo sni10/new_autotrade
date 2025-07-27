@@ -1,5 +1,11 @@
 # full_autotrade_test.py — весь минимум для spot-тестнета Binance
 # pip install ccxtpro
+
+import sys, asyncio, logging, ccxt.pro as ccxt
+import pytest
+
+pytest.skip("requires live Binance connection", allow_module_level=True)
+
 import os
 import sys
 import asyncio

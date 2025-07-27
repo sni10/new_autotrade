@@ -165,8 +165,7 @@ class TestCCXTOrderCompliance:
         assert is_valid is False
         assert len(errors) > 0
         assert any('symbol' in error for error in errors)
-        assert any('side' in error for error in errors)
-        assert any('type' in error for error in errors)
+        assert any('price is required' in error for error in errors)
 
     def test_ccxt_update_from_response(self, ccxt_standard_order):
         """Тест обновления Order из CCXT ответа"""

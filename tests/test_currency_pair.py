@@ -1,3 +1,5 @@
+from src.domain.entities.currency_pair import CurrencyPair
+
 import sys
 import os
 import pytest
@@ -7,6 +9,7 @@ sys.path.insert(
 )
 
 from domain.entities.currency_pair import CurrencyPair
+
 
 
 def test_currency_pair_defaults_and_repr():

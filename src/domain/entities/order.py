@@ -20,6 +20,7 @@ class Order:
     STATUS_CANCELED = "canceled"
     STATUS_EXPIRED = "expired"
     STATUS_REJECTED = "rejected"
+    STATUS_FILLED = STATUS_CLOSED  # Backward compatibility
     
     # ДОПОЛНИТЕЛЬНЫЕ статусы для проекта
     STATUS_PENDING = "pending"                # Ордер создан локально, но не размещен на бирже
@@ -150,7 +151,11 @@ class Order:
         self.price = ccxt_response.get('price', self.price)
         self.amount = ccxt_response.get('amount', self.amount)
         self.filled = ccxt_response.get('filled', self.filled)
+        if self.filled is None:
+            self.filled = 0.0
         self.remaining = ccxt_response.get('remaining', self.remaining)
+        if self.remaining is None:
+            self.remaining = self.amount - self.filled
         self.cost = ccxt_response.get('cost', self.cost)
         self.average = ccxt_response.get('average', self.average)
         trades = ccxt_response.get('trades')
@@ -217,8 +222,8 @@ class Order:
             side=ccxt_response.get('side'),
             price=ccxt_response.get('price'),
             amount=ccxt_response.get('amount', 0.0),
-            filled=ccxt_response.get('filled', 0.0),
-            remaining=ccxt_response.get('remaining'),
+            filled=ccxt_response.get('filled') or 0.0,
+            remaining=ccxt_response.get('remaining') if ccxt_response.get('remaining') is not None else ccxt_response.get('amount', 0.0),
             cost=ccxt_response.get('cost'),
             average=ccxt_response.get('average'),
             trades=ccxt_response.get('trades', []),
@@ -348,11 +353,19 @@ class Order:
             self.datetime = datetime.fromtimestamp(exchange_timestamp / 1000, timezone.utc).isoformat().replace('+00:00', 'Z')
         self.last_update = int(time.time() * 1000)
 
+    # Backward compatibility
+    def mark_as_placed(self, exchange_id: str, exchange_timestamp: Optional[int] = None) -> None:
+        self.mark_as_placed_on_exchange(exchange_id, exchange_timestamp)
+
     def mark_as_failed(self, error_message: str) -> None:
         """Помечает ордер как отклоненный"""
         self.status = self.STATUS_REJECTED
         self.error_message = error_message
         self.last_update = int(time.time() * 1000)
+
+    # Backward compatibility
+    def update_from_exchange(self, data: Dict[str, Any]) -> None:
+        self.update_from_ccxt_response(data)
 
     def update_filled_amount(self, filled: float, average_price: Optional[float] = None) -> None:
         """Обновляет исполненное количество"""
@@ -497,6 +510,21 @@ class OrderExecutionResult:
     order: Optional[Order] = None
     error_message: Optional[str] = None
     exchange_response: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class ExchangeInfo:
+    """Информация о торговой паре с биржи"""
+    symbol: str
+    min_qty: float
+    max_qty: float
+    step_size: float
+    min_price: float
+    max_price: float
+    tick_size: float
+    min_notional: float
+    fees: Dict[str, float]
+    precision: Dict[str, float]
 
 
 # ===== UTILITY FUNCTIONS =====

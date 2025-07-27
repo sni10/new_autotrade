@@ -2,12 +2,7 @@
 import pytest
 import asyncio
 import time
-import sys
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
-
-# Добавляем корень проекта в sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../')))
 
 from src.domain.services.state.state_management_service import StateManagementService
 from src.domain.entities.application_state import (
