@@ -260,6 +260,30 @@ class CCXTUnifiedOrderService:
             logger.error(f"Failed to sync all active orders: {e}")
             return []
 
+    async def watch_orders(self, symbol: Optional[str] = None):
+        """Реальное время обновлений через ccxt.pro"""
+        if not hasattr(self.exchange_connector, "watch_orders"):
+            logger.warning("watch_orders not supported by connector")
+            return
+
+        while True:
+            try:
+                ccxt_order = await self.exchange_connector.watch_orders(symbol)
+                local_order = await self.orders_repository.get_order(ccxt_order.get('id'))
+                if local_order:
+                    local_order.update_from_ccxt_response(ccxt_order)
+                    await self.orders_repository.update_order(local_order)
+                    yield local_order
+                else:
+                    new_order = Order.from_ccxt_response(ccxt_order)
+                    await self.orders_repository.save_order(new_order)
+                    yield new_order
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"watch_orders error: {e}")
+                await asyncio.sleep(1)
+
     async def start_auto_sync(self):
         """
         Запуск автоматической синхронизации
