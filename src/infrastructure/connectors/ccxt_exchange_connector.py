@@ -218,9 +218,19 @@ class CCXTExchangeConnector:
         try:
             trades = await self.stream_client.watch_trades(symbol)
             return trades
-            
+
         except Exception as e:
             logger.error(f"Failed to watch trades for {symbol}: {e}")
+            raise
+
+    async def watch_orders(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        """WebSocket стрим ордеров (CCXT order structure)"""
+        if not self.stream_client:
+            raise RuntimeError("WebSocket client not initialized")
+        try:
+            return await self.stream_client.watch_orders(symbol)
+        except Exception as e:
+            logger.error(f"Failed to watch orders for {symbol or 'all symbols'}: {e}")
             raise
 
     async def watch_ohlcv(self, symbol: str, timeframe: str = '1m') -> List[List]:

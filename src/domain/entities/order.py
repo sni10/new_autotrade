@@ -105,6 +105,26 @@ class Order:
         self.retries = retries
         self.metadata = metadata or {}
 
+    @staticmethod
+    def _calculate_fee_from_trades(trades: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Суммирует комиссии из массива trades"""
+        total_cost = 0.0
+        currency = None
+        rate = None
+        for trade in trades:
+            fee_data = trade.get('fee')
+            if isinstance(fee_data, dict):
+                total_cost += float(fee_data.get('cost', 0.0))
+                currency = currency or fee_data.get('currency')
+                if rate is None and fee_data.get('rate') is not None:
+                    rate = fee_data.get('rate')
+            for f in trade.get('fees', []) or []:
+                total_cost += float(f.get('cost', 0.0))
+                currency = currency or f.get('currency')
+                if rate is None and f.get('rate') is not None:
+                    rate = f.get('rate')
+        return {'cost': total_cost, 'currency': currency, 'rate': rate}
+
     def _generate_iso_datetime(self) -> str:
         """Генерирует ISO8601 datetime строку"""
         return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -133,8 +153,14 @@ class Order:
         self.remaining = ccxt_response.get('remaining', self.remaining)
         self.cost = ccxt_response.get('cost', self.cost)
         self.average = ccxt_response.get('average', self.average)
-        self.trades = ccxt_response.get('trades', self.trades)
+        trades = ccxt_response.get('trades')
+        if trades is not None:
+            self.trades = trades
+            calculated_fee = self._calculate_fee_from_trades(trades)
+            if calculated_fee['cost'] > 0:
+                self.fee = calculated_fee
         self.fee = ccxt_response.get('fee', self.fee)
+        # Если fee не указана, но есть trades, сохраняем рассчитанную
         self.info = ccxt_response.get('info', self.info)
         
         # Обновляем служебные поля
@@ -201,6 +227,10 @@ class Order:
             deal_id=deal_id,
             local_order_id=local_order_id
         )
+        if order.fee['cost'] == 0 and order.trades:
+            calc_fee = cls._calculate_fee_from_trades(order.trades)
+            if calc_fee['cost'] > 0:
+                order.fee = calc_fee
         return order
 
     # ===== STATUS CHECK METHODS =====
