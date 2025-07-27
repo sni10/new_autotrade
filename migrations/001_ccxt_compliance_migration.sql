@@ -96,6 +96,42 @@ $$ LANGUAGE plpgsql;
 -- Если нет, раскомментируйте следующую строку:
 -- \i src/infrastructure/database/schemas/postgresql_ccxt_schema.sql
 
+-- Если таблицы CCXT еще не созданы (например, в fresh install),
+-- создаем минимально необходимую структуру для ccxt_orders
+CREATE TABLE IF NOT EXISTS ccxt_orders (
+            id VARCHAR(100) PRIMARY KEY,
+            client_order_id VARCHAR(100),
+            datetime TIMESTAMP WITH TIME ZONE,
+            timestamp BIGINT,
+            last_trade_timestamp BIGINT,
+            status VARCHAR(20) NOT NULL,
+            symbol VARCHAR(50) NOT NULL,
+            type VARCHAR(20) NOT NULL,
+            time_in_force VARCHAR(10),
+            side VARCHAR(10) NOT NULL,
+            price DECIMAL(20, 8),
+            amount DECIMAL(20, 8) NOT NULL,
+            filled DECIMAL(20, 8) DEFAULT 0,
+            remaining DECIMAL(20, 8),
+            cost DECIMAL(20, 8),
+            average DECIMAL(20, 8),
+            trades JSONB DEFAULT '[]',
+            fee JSONB DEFAULT '{}',
+            info JSONB DEFAULT '{}',
+            deal_id UUID,
+            local_order_id SERIAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            error_message TEXT,
+            retries INTEGER DEFAULT 0,
+            metadata JSONB DEFAULT '{}'
+);
+
+-- Индексы для частых запросов
+CREATE INDEX IF NOT EXISTS idx_ccxt_orders_symbol ON ccxt_orders(symbol);
+CREATE INDEX IF NOT EXISTS idx_ccxt_orders_status ON ccxt_orders(status);
+CREATE INDEX IF NOT EXISTS idx_ccxt_orders_timestamp ON ccxt_orders(timestamp);
+
 -- =================================================================
 -- STEP 2: MIGRATE EXISTING DATA
 -- =================================================================
