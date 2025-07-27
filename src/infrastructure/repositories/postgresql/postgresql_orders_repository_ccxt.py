@@ -34,17 +34,40 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
             async with self.pool.acquire() as conn:
                 # Проверяем, существует ли ордер
                 existing = await self._get_order_by_id(conn, order.id)
-                
+
                 if existing:
                     # Обновляем существующий ордер
                     return await self._update_order_internal(conn, order)
                 else:
                     # Создаем новый ордер
                     return await self._insert_order_internal(conn, order)
-                    
-        except Exception as e:
-            logger.error(f"Failed to save order {order.id}: {str(e)}")
+
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while saving order {order.id}: {e}")
             return False
+        except Exception as e:
+            logger.error(f"Failed to save order {order.id}: {e}")
+            return False
+
+    async def save_orders_batch(self, orders: List[Order]) -> int:
+        """Сохранить несколько ордеров за один запрос"""
+        saved = 0
+        try:
+            async with self.pool.acquire() as conn:
+                async with conn.transaction():
+                    for order in orders:
+                        existing = await self._get_order_by_id(conn, order.id)
+                        if existing:
+                            success = await self._update_order_internal(conn, order)
+                        else:
+                            success = await self._insert_order_internal(conn, order)
+                        if success:
+                            saved += 1
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error in batch save: {e}")
+        except Exception as e:
+            logger.error(f"Failed batch save: {e}")
+        return saved
 
     async def get_order(self, order_id: str) -> Optional[Order]:
         """
@@ -53,8 +76,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
         try:
             async with self.pool.acquire() as conn:
                 return await self._get_order_by_id(conn, order_id)
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting order {order_id}: {e}")
+            return None
         except Exception as e:
-            logger.error(f"Failed to get order {order_id}: {str(e)}")
+            logger.error(f"Failed to get order {order_id}: {e}")
             return None
 
     async def get_order_by_local_id(self, local_order_id: int) -> Optional[Order]:
@@ -69,8 +95,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 row = await conn.fetchrow(query, local_order_id)
                 return self._row_to_order(row) if row else None
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting order by local_id {local_order_id}: {e}")
+            return None
         except Exception as e:
-            logger.error(f"Failed to get order by local_id {local_order_id}: {str(e)}")
+            logger.error(f"Failed to get order by local_id {local_order_id}: {e}")
             return None
 
     async def update_order(self, order: Order) -> bool:
@@ -80,8 +109,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
         try:
             async with self.pool.acquire() as conn:
                 return await self._update_order_internal(conn, order)
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while updating order {order.id}: {e}")
+            return False
         except Exception as e:
-            logger.error(f"Failed to update order {order.id}: {str(e)}")
+            logger.error(f"Failed to update order {order.id}: {e}")
             return False
 
     async def delete_order(self, order_id: str) -> bool:
@@ -99,8 +131,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 result = await conn.execute(query, order_id)
                 return result == "UPDATE 1"
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while deleting order {order_id}: {e}")
+            return False
         except Exception as e:
-            logger.error(f"Failed to delete order {order_id}: {str(e)}")
+            logger.error(f"Failed to delete order {order_id}: {e}")
             return False
 
     # ===== QUERY OPERATIONS =====
@@ -117,8 +152,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting all orders: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get all orders: {str(e)}")
+            logger.error(f"Failed to get all orders: {e}")
             return []
 
     async def get_active_orders(self) -> List[Order]:
@@ -134,8 +172,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting active orders: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get active orders: {str(e)}")
+            logger.error(f"Failed to get active orders: {e}")
             return []
 
     async def get_filled_orders(self) -> List[Order]:
@@ -151,8 +192,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting filled orders: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get filled orders: {str(e)}")
+            logger.error(f"Failed to get filled orders: {e}")
             return []
 
     async def get_orders_by_symbol(self, symbol: str) -> List[Order]:
@@ -168,8 +212,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query, symbol)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting orders by symbol {symbol}: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get orders by symbol {symbol}: {str(e)}")
+            logger.error(f"Failed to get orders by symbol {symbol}: {e}")
             return []
 
     async def get_orders_by_deal_id(self, deal_id: str) -> List[Order]:
@@ -185,8 +232,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query, deal_id)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting orders by deal_id {deal_id}: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get orders by deal_id {deal_id}: {str(e)}")
+            logger.error(f"Failed to get orders by deal_id {deal_id}: {e}")
             return []
 
     async def get_orders_in_period(self, start_time: datetime, end_time: datetime) -> List[Order]:
@@ -202,8 +252,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query, start_time, end_time)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting orders in period: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get orders in period: {str(e)}")
+            logger.error(f"Failed to get orders in period: {e}")
             return []
 
     async def count_active_orders(self) -> int:
@@ -218,8 +271,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 count = await conn.fetchval(query)
                 return count or 0
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while counting active orders: {e}")
+            return 0
         except Exception as e:
-            logger.error(f"Failed to count active orders: {str(e)}")
+            logger.error(f"Failed to count active orders: {e}")
             return 0
 
     async def count_orders_by_status(self, status: str) -> int:
@@ -234,8 +290,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 count = await conn.fetchval(query, status)
                 return count or 0
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while counting orders by status {status}: {e}")
+            return 0
         except Exception as e:
-            logger.error(f"Failed to count orders by status {status}: {str(e)}")
+            logger.error(f"Failed to count orders by status {status}: {e}")
             return 0
 
     # ===== ADVANCED QUERY OPERATIONS =====
@@ -253,8 +312,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query, side, symbol)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting orders by side {side} and symbol {symbol}: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get orders by side {side} and symbol {symbol}: {str(e)}")
+            logger.error(f"Failed to get orders by side {side} and symbol {symbol}: {e}")
             return []
 
     async def get_recent_orders(self, limit: int = 100) -> List[Order]:
@@ -270,8 +332,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query, limit)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting recent orders: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get recent orders: {str(e)}")
+            logger.error(f"Failed to get recent orders: {e}")
             return []
 
     async def get_orders_with_errors(self) -> List[Order]:
@@ -287,8 +352,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 """
                 rows = await conn.fetch(query)
                 return [self._row_to_order(row) for row in rows]
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting orders with errors: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Failed to get orders with errors: {str(e)}")
+            logger.error(f"Failed to get orders with errors: {e}")
             return []
 
     # ===== BULK OPERATIONS =====
@@ -305,8 +373,10 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                         success = await self._update_order_internal(conn, order)
                         if success:
                             updated_count += 1
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while updating orders batch: {e}")
         except Exception as e:
-            logger.error(f"Failed to update orders batch: {str(e)}")
+            logger.error(f"Failed to update orders batch: {e}")
         
         return updated_count
 
@@ -348,9 +418,12 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
             await conn.execute(query, *values)
             logger.debug(f"Inserted order {order.id} into database")
             return True
-            
+
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while inserting order {order.id}: {e}")
+            return False
         except Exception as e:
-            logger.error(f"Failed to insert order {order.id}: {str(e)}")
+            logger.error(f"Failed to insert order {order.id}: {e}")
             return False
 
     async def _update_order_internal(self, conn: Connection, order: Order) -> bool:
@@ -382,9 +455,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 logger.warning(f"No rows updated for order {order.id}")
             
             return success
-            
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while updating order {order.id}: {e}")
+            return False
         except Exception as e:
-            logger.error(f"Failed to update order {order.id}: {str(e)}")
+            logger.error(f"Failed to update order {order.id}: {e}")
             return False
 
     def _order_to_db_values(self, order: Order, include_created_at: bool = True) -> tuple:
@@ -543,8 +618,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                 deleted_count = int(result.split()[-1]) if result.startswith('DELETE') else 0
                 logger.info(f"Cleaned up {deleted_count} old orders")
                 return deleted_count
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while cleaning up old orders: {e}")
+            return 0
         except Exception as e:
-            logger.error(f"Failed to cleanup old orders: {str(e)}")
+            logger.error(f"Failed to cleanup old orders: {e}")
             return 0
 
     async def get_order_statistics(self) -> Dict[str, Any]:
@@ -574,10 +652,13 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                         'total_cost': float(row['total_cost']) if row['total_cost'] else 0.0,
                         'avg_cost': float(row['avg_cost']) if row['avg_cost'] else 0.0
                     }
-                
+
                 return statistics
+        except asyncpg.exceptions.PostgresError as e:
+            logger.error(f"PostgreSQL error while getting order statistics: {e}")
+            return {}
         except Exception as e:
-            logger.error(f"Failed to get order statistics: {str(e)}")
+            logger.error(f"Failed to get order statistics: {e}")
             return {}
 
     async def health_check(self) -> Dict[str, Any]:
@@ -604,6 +685,11 @@ class PostgreSQLOrdersRepositoryCCXT(IOrdersRepository):
                     'connection_pool_size': self.pool.get_size(),
                     'connection_pool_free': self.pool.get_size() - self.pool.get_busy_size()
                 }
+        except asyncpg.exceptions.PostgresError as e:
+            return {
+                'status': 'unhealthy',
+                'error': str(e)
+            }
         except Exception as e:
             return {
                 'status': 'unhealthy',

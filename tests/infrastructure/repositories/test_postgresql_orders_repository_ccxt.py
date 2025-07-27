@@ -119,6 +119,46 @@ class TestPostgreSQLOrdersRepositoryCCXT:
         assert order.deal_id == 1
         assert order.local_order_id == 1001
 
+    def test_json_fields_round_trip(self, repository, sample_order):
+        """Проверяем сериализацию и десериализацию JSONB полей"""
+        repo, _ = repository
+
+        values = repo._order_to_db_values(sample_order)
+        row = {
+            'id': values[0],
+            'client_order_id': values[1],
+            'datetime': datetime.fromisoformat(sample_order.datetime.replace('Z', '+00:00')),
+            'timestamp': values[3],
+            'last_trade_timestamp': values[4],
+            'status': values[5],
+            'symbol': values[6],
+            'type': values[7],
+            'time_in_force': values[8],
+            'side': values[9],
+            'price': values[10],
+            'amount': values[11],
+            'filled': values[12],
+            'remaining': values[13],
+            'cost': values[14],
+            'average': values[15],
+            'trades': values[16],
+            'fee': values[17],
+            'info': values[18],
+            'deal_id': str(sample_order.deal_id),
+            'local_order_id': values[20],
+            'created_at': datetime.now(timezone.utc),
+            'updated_at': datetime.now(timezone.utc),
+            'error_message': None,
+            'retries': 0,
+            'metadata': values[-1],
+        }
+
+        loaded = repo._row_to_order(row)
+        assert loaded.trades == sample_order.trades
+        assert loaded.fee == sample_order.fee
+        assert loaded.info == sample_order.info
+        assert loaded.metadata == sample_order.metadata
+
     @pytest.mark.asyncio
     async def test_save_order_new(self, repository, sample_order):
         """Тест сохранения нового ордера"""
@@ -341,6 +381,18 @@ class TestPostgreSQLOrdersRepositoryCCXT:
         assert 'closed_sell' in stats
         assert stats['open_buy']['count'] == 10
         assert stats['closed_sell']['count'] == 5
+
+    @pytest.mark.asyncio
+    async def test_save_orders_batch(self, repository, sample_order):
+        repo, conn = repository
+
+        conn.fetchrow.return_value = None
+        conn.execute.return_value = "INSERT 0 1"
+
+        result = await repo.save_orders_batch([sample_order])
+
+        assert result == 1
+        assert conn.execute.call_count == 1
 
     def test_validate_ccxt_compliance(self, sample_order):
         """Тест валидации CCXT соответствия"""
