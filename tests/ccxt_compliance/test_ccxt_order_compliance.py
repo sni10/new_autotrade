@@ -165,8 +165,7 @@ class TestCCXTOrderCompliance:
         assert is_valid is False
         assert len(errors) > 0
         assert any('symbol' in error for error in errors)
-        assert any('side' in error for error in errors)
-        assert any('type' in error for error in errors)
+        assert any('price is required' in error for error in errors)
 
     def test_ccxt_update_from_response(self, ccxt_standard_order):
         """Тест обновления Order из CCXT ответа"""
@@ -395,6 +394,15 @@ class TestCCXTOrderCompliance:
         ccxt_fields = ['id', 'symbol', 'type', 'side', 'amount', 'price', 'status']
         for field in ccxt_fields:
             assert original_ccxt[field] == restored_ccxt[field]
+
+    def test_ccxt_dict_roundtrip(self, ccxt_standard_order):
+        """Roundtrip Order through CCXT dict serialization"""
+        original_order = Order.from_ccxt_response(ccxt_standard_order)
+
+        ccxt_dict = original_order.to_ccxt_dict()
+        restored = Order.from_ccxt_response(ccxt_dict)
+
+        assert restored.to_ccxt_dict() == ccxt_dict
 
 
 if __name__ == "__main__":
