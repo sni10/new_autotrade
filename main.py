@@ -6,7 +6,10 @@ import logging
 from datetime import datetime
 import pytz
 import requests
-import win32api
+try:
+    import win32api
+except ImportError:
+    win32api = None
 import time
 from dotenv import load_dotenv
 
@@ -113,8 +116,6 @@ async def main():
             symbol=symbol_ccxt,
             order_life_time=pair_cfg.get("order_life_time", 1),
             deal_quota=pair_cfg.get("deal_quota", 15.0),
-            min_step=pair_cfg.get("min_step", 0.1),
-            price_step=pair_cfg.get("price_step", 0.0001),
             profit_markup=pair_cfg.get("profit_markup", 1.5),
             deal_count=pair_cfg.get("deal_count", 3),
         )
@@ -186,7 +187,7 @@ async def main():
         )
 
         # Deal Service (остается старым)
-        deal_service = DealService(deals_repo, order_service, deal_factory)
+        deal_service = DealService(deals_repo, order_service, deal_factory, pro_exchange_connector_sandbox)
 
         # 🆕 ГЛАВНЫЙ OrderExecutionService (Issue #7)
         order_execution_service = OrderExecutionService(
@@ -198,6 +199,7 @@ async def main():
         # 🕒 НОВЫЙ BuyOrderMonitor (мониторинг тухляков)
         buy_order_monitor = BuyOrderMonitor(
             order_service=order_service,
+            deal_service=deal_service,
             exchange_connector=pro_exchange_connector_sandbox,
             max_age_minutes=15.0,           # 15 минут максимум
             max_price_deviation_percent=3.0, # 3% отклонение цены
