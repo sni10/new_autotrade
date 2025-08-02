@@ -17,13 +17,13 @@ from tests.mocks.mock_exchange_connector import MockCcxtExchangeConnector
 pytestmark = pytest.mark.asyncio
 
 @pytest.fixture
-def setup_services():
+async def setup_services():
     market_info = { "THE/USDT": { "symbol": "THE/USDT", "min_qty": 0.1, "max_qty": 10000.0, "step_size": 0.1, "min_price": 0.0001, "max_price": 100.0, "tick_size": 0.0001, "min_notional": 10.0, "fees": {"maker": 0.001, "taker": 0.001}, "precision": {"amount": 1, "price": 4}, "last_price": 0.4000 } }
     mock_exchange = MockCcxtExchangeConnector(market_info)
     deals_repo = InMemoryDealsRepository()
     orders_repo = InMemoryOrdersRepository()
     order_factory = OrderFactory()
-    symbol_info = asyncio.run(mock_exchange.get_symbol_info("THE/USDT"))
+    symbol_info = await mock_exchange.get_symbol_info("THE/USDT")
     order_factory.update_exchange_info("THE/USDT", symbol_info)
     order_service = OrderService(orders_repo, order_factory, mock_exchange)
     deal_factory = DealFactory(order_factory)

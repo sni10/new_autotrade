@@ -16,7 +16,7 @@ class TestOrderEntity(unittest.TestCase):
             'amount': 1.5,
             'status': 'open',
             'timestamp': int(time.time() * 1000) - 5000,
-            'datetime': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime((time.time() * 1000 - 5000)/1000)),
+            'datetime': time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime((time.time() * 1000 - 5000)/1000)),
             'filled': 0.5,
             'remaining': 1.0,
             'average': 50005.0,
