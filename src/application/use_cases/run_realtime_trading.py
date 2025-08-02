@@ -38,24 +38,26 @@ async def run_realtime_trading(
     repository = InMemoryTickerRepository(max_size=5000)
     indicators_repo = InMemoryIndicatorsRepository()
     ticker_service = TickerService(repository)
+    indicators_repo = InMemoryIndicatorsRepository()
+    ticker_service = TickerService(repository, indicators_repo)
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
-    
+
     # Создаем кеш для стакана заявок (TTL 30 секунд)
     orderbook_cache = OrderBookCache(ttl_seconds=30)
-    
+
     # Создаем обработчик исполненных BUY ордеров
     filled_buy_order_handler = FilledBuyOrderHandler(
         order_service=order_execution_service.order_service,
         deal_service=deal_service
     )
-    
+
     # Создаем монитор завершения сделок
     deal_completion_monitor = DealCompletionMonitor(
         deal_service=deal_service,
         order_service=order_execution_service.order_service
     )
-    
+
     counter = 0
     last_orderbook_update = 0
     orderbook_update_interval = 10  # Обновляем стакан каждые 10 тиков
@@ -65,7 +67,7 @@ async def run_realtime_trading(
     try:
         logger.info("🔄 Начинаем основной торговый цикл...")
         logger.info(f"🎯 Подключаемся к тикеру для символа: {currency_pair.symbol}")
-        
+
         while True:
             try:
                 ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
@@ -115,7 +117,7 @@ async def run_realtime_trading(
                     if orderbook_metrics.signal in [OrderBookSignal.REJECT, OrderBookSignal.WEAK_SELL, OrderBookSignal.STRONG_SELL]:
                         logger.info(f"🚫 Сигнал MACD отклонен анализатором стакана: {orderbook_metrics.signal.value}")
                         continue
-                    
+
                     # Синхронизация ордеров перед принятием решения
                     await order_execution_service.monitor_active_orders()
 
@@ -275,7 +277,7 @@ async def run_realtime_trading(
                     logger.info("   🚨 Тухляков найдено: %s", monitor_stats["stale_orders_found"])
                     logger.info("   ❌ Ордеров отменено: %s", monitor_stats["orders_cancelled"])
                     logger.info("   🔄 Ордеров пересоздано: %s", monitor_stats["orders_recreated"])
-                    
+
                     # Добавляем статистику для нашего нового DealCompletionMonitor
                     if deal_completion_monitor:
                         try:
@@ -286,24 +288,24 @@ async def run_realtime_trading(
                             logger.info("   ✅ Сделок завершено: %s", completion_stats["deals_completed"])
                         except Exception as e:
                             logger.debug("⚠️ DealCompletionMonitor статистика недоступна: %s", e)
-                    
+
                     # Оптимизированная проверка стоп-лосса с кешированными данными
                     if stop_loss_monitor and counter % 50 == 0:  # Проверяем каждые 50 тиков
                         try:
                             current_price = ticker_data.close or 0.0
                             cached_orderbook = orderbook_cache.get(currency_pair.symbol)
-                            
+
                             # Передаем кешированные данные в стоп-лосс
                             await stop_loss_monitor.check_open_deals(
                                 current_price=current_price,
                                 cached_orderbook=cached_orderbook
                             )
-                            
+
                             if counter % 500 == 0:  # Логируем раз в 500 тиков
                                 logger.debug("🛡️ Проверен стоп-лосс с кешированными данными")
                         except Exception as e:
                             logger.debug(f"⚠️ Ошибка в оптимизированном стоп-лоссе: {e}")
-                    
+
                     # Добавляем статистику для StopLossMonitor
                     if stop_loss_monitor:
                         try:
@@ -314,7 +316,7 @@ async def run_realtime_trading(
                             logger.info("   🔴 Пробитий поддержки: %s", stop_loss_stats["support_breaks"])
                             logger.info("   🚨 Экстренных ликвидаций: %s", stop_loss_stats["emergency_liquidations"])
                             logger.info("   💥 Стоп-лоссов сработало: %s", stop_loss_stats["stop_loss_triggered"])
-                            
+
                             # Статистика кеша
                             cache_stats = orderbook_cache.get_stats()
                             logger.info("   📦 Кеш стакана: %s валидных записей (TTL: %ss)", cache_stats["valid_entries"], cache_stats["ttl_seconds"])
