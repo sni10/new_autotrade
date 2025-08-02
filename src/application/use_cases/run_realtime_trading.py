@@ -37,7 +37,7 @@ async def run_realtime_trading(
 
     repository = InMemoryTickerRepository(max_size=5000)
     indicators_repo = InMemoryIndicatorsRepository()
-    ticker_service = TickerService(repository, indicators_repo)
+    ticker_service = TickerService(repository)
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
     
