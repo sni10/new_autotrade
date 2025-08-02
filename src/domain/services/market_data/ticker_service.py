@@ -6,7 +6,7 @@ import numpy as np
 from talib import MA_Type
 
 # В начале файла добавить:
-from domain.services.indicators.cached_indicator_service import CachedIndicatorService
+from domain.services.indicators.indicator_calculator_service import IndicatorCalculatorService
 from domain.entities.ticker import Ticker
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 
@@ -34,7 +34,7 @@ def floor_to_step(value: Decimal, step: Decimal) -> Decimal:
 class TickerService:
     def __init__(self, repository: InMemoryTickerRepository):
         self.repository = repository
-        self.cached_indicators = CachedIndicatorService()  # 🆕 Добавляем кеш
+        self.indicator_calculator = IndicatorCalculatorService()  # 🆕 Добавляем калькулятор
         self.price_history_cache = []  # 🆕 Кеш истории цен
         self.volatility_window = 20
 
@@ -48,22 +48,30 @@ class TickerService:
         if len(self.price_history_cache) > 200:  # Ограничиваем размер
             self.price_history_cache.pop(0)
 
-        # 2. Быстрые индикаторы (каждый тик)
-        fast_signals = self.cached_indicators.update_fast_indicators(current_price)
-
-        # 3. Средние индикаторы (каждые 10 тиков)
-        medium_signals = {}
-        if self.cached_indicators.should_update_medium():
-            medium_signals = self.cached_indicators.update_medium_indicators(self.price_history_cache)
-
-        # 4. Тяжелые индикаторы (каждые 50 тиков)
-        heavy_signals = {}
-        if self.cached_indicators.should_update_heavy():
-            heavy_signals = self.cached_indicators.update_heavy_indicators(self.price_history_cache)
-
-        # 5. Получаем все кешированные сигналы
-        all_signals = self.cached_indicators.get_all_cached_signals()
-        ticker.update_signals(all_signals)
+        # 2. Вычисляем индикаторы если достаточно данных
+        if len(self.price_history_cache) >= 50:
+            # Быстрые индикаторы
+            fast_indicators = self.indicator_calculator.calculate_fast_indicators(
+                self.price_history_cache, ticker.symbol
+            )
+            
+            # Средние индикаторы (каждые 10 тиков)  
+            medium_indicators = self.indicator_calculator.calculate_medium_indicators(
+                self.price_history_cache, ticker.symbol
+            )
+            
+            # Тяжелые индикаторы (MACD)
+            heavy_indicators = self.indicator_calculator.calculate_heavy_indicators(
+                self.price_history_cache, ticker.symbol
+            )
+            
+            # Объединяем все сигналы
+            all_signals = {}
+            all_signals.update(fast_indicators.values)
+            all_signals.update(medium_indicators.values)
+            all_signals.update(heavy_indicators.values)
+            
+            ticker.update_signals(all_signals)
 
         # 6. Сохраняем тикер
         self.repository.save(ticker)
