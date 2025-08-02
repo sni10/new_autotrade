@@ -1,0 +1,1 @@
+# tests/domain/services/indicators/__init__.py
