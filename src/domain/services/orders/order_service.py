@@ -72,3 +72,16 @@ class OrderService:
 
     def get_open_orders(self) -> List[Order]: return self.orders_repo.get_open_orders()
     def get_order_by_id(self, order_id: int) -> Optional[Order]: return self.orders_repo.get_by_id(order_id)
+    
+    def get_statistics(self) -> dict:
+        """Получение статистики сервиса ордеров"""
+        all_orders = self.orders_repo.get_all()
+        open_orders = self.get_open_orders()
+        
+        return {
+            'total_orders': len(all_orders),
+            'open_orders': len(open_orders),
+            'completed_orders': len([o for o in all_orders if o.status == 'FILLED']),
+            'cancelled_orders': len([o for o in all_orders if o.status == 'CANCELLED']),
+            'failed_orders': len([o for o in all_orders if o.status == 'FAILED'])
+        }

@@ -28,6 +28,7 @@ from domain.services.orders.order_service import OrderService  # Использ�
 from domain.services.orders.order_execution_service import OrderExecutionService  # НОВЫЙ главный сервис
 from domain.services.orders.buy_order_monitor import BuyOrderMonitor  # 🆕 МОНИТОРИНГ ТУХЛЯКОВ
 from domain.factories.order_factory import OrderFactory  # Используем .new версию
+from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer  # 🆕 АНАЛИЗ СТАКАНА
 
 # 🚀 ОБНОВЛЕННЫЕ РЕПОЗИТОРИИ
 from infrastructure.repositories.deals_repository import InMemoryDealsRepository
@@ -120,6 +121,17 @@ async def main():
             deal_count=pair_cfg.get("deal_count", 3),
         )
         logger.info(f"✅ Валютная пара создана: {currency_pair.symbol}")
+        
+        # 🆕 OrderBook Analyzer
+        orderbook_config = {
+            'min_volume_threshold': 1000,
+            'big_wall_threshold': 5000,
+            'max_spread_percent': 0.5,
+            'min_liquidity_depth': 10,
+            'typical_order_size': 10
+        }
+        orderbook_analyzer = OrderBookAnalyzer(orderbook_config)
+        logger.info("✅ OrderBookAnalyzer создан")
 
         # 2. 🚀 СОЗДАНИЕ КОННЕКТОРОВ (Production + Sandbox)
         logger.info("🔗 Инициализация коннекторов...")
@@ -231,20 +243,8 @@ async def main():
             logger.error("❌ Завершение работы...")
             return
 
-        # 7. ⚙️ НАСТРОЙКА OrderExecutionService
-        logger.info("⚙️ Настройка OrderExecutionService...")
-
-        order_execution_service.configure_execution_settings(
-            max_execution_time_sec=30.0,       # 30 секунд на выполнение
-            enable_risk_checks=True,           # Включить проверки рисков
-            enable_balance_checks=True,        # Включить проверки баланса
-            enable_slippage_protection=True    # Включить защиту от слиппеджа
-        )
-
-        settings = order_execution_service.get_current_settings()
-        logger.info("✅ OrderExecutionService настроен:")
-        for key, value in settings.items():
-            logger.info(f"   📊 {key}: {value}")
+        # 7. ⚙️ OrderExecutionService готов
+        logger.info("⚙️ OrderExecutionService готов к работе")
 
         # 8. 🕒 ЗАПУСК МОНИТОРИНГА ТУХЛЯКОВ
         logger.info("🕒 Запуск мониторинга протухших BUY ордеров...")
@@ -265,9 +265,9 @@ async def main():
 
         # Статистика сервисов
         order_stats = order_service.get_statistics()
-        execution_stats = order_execution_service.get_execution_statistics()
-        logger.info(f"   🎛️ OrderService: {order_stats['success_rate']:.1f}% success rate")
-        logger.info(f"   🚀 OrderExecutionService: {execution_stats['total_executions']} executions")
+        success_rate = order_stats.get('success_rate', 0.0)
+        logger.info(f"   🎛️ OrderService: {success_rate:.1f}% success rate")
+        logger.info(f"   🚀 OrderExecutionService: готов к работе")
 
         # 10. 🚀 ЗАПУСК ТОРГОВЛИ
         logger.info("🚀 СИСТЕМА ГОТОВА К ЗАПУСКУ ТОРГОВЛИ")
@@ -286,7 +286,8 @@ async def main():
             currency_pair=currency_pair,
             deal_service=deal_service,
             order_execution_service=order_execution_service,  # 🆕 Передаем новый сервис
-            buy_order_monitor=buy_order_monitor  # 🕒 Передаем монитор тухляков
+            buy_order_monitor=buy_order_monitor,  # 🕒 Передаем монитор тухляков
+            orderbook_analyzer=orderbook_analyzer  # 🆕 Передаем анализатор стакана
         )
 
     except Exception as e:
