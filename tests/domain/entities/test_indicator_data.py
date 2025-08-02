@@ -7,7 +7,7 @@ import os
 # Добавляем корневую директорию проекта в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 
-from src.domain.entities.indicator_data import IndicatorData
+from domain.entities.indicator_data import IndicatorData
 
 class TestIndicatorData(unittest.TestCase):
 

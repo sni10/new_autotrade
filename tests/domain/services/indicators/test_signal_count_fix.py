@@ -12,6 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 
 from domain.services.indicators.indicator_calculator_service import IndicatorCalculatorService
 from domain.entities.ticker import Ticker
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+from infrastructure.repositories.indicators_repository import InMemoryIndicatorsRepository
 from domain.services.market_data.ticker_service import TickerService
 
 async def test_signal_generation():
@@ -20,7 +21,8 @@ async def test_signal_generation():
     
     # Create test data
     repository = InMemoryTickerRepository()
-    ticker_service = TickerService(repository)
+    indicators_repo = InMemoryIndicatorsRepository()
+    ticker_service = TickerService(repository, indicators_repo)
     
     # Generate some test price data
     test_prices = [0.33 + i * 0.001 for i in range(100)]  # 100 price points

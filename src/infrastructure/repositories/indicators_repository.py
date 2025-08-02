@@ -1,6 +1,6 @@
 # src/infrastructure/repositories/indicators_repository.py
 from typing import List, Dict, Optional
-from src.domain.entities.indicator_data import IndicatorData
+from domain.entities.indicator_data import IndicatorData
 
 class InMemoryIndicatorsRepository:
     """

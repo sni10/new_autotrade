@@ -109,7 +109,13 @@ class CcxtExchangeConnector:
             normalized_symbol = self._normalize_symbol(symbol)
             logger.info(f"📤 Creating {side.upper()} {order_type} order: {amount} {normalized_symbol} @ {price}")
             raw_order = await self.client.create_order(normalized_symbol, order_type, side, amount, price, params or {})
-            logger.info(f"✅ Order created successfully: {raw_order.get('id', 'N/A')}")
+            
+            # Проверяем, что raw_order не None
+            if raw_order is None:
+                raise Exception("Exchange returned None instead of order data")
+            
+            order_id = raw_order.get('id', 'N/A') if isinstance(raw_order, dict) else 'N/A'
+            logger.info(f"✅ Order created successfully: {order_id}")
             return Order.from_dict(raw_order)
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds: {e}")

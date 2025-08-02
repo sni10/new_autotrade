@@ -37,8 +37,6 @@ async def run_realtime_trading(
 
     repository = InMemoryTickerRepository(max_size=5000)
     indicators_repo = InMemoryIndicatorsRepository()
-    ticker_service = TickerService(repository)
-    indicators_repo = InMemoryIndicatorsRepository()
     ticker_service = TickerService(repository, indicators_repo)
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
@@ -119,7 +117,10 @@ async def run_realtime_trading(
                         continue
 
                     # Синхронизация ордеров перед принятием решения
-                    await order_execution_service.monitor_active_orders()
+                    # Вместо вызова несуществующего метода, будем напрямую использовать BuyOrderMonitor
+                    # для проверки статуса ордеров. Это соответствует новой архитектуре, 
+                    # где каждый сервис выполняет свою четко определенную задачу.
+                    await buy_order_monitor.check_stale_buy_orders()
 
                     if len(repository.tickers) > 0:
                         last_ticker = repository.tickers[-1]
@@ -190,17 +191,7 @@ async def run_realtime_trading(
                                 logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
                                 execution_result = await order_execution_service.execute_trading_strategy(
                                     currency_pair=currency_pair,
-                                    strategy_result=strategy_result,
-                                    metadata={
-                                        'trigger': 'macd_signal',
-                                        'macd_data': {
-                                            'macd': macd,
-                                            'signal': signal,
-                                            'histogram': hist,
-                                        },
-                                        'market_price': current_price,
-                                        'timestamp': int(time.time() * 1000),
-                                    },
+                                    strategy_result=strategy_result
                                 )
 
                                 if execution_result.success:
@@ -239,13 +230,33 @@ async def run_realtime_trading(
                     all_orders = order_execution_service.order_service.orders_repo.get_all()
                     if all_orders:
                         logger.info("   🔍 ДЕТАЛИ ПО ОРДЕРАМ:")
-                        # Динамическое создание строки формата для логов
+                        
+                        # Вычисляем precision для правильного форматирования
+                        from decimal import Decimal
+                        price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
+                        amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
+                        price_precision = int(price_step.normalize().as_tuple().exponent * -1)
+                        amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
+                        
+                        # Создаем строку формата с биржевыми precision
                         log_format = (
                             "     - ID: {} | DealID: {} | {} | {} | {} | "
-                            "Цена: {:g} | Кол-во: {:g} | ExchangeID: {} | Filled: {:g} | AvgPrice: {:g} | Fees: {:g}"
+                            "Цена: {:.{}f} | Кол-во: {:.{}f} | ExchangeID: {} | Filled: {:.{}f} | AvgPrice: {:.{}f} | Fees: {:.8f}"
                         )
 
                         for order in all_orders:
+                            # Безопасно обрабатываем fees - может быть списком, числом или None
+                            try:
+                                if isinstance(order.fees, list):
+                                    # Если fees - список, берем первый элемент или 0
+                                    fees_value = float(order.fees[0]) if order.fees and order.fees[0] is not None else 0.0
+                                elif isinstance(order.fees, (int, float)):
+                                    fees_value = float(order.fees)
+                                else:
+                                    fees_value = 0.0
+                            except (ValueError, TypeError, IndexError):
+                                fees_value = 0.0
+                            
                             logger.info(
                                 log_format.format(
                                     order.order_id,
@@ -253,12 +264,12 @@ async def run_realtime_trading(
                                     order.symbol,
                                     order.side.upper(),
                                     order.status,
-                                    float(order.price),
-                                    float(order.amount),
+                                    float(order.price), price_precision,
+                                    float(order.amount), amount_precision,
                                     order.exchange_id,
-                                    float(order.filled_amount),
-                                    float(order.average_price),
-                                    float(order.fees)
+                                    float(order.filled_amount), amount_precision,
+                                    float(order.average_price), price_precision,
+                                    fees_value
                                 )
                             )
 

@@ -1,6 +1,6 @@
 # src/infrastructure/repositories/order_books_repository.py
 from typing import List, Dict, Optional
-from src.domain.entities.order_book import OrderBook
+from domain.entities.order_book import OrderBook
 
 class InMemoryOrderBooksRepository:
     """

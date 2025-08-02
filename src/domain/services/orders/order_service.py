@@ -31,10 +31,19 @@ class OrderService:
     async def _execute_order_on_exchange(self, order: Order) -> OrderExecutionResult:
         try:
             placed_order = await self.exchange_connector.create_order(order.symbol, order.side, order.order_type, order.amount, order.price)
-            if isinstance(placed_order, Order):
+            # Более надежная проверка типа - проверяем наличие атрибутов Order
+            if hasattr(placed_order, 'order_id') and hasattr(placed_order, 'update_from_order'):
                 order.update_from_order(placed_order)
-            else:
+            elif isinstance(placed_order, dict):
                 order.update_from_exchange(placed_order)
+            else:
+                # Если это объект Order, но isinstance не работает (проблемы с импортами)
+                # пытаемся использовать update_from_order
+                try:
+                    order.update_from_order(placed_order)
+                except AttributeError:
+                    # Если это все-таки словарь, используем update_from_exchange
+                    order.update_from_exchange(placed_order)
             self.orders_repo.save(order)
             return OrderExecutionResult(success=True, order=order)
         except Exception as e:
@@ -47,10 +56,18 @@ class OrderService:
         if not order.exchange_id: return order
         try:
             exchange_order = await self.exchange_connector.fetch_order(order.exchange_id, order.symbol)
-            if isinstance(exchange_order, Order):
+            # Более надежная проверка типа - проверяем наличие атрибутов Order
+            if hasattr(exchange_order, 'order_id') and hasattr(exchange_order, 'update_from_order'):
                 order.update_from_order(exchange_order)
-            else:
+            elif isinstance(exchange_order, dict):
                 order.update_from_exchange(exchange_order)
+            else:
+                # Если это объект Order, но isinstance не работает (проблемы с импортами)
+                try:
+                    order.update_from_order(exchange_order)
+                except AttributeError:
+                    # Если это все-таки словарь, используем update_from_exchange
+                    order.update_from_exchange(exchange_order)
             self.orders_repo.save(order)
         except Exception as e:
             logger.error(f"Error checking order status for {order.order_id}: {e}")
@@ -60,10 +77,18 @@ class OrderService:
         if not order.exchange_id: return False
         try:
             cancelled_order = await self.exchange_connector.cancel_order(order.exchange_id, order.symbol)
-            if isinstance(cancelled_order, Order):
+            # Более надежная проверка типа - проверяем наличие атрибутов Order
+            if hasattr(cancelled_order, 'order_id') and hasattr(cancelled_order, 'update_from_order'):
                 order.update_from_order(cancelled_order)
-            else:
+            elif isinstance(cancelled_order, dict):
                 order.update_from_exchange(cancelled_order)
+            else:
+                # Если это объект Order, но isinstance не работает (проблемы с импортами)
+                try:
+                    order.update_from_order(cancelled_order)
+                except AttributeError:
+                    # Если это все-таки словарь, используем update_from_exchange
+                    order.update_from_exchange(cancelled_order)
             self.orders_repo.save(order)
             return True
         except Exception as e:

@@ -132,15 +132,24 @@ class Order:
         """Возвращает процент исполнения ордера (0.0 - 1.0)"""
         if self.amount == 0:
             return 0.0
-        return min(self.filled_amount / self.amount, 1.0)
+        # Приводим оба значения к float для корректного деления
+        filled = float(self.filled_amount)
+        total = float(self.amount)
+        return min(filled / total, 1.0)
 
     def get_remaining_amount(self) -> float:
         """Возвращает оставшийся объем для исполнения"""
-        return max(self.amount - self.filled_amount, 0.0)
+        # Приводим оба значения к float для корректного вычитания
+        total = float(self.amount)
+        filled = float(self.filled_amount)
+        return max(total - filled, 0.0)
 
     def is_fully_filled(self) -> bool:
         """Проверяет, полностью ли исполнен ордер"""
-        return self.filled_amount >= self.amount
+        # Приводим оба значения к float для корректного сравнения
+        filled = float(self.filled_amount)
+        total = float(self.amount)
+        return filled >= total
 
     # 🆕 МЕТОДЫ ОБНОВЛЕНИЯ СТАТУСА
     def update_from_order(self, other_order: 'Order') -> None:
@@ -241,7 +250,10 @@ class Order:
     def calculate_total_cost(self) -> float:
         """Рассчитывает общую стоимость ордера (без комиссий)"""
         price = self.average_price if self.average_price > 0 else self.price
-        return self.filled_amount * price
+        # Приводим оба значения к float для корректного умножения
+        filled = float(self.filled_amount)
+        price_float = float(price)
+        return filled * price_float
 
     def calculate_total_cost_with_fees(self) -> float:
         """Рассчитывает общую стоимость с учетом комиссий"""
@@ -295,6 +307,38 @@ class Order:
             'exchange_raw_data': self.exchange_raw_data
         }
 
+    @staticmethod
+    def _extract_fees_value(data: Dict[str, Any]) -> float:
+        """Безопасно извлекает значение fees из данных биржи"""
+        # Сначала проверяем прямое поле 'fees'
+        fees_value = data.get('fees')
+        if fees_value is not None:
+            # Если fees является списком, берем первый элемент или сумму
+            if isinstance(fees_value, list):
+                if len(fees_value) > 0:
+                    # Если элементы списка - словари с 'cost', извлекаем cost
+                    if isinstance(fees_value[0], dict) and 'cost' in fees_value[0]:
+                        return float(fees_value[0]['cost']) if fees_value[0]['cost'] is not None else 0.0
+                    # Если элементы списка - числа, берем первый
+                    elif isinstance(fees_value[0], (int, float)):
+                        return float(fees_value[0])
+                return 0.0
+            # Если fees - число, возвращаем его
+            elif isinstance(fees_value, (int, float)):
+                return float(fees_value)
+            # Если fees - словарь с 'cost'
+            elif isinstance(fees_value, dict) and 'cost' in fees_value:
+                return float(fees_value['cost']) if fees_value['cost'] is not None else 0.0
+        
+        # Если прямого поля 'fees' нет, проверяем поле 'fee'
+        fee_data = data.get('fee', {})
+        if isinstance(fee_data, dict) and 'cost' in fee_data:
+            cost = fee_data.get('cost')
+            return float(cost) if cost is not None else 0.0
+        
+        # По умолчанию возвращаем 0.0
+        return 0.0
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Order':
         """
@@ -319,7 +363,7 @@ class Order:
             'exchange_timestamp': data.get('exchange_timestamp') or data.get('timestamp'),
             'last_trade_timestamp': data.get('last_trade_timestamp') or data.get('lastTradeTimestamp'),
             'deal_id': data.get('deal_id'),
-            'fees': data.get('fees') if data.get('fees') is not None else data.get('fee', {}).get('cost'),
+            'fees': cls._extract_fees_value(data),
             'fee_currency': data.get('fee_currency') if data.get('fee_currency') is not None else data.get('fee', {}).get('currency'),
             'trades': data.get('trades'),
             'exchange_raw_data': data.get('exchange_raw_data') or data.get('info'),

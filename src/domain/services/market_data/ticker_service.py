@@ -8,7 +8,6 @@ from domain.entities.currency_pair import CurrencyPair
 from domain.services.indicators.indicator_calculator_service import IndicatorCalculatorService
 from domain.entities.ticker import Ticker
 from domain.entities.indicator_data import IndicatorData
-from domain.services.indicators.indicator_calculator_service import IndicatorCalculatorService
 from domain.services.utils.decimal_rounding_service import DecimalRoundingService
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
 from infrastructure.repositories.indicators_repository import InMemoryIndicatorsRepository
@@ -30,11 +29,6 @@ class TickerService:
         if self.tickers_repo.tickers:
             self.price_history_cache = [t.last for t in self.tickers_repo.tickers]
             self.tick_count = len(self.price_history_cache)
-    def __init__(self, repository: InMemoryTickerRepository):
-        self.repository = repository
-        self.indicator_calculator = IndicatorCalculatorService()  # 🆕 Добавляем калькулятор
-        self.price_history_cache = []  # 🆕 Кеш истории цен
-        self.volatility_window = 20
 
     def _should_update_medium(self) -> bool:
         return self.tick_count - self.last_medium_update_tick >= 10
@@ -54,18 +48,38 @@ class TickerService:
 
         all_indicators = {}
 
+        # Получаем предыдущие индикаторы для сохранения значений
+        previous_indicators = {}
+        if self.tickers_repo.tickers:
+            last_ticker = self.tickers_repo.tickers[-1]
+            if last_ticker.signals:
+                previous_indicators = last_ticker.signals.copy()
+
+        # Fast индикаторы обновляются каждый тик
         fast_indicators = self.indicator_calculator.calculate_fast_indicators(self.price_history_cache)
         all_indicators.update(fast_indicators.values)
 
+        # Medium индикаторы обновляются каждые 10 тиков
         if self._should_update_medium():
             medium_indicators = self.indicator_calculator.calculate_medium_indicators(self.price_history_cache)
             all_indicators.update(medium_indicators.values)
             self.last_medium_update_tick = self.tick_count
+        else:
+            # Сохраняем предыдущие значения medium индикаторов
+            for key in ['rsi_5', 'rsi_15']:
+                if key in previous_indicators:
+                    all_indicators[key] = previous_indicators[key]
 
+        # Heavy индикаторы обновляются каждые 50 тиков
         if self._should_update_heavy():
             heavy_indicators = self.indicator_calculator.calculate_heavy_indicators(self.price_history_cache)
             all_indicators.update(heavy_indicators.values)
             self.last_heavy_update_tick = self.tick_count
+        else:
+            # Сохраняем предыдущие значения heavy индикаторов
+            for key in ['macd', 'macdsignal', 'macdhist', 'bb_upper', 'bb_middle', 'bb_lower', 'signal_strength', 'trend_signal']:
+                if key in previous_indicators:
+                    all_indicators[key] = previous_indicators[key]
 
         if all_indicators:
             indicator_data = IndicatorData(
@@ -75,31 +89,7 @@ class TickerService:
             )
             self.indicators_repo.save(indicator_data)
 
-        # 2. Вычисляем индикаторы если достаточно данных
-        if len(self.price_history_cache) >= 50:
-            # Быстрые индикаторы
-            fast_indicators = self.indicator_calculator.calculate_fast_indicators(
-                self.price_history_cache, ticker.symbol
-            )
-
-            # Средние индикаторы (каждые 10 тиков)
-            medium_indicators = self.indicator_calculator.calculate_medium_indicators(
-                self.price_history_cache, ticker.symbol
-            )
-
-            # Тяжелые индикаторы (MACD)
-            heavy_indicators = self.indicator_calculator.calculate_heavy_indicators(
-                self.price_history_cache, ticker.symbol
-            )
-
-            # Объединяем все сигналы
-            all_signals = {}
-            all_signals.update(fast_indicators.values)
-            all_signals.update(medium_indicators.values)
-            all_signals.update(heavy_indicators.values)
-
-            ticker.update_signals(all_signals)
-
+        # Update ticker with signals and save to repository
         ticker.update_signals(all_indicators)
         self.tickers_repo.save(ticker)
 
