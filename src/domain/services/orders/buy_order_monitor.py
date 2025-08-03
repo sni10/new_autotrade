@@ -28,7 +28,8 @@ class BuyOrderMonitor:
         exchange_connector: CcxtExchangeConnector,
         max_age_minutes: float = 15.0,
         max_price_deviation_percent: float = 3.0,
-        check_interval_seconds: int = 60
+        check_interval_seconds: int = 60,
+        grace_period_seconds: int = 60  # Период ожидания перед проверкой новых ордеров
     ):
         self.order_service = order_service
         self.deal_service = deal_service # ❗️ ДОБАВЛЕНО
@@ -36,6 +37,7 @@ class BuyOrderMonitor:
         self.max_age_minutes = max_age_minutes
         self.max_price_deviation_percent = max_price_deviation_percent
         self.check_interval_seconds = check_interval_seconds
+        self.grace_period_seconds = grace_period_seconds
         
         self.running = False
         self.stats = {
@@ -96,7 +98,15 @@ class BuyOrderMonitor:
                 return
             
             for order in buy_orders:
-                # КРИТИЧНО: Обновляем статус с биржи ПЕРЕД проверкой
+                # Проверяем возраст ордера для определения необходимости проверки статуса
+                age_seconds = self._get_order_age_seconds(order)
+                
+                # Пропускаем проверку статуса для новых ордеров (в пределах grace period)
+                if age_seconds < self.grace_period_seconds:
+                    logger.debug(f"⏳ BUY {order.order_id}: пропускаем проверку статуса (возраст {age_seconds:.1f}с < {self.grace_period_seconds}с)")
+                    continue
+                
+                # КРИТИЧНО: Обновляем статус с биржи ТОЛЬКО после grace period
                 updated_order = await self.order_service.get_order_status(order)
                 
                 # Детальное логирование состояния ордера
@@ -132,6 +142,30 @@ class BuyOrderMonitor:
             
             # Сбрасываем счетчик тихих проверок
             self.quiet_checks_count = 0
+
+    def _get_order_age_seconds(self, order: Order) -> float:
+        """Вычисляет возраст ордера в секундах"""
+        try:
+            current_time = int(time.time() * 1000)
+            
+            # Безопасное преобразование created_at к int (миллисекунды)
+            if hasattr(order.created_at, 'timestamp'):
+                # Если это pandas Timestamp, конвертируем в миллисекунды
+                created_at_ms = int(order.created_at.timestamp() * 1000)
+            elif isinstance(order.created_at, (int, float)):
+                # Если это уже число, используем как есть
+                created_at_ms = int(order.created_at)
+            else:
+                # Fallback: возвращаем 0 (ордер считается новым)
+                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
+                return 0.0
+            
+            age_seconds = (current_time - created_at_ms) / 1000
+            return max(0.0, age_seconds)  # Не может быть отрицательным
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка вычисления возраста ордера {order.order_id}: {e}")
+            return 0.0
 
     def _get_order_age_minutes(self, order: Order) -> float:
         """Вычисляет возраст ордера в минутах"""

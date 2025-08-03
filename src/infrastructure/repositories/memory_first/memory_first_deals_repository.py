@@ -24,8 +24,9 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
     - Автоматическое восстановление после перезапуска
     """
     
-    def __init__(self, persistent_provider=None):
+    def __init__(self, persistent_provider=None, orders_repository=None):
         super().__init__(persistent_provider)
+        self.orders_repository = orders_repository
         self._initialize_dataframe()
         
         # Загружаем существующие данные из БД при инициализации
@@ -119,8 +120,32 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
         deal.updated_at = data.get('updated_at')
         deal.profit = data.get('profit', 0.0)
         
-        # TODO: Загрузка связанных ордеров (buy_order, sell_order)
-        # Это потребует интеграции с OrdersRepository
+        # Загрузка связанных ордеров (buy_order, sell_order)
+        if self.orders_repository:
+            buy_order_id = data.get('buy_order_id')
+            sell_order_id = data.get('sell_order_id')
+            
+            if buy_order_id:
+                try:
+                    buy_order = self.orders_repository.get_by_id(buy_order_id)
+                    if buy_order:
+                        deal.buy_order = buy_order
+                        logger.debug(f"✅ Loaded buy_order {buy_order_id} for deal {deal.deal_id}")
+                    else:
+                        logger.debug(f"⚠️ Buy order {buy_order_id} not found for deal {deal.deal_id}")
+                except Exception as e:
+                    logger.warning(f"❌ Error loading buy_order {buy_order_id} for deal {deal.deal_id}: {e}")
+            
+            if sell_order_id:
+                try:
+                    sell_order = self.orders_repository.get_by_id(sell_order_id)
+                    if sell_order:
+                        deal.sell_order = sell_order
+                        logger.debug(f"✅ Loaded sell_order {sell_order_id} for deal {deal.deal_id}")
+                    else:
+                        logger.debug(f"⚠️ Sell order {sell_order_id} not found for deal {deal.deal_id}")
+                except Exception as e:
+                    logger.warning(f"❌ Error loading sell_order {sell_order_id} for deal {deal.deal_id}: {e}")
         
         return deal
     
@@ -154,9 +179,23 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
                 self.df['status'] = self.df['status'].astype(pd.CategoricalDtype(categories=status_categories))
                 self._optimize_dataframe_dtypes()
             else:
-                # Используем pd.concat с ignore_index для избежания warnings
-                new_row_df = pd.DataFrame([deal_data])
-                self.df = pd.concat([self.df, new_row_df], ignore_index=True)
+                # ОПТИМИЗИРОВАННАЯ версия: Быстрое добавление строки без дорогих операций
+                # Используем loc для прямого добавления строки - намного быстрее чем concat
+                new_index = len(self.df)
+                
+                # Добавляем строку напрямую через loc - избегаем concat и type conversions
+                for col in self.df.columns:
+                    if col in deal_data:
+                        value = deal_data[col]
+                        # Быстрая конвертация datetime значений для избежания FutureWarning
+                        if col in ['created_at', 'updated_at', 'closed_at'] and value is not None:
+                            if isinstance(value, (int, float)):
+                                # Конвертируем timestamp в datetime
+                                value = pd.to_datetime(value, unit='ms')
+                        self.df.loc[new_index, col] = value
+                    else:
+                        # Используем pd.NA для отсутствующих значений - pandas сам определит правильный тип
+                        self.df.loc[new_index, col] = pd.NA
         
         # Фоновая синхронизация с PostgreSQL (не блокирует торговлю)
         if self.persistent_provider:
@@ -418,7 +457,7 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
                 if self.df.empty:
                     self.df = new_deals_df
                 else:
-                    self.df = pd.concat([self.df, new_deals_df], ignore_index=True)
+                    self.df = pd.concat([self.df, new_deals_df], ignore_index=True, sort=False)
             
             if not self.df.empty:
                 self._update_next_id_from_dataframe()

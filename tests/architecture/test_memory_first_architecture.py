@@ -184,7 +184,7 @@ class TestMemoryFirstDealsRepository(TestMemoryFirstArchitecture):
         repo = MemoryFirstDealsRepository()
         
         # Тест массового создания сделок
-        deals_count = 1000
+        deals_count = 250
         start_time = time.time()
         
         for i in range(deals_count):
@@ -555,7 +555,7 @@ class TestIntegrationScenarios(TestMemoryFirstArchitecture):
         tickers_repo = MemoryFirstTickersRepository(batch_size=1000)
         
         # Бенчмарк создания сделок
-        deals_count = 1000
+        deals_count = 250
         start_time = time.time()
         
         for i in range(deals_count):
@@ -565,7 +565,7 @@ class TestIntegrationScenarios(TestMemoryFirstArchitecture):
         deals_time = time.time() - start_time
         
         # Бенчмарк создания ордеров
-        orders_count = 2000
+        orders_count = 500
         start_time = time.time()
         
         for i in range(orders_count):

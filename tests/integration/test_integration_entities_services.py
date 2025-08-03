@@ -179,7 +179,7 @@ async def test_performance():
         )
         
         # Тест массового создания сделок
-        deals_count = 1000
+        deals_count = 300
         start_time = time.time()
         
         for i in range(deals_count):

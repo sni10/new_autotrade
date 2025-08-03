@@ -1,6 +1,7 @@
 # src/domain/services/deals/deal_completion_monitor.py
 import asyncio
 import logging
+import time
 from typing import List
 
 from domain.services.deals.deal_service import DealService
@@ -17,10 +18,11 @@ class DealCompletionMonitor:
     логирует их статус и закрывает сделку в случае полного исполнения.
     """
 
-    def __init__(self, deal_service: DealService, order_service: OrderService, check_interval_seconds: int = 30):
+    def __init__(self, deal_service: DealService, order_service: OrderService, check_interval_seconds: int = 30, grace_period_seconds: int = 60):
         self.deal_service = deal_service
         self.order_service = order_service
         self.check_interval_seconds = check_interval_seconds
+        self.grace_period_seconds = grace_period_seconds
         self.stats = {
             "checks_performed": 0,
             "deals_monitored": 0,
@@ -93,9 +95,25 @@ class DealCompletionMonitor:
             buy_order = buy_orders[0]
             sell_order = sell_orders[0]
             
-            # КРИТИЧНО: Обновляем статусы с биржи ПЕРЕД проверкой
-            updated_buy = await self.order_service.get_order_status(buy_order)
-            updated_sell = await self.order_service.get_order_status(sell_order) if sell_order.exchange_id else sell_order
+            # КРИТИЧНО: Обновляем статусы с биржи ПЕРЕД проверкой, но с учетом grace period
+            # Проверяем возраст buy ордера
+            buy_age_seconds = self._get_order_age_seconds(buy_order)
+            if buy_age_seconds < self.grace_period_seconds:
+                logger.debug(f"⏳ BUY {buy_order.order_id}: пропускаем проверку статуса (возраст {buy_age_seconds:.1f}с < {self.grace_period_seconds}с)")
+                updated_buy = buy_order  # Используем текущий статус без обновления
+            else:
+                updated_buy = await self.order_service.get_order_status(buy_order)
+            
+            # Проверяем возраст sell ордера (если он есть на бирже)
+            if sell_order.exchange_id:
+                sell_age_seconds = self._get_order_age_seconds(sell_order)
+                if sell_age_seconds < self.grace_period_seconds:
+                    logger.debug(f"⏳ SELL {sell_order.order_id}: пропускаем проверку статуса (возраст {sell_age_seconds:.1f}с < {self.grace_period_seconds}с)")
+                    updated_sell = sell_order  # Используем текущий статус без обновления
+                else:
+                    updated_sell = await self.order_service.get_order_status(sell_order)
+            else:
+                updated_sell = sell_order
             
             # Детальная аналитика состояния сделки
             buy_fill = updated_buy.get_fill_percentage() if hasattr(updated_buy, 'get_fill_percentage') else 0.0
@@ -141,3 +159,27 @@ class DealCompletionMonitor:
     def get_statistics(self) -> dict:
         """Возвращает статистику работы монитора."""
         return self.stats
+
+    def _get_order_age_seconds(self, order: Order) -> float:
+        """Вычисляет возраст ордера в секундах"""
+        try:
+            current_time = int(time.time() * 1000)
+            
+            # Безопасное преобразование created_at к int (миллисекунды)
+            if hasattr(order.created_at, 'timestamp'):
+                # Если это pandas Timestamp, конвертируем в миллисекунды
+                created_at_ms = int(order.created_at.timestamp() * 1000)
+            elif isinstance(order.created_at, (int, float)):
+                # Если это уже число, используем как есть
+                created_at_ms = int(order.created_at)
+            else:
+                # Fallback: возвращаем 0 (ордер считается новым)
+                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
+                return 0.0
+            
+            age_seconds = (current_time - created_at_ms) / 1000
+            return max(0.0, age_seconds)  # Не может быть отрицательным
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка вычисления возраста ордера {order.order_id}: {e}")
+            return 0.0

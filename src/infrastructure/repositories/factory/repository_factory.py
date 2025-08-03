@@ -48,6 +48,9 @@ class RepositoryFactory:
         self.config = load_config()
         self.persistent_provider = None
         self._initialized = False
+        # Repository instances for cross-references
+        self._deals_repository = None
+        self._orders_repository = None
         
     async def initialize(self):
         """Инициализация фабрики и подключений"""
@@ -172,6 +175,10 @@ class RepositoryFactory:
     
     async def get_deals_repository(self) -> IDealsRepository:
         """Создает репозиторий сделок (АТОМАРНЫЕ ДАННЫЕ)"""
+        # Return existing instance if already created
+        if self._deals_repository:
+            return self._deals_repository
+            
         storage_type = self.config.get("storage", {}).get("deals_type", "memory_first_postgres")
         
         try:
@@ -179,12 +186,20 @@ class RepositoryFactory:
                 if not self._initialized:
                     await self.initialize()
                 
-                repo = MemoryFirstDealsRepository(self.persistent_provider)
-                logger.info("✅ Created MemoryFirstDealsRepository")
+                # Get orders repository if available for cross-reference
+                orders_repo = self._orders_repository
+                if not orders_repo:
+                    # Try to create orders repository first
+                    orders_repo = await self.get_orders_repository()
+                
+                repo = MemoryFirstDealsRepository(self.persistent_provider, orders_repo)
+                self._deals_repository = repo
+                logger.info("✅ Created MemoryFirstDealsRepository with orders repository reference")
                 return repo
                 
             elif storage_type == "in_memory_legacy":
                 repo = InMemoryDealsRepository()
+                self._deals_repository = repo
                 logger.info("✅ Created InMemoryDealsRepository (legacy)")
                 return repo
                 
@@ -195,10 +210,16 @@ class RepositoryFactory:
             logger.error(f"❌ Failed to create deals repository: {e}")
             # Fallback на legacy репозиторий
             logger.warning("🔄 Falling back to InMemoryDealsRepository")
-            return InMemoryDealsRepository()
+            repo = InMemoryDealsRepository()
+            self._deals_repository = repo
+            return repo
     
     async def get_orders_repository(self) -> IOrdersRepository:
         """Создает репозиторий ордеров (АТОМАРНЫЕ ДАННЫЕ)"""
+        # Return existing instance if already created
+        if self._orders_repository:
+            return self._orders_repository
+            
         storage_type = self.config.get("storage", {}).get("orders_type", "memory_first_postgres")
         
         try:
@@ -207,11 +228,20 @@ class RepositoryFactory:
                     await self.initialize()
                 
                 repo = MemoryFirstOrdersRepository(self.persistent_provider)
+                self._orders_repository = repo
                 logger.info("✅ Created MemoryFirstOrdersRepository")
+                
+                # If deals repository already exists and needs orders repository reference, update it
+                if self._deals_repository and hasattr(self._deals_repository, 'orders_repository'):
+                    if not self._deals_repository.orders_repository:
+                        self._deals_repository.orders_repository = repo
+                        logger.info("✅ Updated deals repository with orders repository reference")
+                
                 return repo
                 
             elif storage_type == "in_memory_legacy":
                 repo = InMemoryOrdersRepository(max_orders=50000)
+                self._orders_repository = repo
                 logger.info("✅ Created InMemoryOrdersRepository (legacy)")
                 return repo
                 
@@ -222,7 +252,9 @@ class RepositoryFactory:
             logger.error(f"❌ Failed to create orders repository: {e}")
             # Fallback на legacy репозиторий
             logger.warning("🔄 Falling back to InMemoryOrdersRepository")
-            return InMemoryOrdersRepository(max_orders=50000)
+            repo = InMemoryOrdersRepository(max_orders=50000)
+            self._orders_repository = repo
+            return repo
     
     async def get_tickers_repository(self) -> ITickersRepository:
         """Создает репозиторий тикеров (ПОТОКОВЫЕ ДАННЫЕ)"""

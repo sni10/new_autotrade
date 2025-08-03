@@ -165,6 +165,7 @@ class MemoryFirstOrdersRepository(MemoryFirstRepository[Order], IOrdersRepositor
     def get_open_orders(self) -> List[Order]:
         """Получение открытых ордеров из DataFrame"""
         # ИСПРАВЛЕНИЕ: Добавлен статус 'open' для корректной работы BuyOrderMonitor
+        # Исключаем ордера, которые не найдены на бирже
         open_statuses = ['NEW', 'PARTIALLY_FILLED', 'open']
         open_mask = self.df['status'].isin(open_statuses)
         open_rows = self.df[open_mask]

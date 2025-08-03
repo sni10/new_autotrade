@@ -69,6 +69,12 @@ class OrderService:
                     # Если это все-таки словарь, используем update_from_exchange
                     order.update_from_exchange(exchange_order)
             self.orders_repo.save(order)
+        except ccxt.OrderNotFound as e:
+            # Ордер не существует на бирже - помечаем как не найденный на бирже
+            logger.warning(f"Order {order.order_id} no longer exists on exchange, marking as NOT_FOUND_ON_EXCHANGE: {e}")
+            order.status = Order.STATUS_NOT_FOUND_ON_EXCHANGE
+            order.error_message = f"Order not found on exchange: {str(e)}"
+            self.orders_repo.save(order)
         except Exception as e:
             logger.error(f"Error checking order status for {order.order_id}: {e}")
         return order
