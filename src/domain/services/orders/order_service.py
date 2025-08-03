@@ -3,14 +3,14 @@ import logging
 from typing import Optional, List
 from domain.entities.order import Order, OrderExecutionResult
 from domain.factories.order_factory import OrderFactory
-from infrastructure.repositories.orders_repository import OrdersRepository
+from infrastructure.repositories.interfaces.orders_repository_interface import IOrdersRepository
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 import ccxt
 
 logger = logging.getLogger(__name__)
 
 class OrderService:
-    def __init__(self, orders_repo: OrdersRepository, order_factory: OrderFactory, exchange_connector: CcxtExchangeConnector):
+    def __init__(self, orders_repo: IOrdersRepository, order_factory: OrderFactory, exchange_connector: CcxtExchangeConnector):
         self.orders_repo = orders_repo
         self.order_factory = order_factory
         self.exchange_connector = exchange_connector
@@ -110,6 +110,3 @@ class OrderService:
             'cancelled_orders': len([o for o in all_orders if o.status == 'CANCELLED']),
             'failed_orders': len([o for o in all_orders if o.status == 'FAILED'])
         }
-
-    def get_open_orders(self) -> List[Order]: return self.orders_repo.get_open_orders()
-    def get_order_by_id(self, order_id: int) -> Optional[Order]: return self.orders_repo.get_by_id(order_id)

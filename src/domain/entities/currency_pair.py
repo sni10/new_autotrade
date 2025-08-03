@@ -67,4 +67,4 @@ class CurrencyPair:
     def __repr__(self):
         return (f"<CurrencyPair(symbol={self.symbol}, "
                 f"order_life_time={self.order_life_time}, "
-                )
+                f"deal_quota={self.deal_quota})>")

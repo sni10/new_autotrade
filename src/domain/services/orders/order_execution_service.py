@@ -24,37 +24,61 @@ class OrderExecutionService:
         self.order_service = order_service
         self.deal_service = deal_service
         self.exchange_connector = exchange_connector
+        # Статистика выполнений
+        self.stats = {
+            "total_executions": 0,
+            "successful_executions": 0,
+            "failed_executions": 0,
+            "total_volume": 0.0,
+            "total_fees": 0.0
+        }
 
     async def execute_trading_strategy(self, currency_pair: CurrencyPair, strategy_result: Any) -> ExecutionReport:
         try:
+            # Увеличиваем счетчик попыток выполнения
+            self.stats["total_executions"] += 1
+            
             is_valid, validation_error = self._validate_strategy_input(strategy_result)
             if not is_valid:
+                self.stats["failed_executions"] += 1
                 return ExecutionReport(success=False, error_message=f"Input validation failed: {validation_error}")
 
             buy_price, buy_amount, sell_price, sell_amount, _ = strategy_result
             
             can_trade, reason, _ = await self.exchange_connector.check_sufficient_balance(currency_pair.symbol, 'buy', buy_amount, buy_price)
             if not can_trade:
+                self.stats["failed_executions"] += 1
                 return ExecutionReport(success=False, error_message=f"Pre-execution check failed: {reason}")
 
             deal = self.deal_service.create_new_deal(currency_pair)
             
             buy_exec_result = await self.order_service.create_and_place_buy_order(currency_pair.symbol, buy_amount, buy_price, deal.deal_id)
             if not buy_exec_result.success:
+                self.stats["failed_executions"] += 1
                 return ExecutionReport(success=False, deal_id=deal.deal_id, error_message=f"BUY order failed: {buy_exec_result.error_message}")
 
             sell_exec_result = await self.order_service.create_local_sell_order(currency_pair.symbol, sell_amount, sell_price, deal.deal_id)
             if not sell_exec_result.success:
                 await self.order_service.cancel_order(buy_exec_result.order)
+                self.stats["failed_executions"] += 1
                 return ExecutionReport(success=False, deal_id=deal.deal_id, buy_order=buy_exec_result.order, error_message=f"Local SELL order creation failed: {sell_exec_result.error_message}")
 
             deal.attach_orders(buy_exec_result.order, sell_exec_result.order)
             self.deal_service.deals_repo.save(deal)
             
+            # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Сохраняем обновленные ордера с правильным deal_id
+            self.order_service.orders_repo.save(buy_exec_result.order)
+            self.order_service.orders_repo.save(sell_exec_result.order)
+            
+            # Обновляем статистику успешного выполнения
+            self.stats["successful_executions"] += 1
+            
             return ExecutionReport(success=True, deal_id=deal.deal_id, buy_order=buy_exec_result.order, sell_order=sell_exec_result.order)
 
         except Exception as e:
             logger.error(f"Strategy execution failed: {e}", exc_info=True)
+            # Обновляем статистику неудачных выполнений (total_executions уже увеличен в начале метода)
+            self.stats["failed_executions"] += 1
             return ExecutionReport(success=False, error_message=f"Unexpected error: {str(e)}")
 
     def _validate_strategy_input(self, strategy_result: Any) -> Tuple[bool, str]:
@@ -82,19 +106,18 @@ class OrderExecutionService:
 
     def get_execution_statistics(self) -> Dict[str, Any]:
         """
-        TODO: Реализовать статистику исполнения ордеров после интеграции с БД.
-        Метод должен возвращать:
-        - orders_created, orders_filled, orders_cancelled
-        - success_rate, average_execution_time
-        - error_counts, etc.
+        Возвращает статистику исполнения торговых стратегий.
         """
+        success_rate = 0.0
+        if self.stats["total_executions"] > 0:
+            success_rate = (self.stats["successful_executions"] / self.stats["total_executions"]) * 100
+        
         return {
-            "total_executions": 0,
-            "successful_executions": 0,
-            "failed_executions": 0,
-            "success_rate": 0.0,
-            "total_volume": 0.0,
-            "total_fees": 0.0,
-            "average_execution_time_ms": 0.0,
-            "warnings": ["Метод пока не реализован - это заглушка"]
+            "total_executions": self.stats["total_executions"],
+            "successful_executions": self.stats["successful_executions"],
+            "failed_executions": self.stats["failed_executions"],
+            "success_rate": success_rate,
+            "total_volume": self.stats["total_volume"],
+            "total_fees": self.stats["total_fees"],
+            "average_execution_time_ms": 0.0  # TODO: Добавить измерение времени выполнения
         }

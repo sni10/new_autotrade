@@ -38,9 +38,8 @@ from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
 from domain.services.risk.stop_loss_monitor import StopLossMonitor
 from domain.services.deals.deal_completion_monitor import DealCompletionMonitor
 
-# Репозитории (память, кеш, файлы - НЕ база данных)
-from infrastructure.repositories.deals_repository import InMemoryDealsRepository
-from infrastructure.repositories.orders_repository import InMemoryOrdersRepository
+# Новая двухуровневая архитектура репозиториев (DataFrame + PostgreSQL/Parquet)
+from infrastructure.repositories.factory.repository_factory import RepositoryFactory
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from config.config_loader import load_config
 from application.use_cases.run_realtime_trading import run_realtime_trading
@@ -111,6 +110,7 @@ async def main():
     deal_completion_monitor = None
     pro_exchange_connector_prod = None
     pro_exchange_connector_sandbox = None
+    repository_factory = None
     
     try:
         # 1. Инициализация коннекторов
@@ -118,10 +118,16 @@ async def main():
         pro_exchange_connector_sandbox = CcxtExchangeConnector(use_sandbox=True)
         logger.info("✅ Коннекторы инициализированы (Production, Sandbox)")
         
-        # 2. Инициализация репозиториев (память, НЕ база данных)
-        deals_repo = InMemoryDealsRepository()
-        orders_repo = InMemoryOrdersRepository(max_orders=50000)
-        logger.info("✅ Репозитории созданы (InMemory)")
+        # 2. Инициализация двухуровневой архитектуры репозиториев (DataFrame + PostgreSQL/Parquet)
+        repository_factory = RepositoryFactory()
+        await repository_factory.initialize()
+        
+        deals_repo = await repository_factory.get_deals_repository()
+        orders_repo = await repository_factory.get_orders_repository()
+        
+        storage_info = repository_factory.get_storage_info()
+        logger.info(f"✅ Репозитории созданы: {storage_info['deals_type']}, {storage_info['orders_type']}")
+        logger.info(f"📊 PostgreSQL: {'✅' if storage_info['postgresql_available'] else '❌'}")
         
         # 3. Инициализация фабрик с exchange info
         order_factory = OrderFactory()
@@ -154,13 +160,21 @@ async def main():
         
         # 6. Инициализация мониторинга
         buy_order_monitor_cfg = config.get("buy_order_monitor", {})
+        
+        # Извлекаем параметры из конфига с правильными дефолтными значениями
+        max_age_minutes = buy_order_monitor_cfg.get("max_age_minutes", 5.0)  # ИСПРАВЛЕНО: было 15.0
+        max_price_deviation_percent = buy_order_monitor_cfg.get("max_price_deviation_percent", 3.0)
+        check_interval_seconds = buy_order_monitor_cfg.get("check_interval_seconds", 10)
+        
+        logger.info(f"🔧 BuyOrderMonitor настройки: max_age={max_age_minutes}мин, deviation={max_price_deviation_percent}%, interval={check_interval_seconds}с")
+        
         buy_order_monitor = BuyOrderMonitor(
             order_service=order_service,
             deal_service=deal_service,
             exchange_connector=pro_exchange_connector_sandbox,
-            max_age_minutes=buy_order_monitor_cfg.get("max_age_minutes", 15.0),
-            max_price_deviation_percent=buy_order_monitor_cfg.get("max_price_deviation_percent", 3.0),
-            check_interval_seconds=buy_order_monitor_cfg.get("check_interval_seconds", 10)
+            max_age_minutes=max_age_minutes,
+            max_price_deviation_percent=max_price_deviation_percent,
+            check_interval_seconds=check_interval_seconds
         )
         asyncio.create_task(buy_order_monitor.start_monitoring())
         logger.info("✅ BuyOrderMonitor запущен")
@@ -237,6 +251,9 @@ async def main():
             await pro_exchange_connector_prod.close()
         if pro_exchange_connector_sandbox:
             await pro_exchange_connector_sandbox.close()
+        if repository_factory:
+            await repository_factory.close()
+            logger.info("✅ RepositoryFactory закрыт")
         logger.info("👋 AutoTrade завершен")
 
 if __name__ == "__main__":

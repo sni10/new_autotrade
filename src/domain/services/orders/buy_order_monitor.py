@@ -70,18 +70,20 @@ class BuyOrderMonitor:
     async def check_stale_buy_orders(self):
         """Проверка всех открытых BUY ордеров на протухание"""
         try:
+            # ИСПРАВЛЕНИЕ: Увеличиваем счетчик проверок в начале метода
+            self.stats['checks_performed'] += 1
+            
             # Получаем все открытые ордера
             open_orders = self.order_service.get_open_orders()
             
             # Фильтруем только BUY ордера
             buy_orders = [order for order in open_orders if order.side == Order.SIDE_BUY]
             
-            if not buy_orders:
-                return
-                
-            self.stats['checks_performed'] += 1
+            logger.debug(f"🔍 Проверяем {len(buy_orders)} открытых BUY ордеров (всего открытых: {len(open_orders)})")
             
-            logger.debug(f"🔍 Проверяем {len(buy_orders)} открытых BUY ордеров")
+            if not buy_orders:
+                logger.debug("ℹ️ Нет открытых BUY ордеров для проверки")
+                return
             
             for order in buy_orders:
                 is_stale, reason = await self._is_order_stale(order)
@@ -96,7 +98,20 @@ class BuyOrderMonitor:
         try:
             # 1. Проверка возраста
             current_time = int(time.time() * 1000)
-            age_minutes = (current_time - order.created_at) / 1000 / 60
+            
+            # ИСПРАВЛЕНИЕ: Безопасное преобразование created_at к int (миллисекунды)
+            if hasattr(order.created_at, 'timestamp'):
+                # Если это pandas Timestamp, конвертируем в миллисекунды
+                created_at_ms = int(order.created_at.timestamp() * 1000)
+            elif isinstance(order.created_at, (int, float)):
+                # Если это уже число, используем как есть
+                created_at_ms = int(order.created_at)
+            else:
+                # Fallback: используем текущее время (ордер будет считаться новым)
+                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
+                created_at_ms = current_time
+            
+            age_minutes = (current_time - created_at_ms) / 1000 / 60
             
             if age_minutes > self.max_age_minutes:
                 reason = f"🕒 BUY ордер {order.order_id} протух по времени: {age_minutes:.1f} мин"
@@ -190,6 +205,11 @@ class BuyOrderMonitor:
     async def _update_related_sell_order(self, deal, new_buy_order: Order):
         """Находит связанный PENDING SELL и обновляет его параметры."""
         try:
+            # ИСПРАВЛЕНИЕ: Проверяем, что deal.sell_order не None
+            if not deal.sell_order:
+                logger.warning(f"Сделка {deal.deal_id} не имеет связанного SELL ордера. Нечего обновлять.")
+                return
+                
             pending_sell = self.order_service.get_order_by_id(deal.sell_order.order_id)
             
             if not pending_sell or not pending_sell.is_pending():

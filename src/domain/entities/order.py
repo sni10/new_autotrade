@@ -113,7 +113,8 @@ class Order:
 
     def is_filled(self) -> bool:
         """Ордер полностью исполнен"""
-        return self.status == self.STATUS_FILLED
+        # ИСПРАВЛЕНИЕ: Учитываем статус "closed" от биржи как исполненный ордер
+        return self.status in [self.STATUS_FILLED, 'closed']
 
     def is_partially_filled(self) -> bool:
         """Ордер частично исполнен"""
@@ -344,6 +345,10 @@ class Order:
         """
         Создает ордер из словаря, адаптируя ключи от ccxt.
         """
+        # Handle None input gracefully
+        if data is None:
+            raise ValueError("Cannot create Order from None data. Exchange may have returned None response.")
+        
         # Явная адаптация ключевых полей ccxt к полям нашего конструктора
         adapted_data = {
             'order_id': data.get('order_id') or data.get('id'),
@@ -364,7 +369,7 @@ class Order:
             'last_trade_timestamp': data.get('last_trade_timestamp') or data.get('lastTradeTimestamp'),
             'deal_id': data.get('deal_id'),
             'fees': cls._extract_fees_value(data),
-            'fee_currency': data.get('fee_currency') if data.get('fee_currency') is not None else data.get('fee', {}).get('currency'),
+            'fee_currency': data.get('fee_currency') if data.get('fee_currency') is not None else (data.get('fee') or {}).get('currency'),
             'trades': data.get('trades'),
             'exchange_raw_data': data.get('exchange_raw_data') or data.get('info'),
             'client_order_id': data.get('client_order_id') or data.get('clientOrderId'),

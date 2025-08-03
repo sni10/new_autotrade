@@ -4,7 +4,7 @@ from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-from infrastructure.repositories.deals_repository import DealsRepository
+from infrastructure.repositories.interfaces.deals_repository_interface import IDealsRepository
 from domain.services.orders.order_service import OrderService
 from typing import List, Optional
 import logging
@@ -20,7 +20,7 @@ class DealService:
     - Взаимодействие с OrderService для управления ордерами.
     """
 
-    def __init__(self, deals_repo: DealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
+    def __init__(self, deals_repo: IDealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
         self.deals_repo = deals_repo
         self.order_service = order_service
         self.deal_factory = deal_factory
@@ -48,24 +48,44 @@ class DealService:
 
     def open_buy_order(self, price, amount, deal_id):
         """
-        Проверяет и обрабатывает все открытые сделки.
+        Создает BUY ордер и связывает его со сделкой.
         """
         buy_order = self.order_service.create_buy_order(
             price, amount
         )
         buy_order.deal_id = deal_id
+        
+        # Связываем ордер со сделкой
+        deal = self.get_deal_by_id(deal_id)
+        if deal:
+            deal.buy_order = buy_order
+            self.deals_repo.save(deal)  # Сохраняем обновленную сделку
+            logger.info(f"✅ BUY Order linked to deal {deal_id}: {buy_order}")
+        else:
+            logger.warning(f"⚠️ Deal {deal_id} not found when linking BUY order")
+        
         logger.info(f"Create BUY Order: {buy_order}")
         return buy_order
 
 
     def open_sell_order(self, price, amount, deal_id):
         """
-        Проверяет и обрабатывает все открытые сделки.
+        Создает SELL ордер и связывает его со сделкой.
         """
         sell_order = self.order_service.create_sell_order(
             price, amount
         )
         sell_order.deal_id = deal_id
+        
+        # Связываем ордер со сделкой
+        deal = self.get_deal_by_id(deal_id)
+        if deal:
+            deal.sell_order = sell_order
+            self.deals_repo.save(deal)  # Сохраняем обновленную сделку
+            logger.info(f"✅ SELL Order linked to deal {deal_id}: {sell_order}")
+        else:
+            logger.warning(f"⚠️ Deal {deal_id} not found when linking SELL order")
+        
         logger.info(f"Create SELL Order: {sell_order}")
         return sell_order
 

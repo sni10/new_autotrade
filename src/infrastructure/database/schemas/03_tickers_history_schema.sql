@@ -1,12 +1,16 @@
 -- Схема для хранения истории тикеров
--- Содержит ключевые поля для индексации и поле 'data' типа JSONB
--- для хранения полного объекта Ticker.
+-- Обновлена для соответствия текущей структуре БД и требованиям кода
+-- Содержит все поля из текущей БД + обязательное поле 'data' типа JSONB
 CREATE TABLE IF NOT EXISTS tickers_history (
     id SERIAL PRIMARY KEY,
     symbol VARCHAR(20) NOT NULL,
     timestamp BIGINT NOT NULL,
-    last_price REAL NOT NULL,
+    last_price NUMERIC NOT NULL,
+    bid_price NUMERIC,
+    ask_price NUMERIC,
+    volume NUMERIC,
     data JSONB NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
     
     UNIQUE(symbol, timestamp)
 );

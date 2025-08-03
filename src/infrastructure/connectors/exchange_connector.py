@@ -110,12 +110,24 @@ class CcxtExchangeConnector:
             logger.info(f"📤 Creating {side.upper()} {order_type} order: {amount} {normalized_symbol} @ {price}")
             raw_order = await self.client.create_order(normalized_symbol, order_type, side, amount, price, params or {})
             
-            # Проверяем, что raw_order не None
+            # Проверяем, что raw_order не None и является словарем
             if raw_order is None:
-                raise Exception("Exchange returned None instead of order data")
+                error_msg = f"Exchange returned None for {side.upper()} {order_type} order: {amount} {normalized_symbol} @ {price}"
+                logger.error(f"❌ {error_msg}")
+                raise Exception(error_msg)
             
-            order_id = raw_order.get('id', 'N/A') if isinstance(raw_order, dict) else 'N/A'
+            if not isinstance(raw_order, dict):
+                error_msg = f"Exchange returned invalid data type {type(raw_order)} instead of dict for order"
+                logger.error(f"❌ {error_msg}")
+                raise Exception(error_msg)
+            
+            order_id = raw_order.get('id', 'N/A')
             logger.info(f"✅ Order created successfully: {order_id}")
+            
+            # Additional validation before creating Order object
+            if 'id' not in raw_order and 'order_id' not in raw_order:
+                logger.warning(f"⚠️ Order response missing ID field: {raw_order}")
+            
             return Order.from_dict(raw_order)
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds: {e}")
