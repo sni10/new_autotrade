@@ -341,9 +341,13 @@ class Order:
         return 0.0
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Order':
+    def from_dict(cls, data: Dict[str, Any], exchange_info: 'ExchangeInfo' = None) -> 'Order':
         """
         Создает ордер из словаря, адаптируя ключи от ccxt.
+        
+        Args:
+            data: Словарь с данными ордера
+            exchange_info: Опциональная информация о точности биржи для округления
         """
         # Handle None input gracefully
         if data is None:
@@ -392,7 +396,33 @@ class Order:
         if 'order_type' not in final_data:
             raise ValueError("'order_type' or 'type' is required to create an Order from dict")
 
-        return cls(**final_data)
+        # Создаем ордер
+        order = cls(**final_data)
+        
+        # Применяем округление если доступна информация о точности биржи
+        if exchange_info and data.get('symbol') == exchange_info.symbol:
+            import math
+            
+            # Округляем amount согласно step_size
+            if exchange_info.step_size and exchange_info.step_size > 0 and order.amount:
+                precision = len(str(exchange_info.step_size).split('.')[-1]) if '.' in str(exchange_info.step_size) else 0
+                steps = order.amount / exchange_info.step_size
+                steps = math.floor(steps)  # Округляем вниз для безопасности
+                order.amount = round(steps * exchange_info.step_size, precision)
+            
+            # Округляем price согласно tick_size
+            if exchange_info.tick_size and exchange_info.tick_size > 0 and order.price:
+                precision = len(str(exchange_info.tick_size).split('.')[-1]) if '.' in str(exchange_info.tick_size) else 0
+                order.price = round(order.price // exchange_info.tick_size * exchange_info.tick_size, precision)
+            
+            # Округляем filled_amount аналогично amount
+            if exchange_info.step_size and exchange_info.step_size > 0 and order.filled_amount:
+                precision = len(str(exchange_info.step_size).split('.')[-1]) if '.' in str(exchange_info.step_size) else 0
+                steps = order.filled_amount / exchange_info.step_size
+                steps = math.floor(steps)
+                order.filled_amount = round(steps * exchange_info.step_size, precision)
+        
+        return order
 
     def __repr__(self):
         fill_pct = self.get_fill_percentage() * 100

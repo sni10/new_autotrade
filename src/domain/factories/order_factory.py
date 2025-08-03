@@ -85,40 +85,48 @@ class OrderFactory:
     def create_buy_order(
         self,
         symbol: str,
-        amount: float,
-        price: float,
+        amount,  # Может быть float или Decimal
+        price,   # Может быть float или Decimal
         deal_id: Optional[int] = None,
         order_type: str = Order.TYPE_LIMIT,
         client_order_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Order:
         """
-        🛒 Создание BUY ордера с валидацией
+        🛒 Создание BUY ордера с валидацией и правильным округлением
 
         Args:
             symbol: Торговая пара (BTCUSDT)
-            amount: Количество для покупки
-            price: Цена покупки
+            amount: Количество для покупки (float или Decimal)
+            price: Цена покупки (float или Decimal)
             deal_id: ID связанной сделки
             order_type: Тип ордера (по умолчанию LIMIT)
             client_order_id: Клиентский ID
             metadata: Дополнительная информация
         """
 
+        # ИСПРАВЛЕНИЕ: Применяем правильное округление согласно параметрам биржи
+        adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=True)
+        adjusted_price = self.adjust_price_precision(symbol, float(price))
+
         # Добавляем метаданные для buy ордера
         buy_metadata = metadata or {}
         buy_metadata.update({
             'order_direction': 'entry',  # Вход в позицию
             'created_by': 'order_factory',
-            'creation_timestamp': int(time.time() * 1000)
+            'creation_timestamp': int(time.time() * 1000),
+            'original_amount': str(amount),  # Сохраняем оригинальные значения для отладки
+            'original_price': str(price),
+            'adjusted_amount': str(adjusted_amount),
+            'adjusted_price': str(adjusted_price)
         })
 
         return self._create_base_order(
             side=Order.SIDE_BUY,
             order_type=order_type,
             symbol=symbol,
-            amount=amount,
-            price=price,
+            amount=adjusted_amount,  # Используем округленные значения
+            price=adjusted_price,    # Используем округленные значения
             deal_id=deal_id,
             client_order_id=client_order_id,
             metadata=buy_metadata
@@ -127,40 +135,48 @@ class OrderFactory:
     def create_sell_order(
         self,
         symbol: str,
-        amount: float,
-        price: float,
+        amount,  # Может быть float или Decimal
+        price,   # Может быть float или Decimal
         deal_id: Optional[int] = None,
         order_type: str = Order.TYPE_LIMIT,
         client_order_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Order:
         """
-        🏷️ Создание SELL ордера с валидацией
+        🏷️ Создание SELL ордера с валидацией и правильным округлением
 
         Args:
             symbol: Торговая пара (BTCUSDT)
-            amount: Количество для продажи
-            price: Цена продажи
+            amount: Количество для продажи (float или Decimal)
+            price: Цена продажи (float или Decimal)
             deal_id: ID связанной сделки
             order_type: Тип ордера (по умолчанию LIMIT)
             client_order_id: Клиентский ID
             metadata: Дополнительная информация
         """
 
+        # ИСПРАВЛЕНИЕ: Применяем правильное округление согласно параметрам биржи
+        adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=False)  # SELL округляем вниз
+        adjusted_price = self.adjust_price_precision(symbol, float(price))
+
         # Добавляем метаданные для sell ордера
         sell_metadata = metadata or {}
         sell_metadata.update({
             'order_direction': 'exit',  # Выход из позиции
             'created_by': 'order_factory',
-            'creation_timestamp': int(time.time() * 1000)
+            'creation_timestamp': int(time.time() * 1000),
+            'original_amount': str(amount),  # Сохраняем оригинальные значения для отладки
+            'original_price': str(price),
+            'adjusted_amount': str(adjusted_amount),
+            'adjusted_price': str(adjusted_price)
         })
 
         return self._create_base_order(
             side=Order.SIDE_SELL,
             order_type=order_type,
             symbol=symbol,
-            amount=amount,
-            price=price,
+            amount=adjusted_amount,  # Используем округленные значения
+            price=adjusted_price,    # Используем округленные значения
             deal_id=deal_id,
             client_order_id=client_order_id,
             metadata=sell_metadata
@@ -169,24 +185,29 @@ class OrderFactory:
     def create_market_buy_order(
         self,
         symbol: str,
-        amount: float,
+        amount,  # Может быть float или Decimal
         deal_id: Optional[int] = None,
         client_order_id: Optional[str] = None
     ) -> Order:
         """
-        🛒 Создание MARKET BUY ордера (покупка по рынку)
+        🛒 Создание MARKET BUY ордера (покупка по рынку) с правильным округлением
         """
+        # ИСПРАВЛЕНИЕ: Применяем правильное округление для количества
+        adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=True)
+        
         metadata = {
             'order_direction': 'entry',
             'order_urgency': 'immediate',
-            'market_order': True
+            'market_order': True,
+            'original_amount': str(amount),
+            'adjusted_amount': str(adjusted_amount)
         }
 
         return self._create_base_order(
             side=Order.SIDE_BUY,
             order_type=Order.TYPE_MARKET,
             symbol=symbol,
-            amount=amount,
+            amount=adjusted_amount,  # Используем округленное значение
             price=0.0,  # Для market ордеров цена не нужна
             deal_id=deal_id,
             client_order_id=client_order_id,
@@ -196,24 +217,29 @@ class OrderFactory:
     def create_market_sell_order(
         self,
         symbol: str,
-        amount: float,
+        amount,  # Может быть float или Decimal
         deal_id: Optional[int] = None,
         client_order_id: Optional[str] = None
     ) -> Order:
         """
-        🏷️ Создание MARKET SELL ордера (продажа по рынку)
+        🏷️ Создание MARKET SELL ордера (продажа по рынку) с правильным округлением
         """
+        # ИСПРАВЛЕНИЕ: Применяем правильное округление для количества (SELL округляем вниз)
+        adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=False)
+        
         metadata = {
             'order_direction': 'exit',
             'order_urgency': 'immediate',
-            'market_order': True
+            'market_order': True,
+            'original_amount': str(amount),
+            'adjusted_amount': str(adjusted_amount)
         }
 
         return self._create_base_order(
             side=Order.SIDE_SELL,
             order_type=Order.TYPE_MARKET,
             symbol=symbol,
-            amount=amount,
+            amount=adjusted_amount,  # Используем округленное значение
             price=0.0,  # Для market ордеров цена не нужна
             deal_id=deal_id,
             client_order_id=client_order_id,
@@ -223,34 +249,41 @@ class OrderFactory:
     def create_stop_loss_order(
         self,
         symbol: str,
-        amount: float,
-        stop_price: float,
+        amount,  # Может быть float или Decimal
+        stop_price,  # Может быть float или Decimal
         deal_id: Optional[int] = None,
         client_order_id: Optional[str] = None
     ) -> Order:
         """
-        🛡️ Создание STOP LOSS ордера для защиты от убытков
+        🛡️ Создание STOP LOSS ордера для защиты от убытков с правильным округлением
 
         Args:
             symbol: Торговая пара
-            amount: Количество для продажи
-            stop_price: Цена срабатывания стоп-лосса
+            amount: Количество для продажи (float или Decimal)
+            stop_price: Цена срабатывания стоп-лосса (float или Decimal)
             deal_id: ID связанной сделки
             client_order_id: Клиентский ID
         """
+        # ИСПРАВЛЕНИЕ: Применяем правильное округление для amount и price
+        adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=False)  # SELL округляем вниз
+        adjusted_stop_price = self.adjust_price_precision(symbol, float(stop_price))
+        
         metadata = {
             'order_direction': 'exit',
             'order_purpose': 'stop_loss',
             'risk_management': True,
-            'stop_price': stop_price
+            'original_amount': str(amount),
+            'original_stop_price': str(stop_price),
+            'adjusted_amount': str(adjusted_amount),
+            'adjusted_stop_price': str(adjusted_stop_price)
         }
 
         return self._create_base_order(
             side=Order.SIDE_SELL,
             order_type=Order.TYPE_STOP_LOSS,
             symbol=symbol,
-            amount=amount,
-            price=stop_price,
+            amount=adjusted_amount,  # Используем округленные значения
+            price=adjusted_stop_price,  # Используем округленные значения
             deal_id=deal_id,
             client_order_id=client_order_id,
             metadata=metadata
@@ -259,34 +292,41 @@ class OrderFactory:
     def create_take_profit_order(
         self,
         symbol: str,
-        amount: float,
-        target_price: float,
+        amount,  # Может быть float или Decimal
+        target_price,  # Может быть float или Decimal
         deal_id: Optional[int] = None,
         client_order_id: Optional[str] = None
     ) -> Order:
         """
-        💰 Создание TAKE PROFIT ордера для фиксации прибыли
+        💰 Создание TAKE PROFIT ордера для фиксации прибыли с правильным округлением
 
         Args:
             symbol: Торговая пара
-            amount: Количество для продажи
-            target_price: Целевая цена прибыли
+            amount: Количество для продажи (float или Decimal)
+            target_price: Целевая цена прибыли (float или Decimal)
             deal_id: ID связанной сделки
             client_order_id: Клиентский ID
         """
+        # ИСПРАВЛЕНИЕ: Применяем правильное округление для amount и price
+        adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=False)  # SELL округляем вниз
+        adjusted_target_price = self.adjust_price_precision(symbol, float(target_price))
+        
         metadata = {
             'order_direction': 'exit',
             'order_purpose': 'take_profit',
             'profit_taking': True,
-            'target_price': target_price
+            'original_amount': str(amount),
+            'original_target_price': str(target_price),
+            'adjusted_amount': str(adjusted_amount),
+            'adjusted_target_price': str(adjusted_target_price)
         }
 
         return self._create_base_order(
             side=Order.SIDE_SELL,
             order_type=Order.TYPE_TAKE_PROFIT,
             symbol=symbol,
-            amount=amount,
-            price=target_price,
+            amount=adjusted_amount,  # Используем округленные значения
+            price=adjusted_target_price,  # Используем округленные значения
             deal_id=deal_id,
             client_order_id=client_order_id,
             metadata=metadata

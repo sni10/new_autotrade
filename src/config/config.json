@@ -49,7 +49,7 @@
     "min_time_between_recreations_minutes": 0.0
   },
   "currency_pair": {
-    "base_currency": "OM",
+    "base_currency": "ATM",
     "quote_currency": "USDT",
     "order_life_time": 1,
     "deal_quota": 25.0,

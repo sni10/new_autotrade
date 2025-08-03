@@ -44,6 +44,11 @@ class BuyOrderMonitor:
             'orders_cancelled': 0,
             'orders_recreated': 0
         }
+        
+        # Улучшенное логирование
+        self.quiet_checks_count = 0  # Счетчик "тихих" проверок
+        self.last_summary_time = 0   # Время последней сводки
+        self.summary_interval_minutes = 5  # Интервал сводки в минутах
 
     async def start_monitoring(self):
         """Запуск мониторинга в фоне"""
@@ -68,9 +73,8 @@ class BuyOrderMonitor:
         logger.info("🔴 Мониторинг BUY ордеров остановлен")
 
     async def check_stale_buy_orders(self):
-        """Проверка всех открытых BUY ордеров на протухание"""
+        """Активная проверка всех открытых BUY ордеров с синхронизацией биржи"""
         try:
-            # ИСПРАВЛЕНИЕ: Увеличиваем счетчик проверок в начале метода
             self.stats['checks_performed'] += 1
             
             # Получаем все открытые ордера
@@ -79,27 +83,62 @@ class BuyOrderMonitor:
             # Фильтруем только BUY ордера
             buy_orders = [order for order in open_orders if order.side == Order.SIDE_BUY]
             
-            logger.debug(f"🔍 Проверяем {len(buy_orders)} открытых BUY ордеров (всего открытых: {len(open_orders)})")
-            
-            if not buy_orders:
+            # Умное логирование: детально только при наличии ордеров
+            if buy_orders:
+                logger.info(f"🔍 МОНИТОРИНГ BUY: проверяем {len(buy_orders)} ордеров")
+                self.quiet_checks_count = 0  # Сбрасываем счетчик тихих проверок
+            else:
+                self.quiet_checks_count += 1
                 logger.debug("ℹ️ Нет открытых BUY ордеров для проверки")
+                
+                # Периодическая сводка вместо постоянного шума
+                await self._log_periodic_summary()
                 return
             
             for order in buy_orders:
-                is_stale, reason = await self._is_order_stale(order)
+                # КРИТИЧНО: Обновляем статус с биржи ПЕРЕД проверкой
+                updated_order = await self.order_service.get_order_status(order)
+                
+                # Детальное логирование состояния ордера
+                age_minutes = self._get_order_age_minutes(updated_order)
+                fill_percentage = updated_order.get_fill_percentage() if hasattr(updated_order, 'get_fill_percentage') else 0.0
+                
+                logger.info(f"📊 BUY {updated_order.order_id}: статус={updated_order.status}, "
+                           f"заполнено={fill_percentage:.1%}, возраст={age_minutes:.1f}мин")
+                
+                # Проверяем на "протухание"
+                is_stale, reason = await self._is_order_stale(updated_order)
                 if is_stale:
-                    await self._handle_stale_buy_order(order)
+                    logger.warning(f"🚨 ПРОТУХШИЙ BUY: {reason}")
+                    await self._handle_stale_buy_order(updated_order)
                     
         except Exception as e:
             logger.error(f"❌ Ошибка проверки BUY ордеров: {e}")
 
-    async def _is_order_stale(self, order: Order) -> Tuple[bool, str]:
-        """Проверяет протух ли BUY ордер"""
+    async def _log_periodic_summary(self):
+        """Периодическое логирование сводки вместо постоянного шума"""
+        current_time = time.time()
+        
+        # Проверяем, нужно ли выводить сводку
+        if (current_time - self.last_summary_time) >= (self.summary_interval_minutes * 60):
+            self.last_summary_time = current_time
+            
+            # Выводим информативную сводку
+            logger.info(f"📊 BUY МОНИТОР СВОДКА: "
+                       f"тихих проверок за {self.summary_interval_minutes}мин: {self.quiet_checks_count}, "
+                       f"всего проверок: {self.stats['checks_performed']}, "
+                       f"найдено тухляков: {self.stats['stale_orders_found']}, "
+                       f"пересоздано: {self.stats['orders_recreated']}")
+            
+            # Сбрасываем счетчик тихих проверок
+            self.quiet_checks_count = 0
+
+    def _get_order_age_minutes(self, order: Order) -> float:
+        """Вычисляет возраст ордера в минутах"""
         try:
-            # 1. Проверка возраста
             current_time = int(time.time() * 1000)
             
-            # ИСПРАВЛЕНИЕ: Безопасное преобразование created_at к int (миллисекунды)
+            # Безопасное преобразование created_at к int (миллисекунды)
             if hasattr(order.created_at, 'timestamp'):
                 # Если это pandas Timestamp, конвертируем в миллисекунды
                 created_at_ms = int(order.created_at.timestamp() * 1000)
@@ -107,133 +146,99 @@ class BuyOrderMonitor:
                 # Если это уже число, используем как есть
                 created_at_ms = int(order.created_at)
             else:
-                # Fallback: используем текущее время (ордер будет считаться новым)
+                # Fallback: возвращаем 0 (ордер считается новым)
                 logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
-                created_at_ms = current_time
+                return 0.0
             
             age_minutes = (current_time - created_at_ms) / 1000 / 60
+            return max(0.0, age_minutes)  # Не может быть отрицательным
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка вычисления возраста ордера {order.order_id}: {e}")
+            return 0.0
+
+    async def _is_order_stale(self, order: Order) -> Tuple[bool, str]:
+        """Упрощенная проверка протухания BUY ордера (как в версии 2.3.4)"""
+        try:
+            # 1. Проверка возраста ордера
+            age_minutes = self._get_order_age_minutes(order)
             
             if age_minutes > self.max_age_minutes:
-                reason = f"🕒 BUY ордер {order.order_id} протух по времени: {age_minutes:.1f} мин"
-                logger.info(reason)
+                reason = f"ордер {order.order_id} протух по времени: {age_minutes:.1f} мин > {self.max_age_minutes} мин"
                 return True, reason
             
-            # 2. Проверка отклонения цены
-            deal = self.deal_service.get_deal_by_id(order.deal_id)
-            if not deal:
-                reason = f"Критическая ошибка: не найдена сделка {order.deal_id} для ордера {order.order_id}!"
-                logger.error(reason)
-                return False, reason
-
-            ticker = await self.exchange.fetch_ticker(deal.symbol)
-            current_price = ticker.last
-            
-            # Для BUY: если рынок ушел выше нашей цены
-            price_deviation = ((current_price - order.price) / order.price) * 100
-            
-            if price_deviation > self.max_price_deviation_percent:
-                reason = f"📈 BUY ордер {order.order_id} протух по цене: рынок {current_price}, ордер {order.price} (+{price_deviation:.1f}%)"
-                logger.info(reason)
-                return True, reason
+            # 2. Простая проверка отклонения цены от рынка
+            try:
+                ticker = await self.exchange.fetch_ticker(order.symbol)
+                current_price = float(ticker.last)
+                
+                # Для BUY: если рынок ушел выше нашей цены
+                price_deviation = ((current_price - order.price) / order.price) * 100
+                
+                if price_deviation > self.max_price_deviation_percent:
+                    reason = f"ордер {order.order_id} протух по цене: рынок {current_price}, ордер {order.price} (+{price_deviation:.1f}%)"
+                    return True, reason
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ Не удалось проверить цену для {order.symbol}: {e}")
+                # Если не можем получить цену, проверяем только по времени
                 
             return False, ""
             
         except Exception as e:
-            reason = f"❌ Ошибка проверки ордера {order.order_id}: {e}"
-            logger.error(reason)
-            return False, reason
+            logger.error(f"❌ Ошибка проверки ордера {order.order_id}: {e}")
+            return False, ""
 
     async def _handle_stale_buy_order(self, order: Order):
-        """Обработка протухшего BUY ордера: отмена + пересоздание + обновление связанного SELL."""
+        """Простая обработка протухшего BUY ордера: отмена + пересоздание (как в версии 2.3.4)"""
         try:
             self.stats['stale_orders_found'] += 1
-            logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id} для сделки {order.deal_id}")
+            logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id}")
 
             # 1. Отменяем старый BUY ордер
             cancel_success = await self.order_service.cancel_order(order)
             if not cancel_success:
-                logger.error(f"❌ Не удалось отменить BUY о��дер {order.order_id}")
+                logger.error(f"❌ Не удалось отменить BUY ордер {order.order_id}")
                 return
+            
             self.stats['orders_cancelled'] += 1
             logger.info(f"✅ BUY ордер {order.order_id} отменен")
 
             # 2. Пересоздаем BUY ордер по новой цене
             new_buy_order = await self._recreate_buy_order(order)
             if not new_buy_order:
-                logger.error(f"❌ Не удалось пересоздать BUY ордер для сделки {order.deal_id}")
+                logger.error(f"❌ Не удалось пересоздать BUY ордер")
                 return
+                
             self.stats['orders_recreated'] += 1
-            logger.info(f"✅ BUY ордер пересоздан: {order.order_id} -> {new_buy_order.order_id} (Exchange ID: {new_buy_order.exchange_id})")
-
-            # 3. Обновляем сделку, привязывая к ней новый BUY ордер
-            deal = self.deal_service.get_deal_by_id(order.deal_id)
-            if not deal:
-                logger.error(f"Критическая ошибка: не найдена сделка {order.deal_id} для обновления!")
-                return
-            
-            deal.buy_order = new_buy_order
-            self.deal_service.deals_repo.save(deal)
-            logger.info(f"✅ Сделка {deal.deal_id} обновлена новым BUY ордером {new_buy_order.order_id}")
-
-            # 4. Находим и обновляем связанный PENDING SELL ордер
-            await self._update_related_sell_order(deal, new_buy_order)
+            logger.info(f"✅ BUY ордер пересоздан: {order.order_id} -> {new_buy_order.order_id}")
 
         except Exception as e:
             logger.error(f"❌ Ошибка обработки протухшего BUY ордера {order.order_id}: {e}", exc_info=True)
 
     async def _recreate_buy_order(self, old_order: Order) -> Optional[Order]:
-        """Пересоздание BUY ордера по текущей рыночной цене"""
+        """Простое пересоздание BUY ордера по текущей рыночной цене (как в версии 2.3.4)"""
         try:
-            deal = self.deal_service.get_deal_by_id(old_order.deal_id)
-            ticker = await self.exchange.fetch_ticker(deal.symbol)
-            new_price = ticker.last * 0.999
+            # Получаем текущую цену
+            ticker = await self.exchange.fetch_ticker(old_order.symbol)
+            new_price = float(ticker.last) * 0.999  # Небольшая скидка для быстрого исполнения
 
             logger.info(f"🔄 Пересоздаем BUY ордер: старая цена {old_order.price}, новая цена {new_price}")
 
+            # Создаем и размещаем новый ордер
             execution_result = await self.order_service.create_and_place_buy_order(
-                symbol=deal.symbol,
+                symbol=old_order.symbol,
                 amount=old_order.amount,
                 price=new_price,
                 deal_id=old_order.deal_id
             )
             
             return execution_result.order if execution_result.success else None
+            
         except Exception as e:
-            logger.error(f"❌ Ошибка ��ересоздания BUY ордера: {e}", exc_info=True)
+            logger.error(f"❌ Ошибка пересоздания BUY ордера: {e}", exc_info=True)
             return None
 
-    async def _update_related_sell_order(self, deal, new_buy_order: Order):
-        """Находит связанный PENDING SELL и обновляет его параметры."""
-        try:
-            # ИСПРАВЛЕНИЕ: Проверяем, что deal.sell_order не None
-            if not deal.sell_order:
-                logger.warning(f"Сделка {deal.deal_id} не имеет связанного SELL ордера. Нечего обновлять.")
-                return
-                
-            pending_sell = self.order_service.get_order_by_id(deal.sell_order.order_id)
-            
-            if not pending_sell or not pending_sell.is_pending():
-                logger.warning(f"Не найден PENDING SELL для сделки {deal.deal_id}. Нечего обновлять.")
-                return
-
-            # Пересчитываем цену и количество для SELL на основе нового BUY
-            # (Эта логика должна быть идентична той, что в TickerService/Strategy)
-            profit_markup = deal.currency_pair.profit_markup
-            new_sell_price = new_buy_order.price * (1 + profit_markup)
-            
-            # TODO: Пересчет количества, если есть комиссия в базовой валюте
-            new_sell_amount = new_buy_order.amount 
-
-            logger.info(f"🔄 Обновляем PENDING SELL ордер {pending_sell.order_id}: цена {pending_sell.price} -> {new_sell_price}, кол-во {pending_sell.amount} -> {new_sell_amount}")
-
-            pending_sell.price = new_sell_price
-            pending_sell.amount = new_sell_amount
-            
-            self.order_service.orders_repo.save(pending_sell)
-            logger.info(f"✅ PENDING SELL ордер {pending_sell.order_id} обновлен.")
-
-        except Exception as e:
-            logger.error(f"❌ Ошибка обновления связанного SELL ордера для сделки {deal.deal_id}: {e}", exc_info=True)
 
     def get_statistics(self) -> dict:
         """Получение статистики работы мониторинга"""

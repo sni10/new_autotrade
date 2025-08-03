@@ -46,13 +46,38 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
     
     def _optimize_dataframe_dtypes(self):
         """Оптимизация типов данных для экономии памяти"""
-        if not self.df.empty:
-            # Оптимизируем типы данных для лучшей производительности
-            self.df['deal_id'] = self.df['deal_id'].astype('int32')
-            self.df['deal_quota'] = self.df['deal_quota'].astype('float64')
-            self.df['profit'] = self.df['profit'].astype('float64')
-            self.df['status'] = self.df['status'].astype('category')
-            self.df['currency_pair'] = self.df['currency_pair'].astype('category')
+        # Устанавливаем типы данных даже для пустого DataFrame
+        dtypes = {
+            'deal_id': 'int64',  # Изменено с int32 на int64 для больших timestamp-based ID
+            'currency_pair': 'category',
+            'base_currency': 'category', 
+            'quote_currency': 'category',
+            'deal_quota': 'float64',
+            'status': 'category',
+            'created_at': 'datetime64[ns]',
+            'updated_at': 'datetime64[ns]',
+            'closed_at': 'datetime64[ns]',
+            'buy_order_id': 'Int64',  # Изменено с Int32 на Int64 для больших ID
+            'sell_order_id': 'Int64',  # Изменено с Int32 на Int64 для больших ID
+            'profit': 'float64'
+        }
+        
+        # Применяем типы данных к существующим колонкам
+        for col, dtype in dtypes.items():
+            if col in self.df.columns:
+                try:
+                    if dtype == 'datetime64[ns]':
+                        self.df[col] = pd.to_datetime(self.df[col], errors='coerce')
+                    elif col == 'status' and dtype == 'category':
+                        # Для статуса явно определяем все возможные категории
+                        from domain.entities.deal import Deal
+                        status_categories = [Deal.STATUS_OPEN, Deal.STATUS_CLOSED, Deal.STATUS_CANCELED]
+                        self.df[col] = self.df[col].astype(pd.CategoricalDtype(categories=status_categories))
+                    else:
+                        self.df[col] = self.df[col].astype(dtype)
+                except Exception:
+                    # Если не удается преобразовать, оставляем как есть
+                    pass
     
     def _entity_to_dict(self, deal: Deal) -> Dict[str, Any]:
         """Преобразование Deal в словарь для DataFrame"""
@@ -113,15 +138,25 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
         if mask.any():
             # Обновление существующей записи
             for key, value in deal_data.items():
-                self.df.loc[mask, key] = value
+                if key in ['created_at', 'updated_at', 'closed_at'] and value is not None:
+                    # Правильно обрабатываем datetime значения
+                    self.df.loc[mask, key] = pd.to_datetime(value)
+                else:
+                    self.df.loc[mask, key] = value
         else:
-            # Добавление новой записи (оптимизированный способ)
+            # Добавление новой записи без concatenation warnings
             if self.df.empty:
+                # Создаем DataFrame с правильными типами данных
                 self.df = pd.DataFrame([deal_data])
+                # Для пустого DataFrame нужно явно создать categorical колонки с предопределенными категориями
+                from domain.entities.deal import Deal
+                status_categories = [Deal.STATUS_OPEN, Deal.STATUS_CLOSED, Deal.STATUS_CANCELED]
+                self.df['status'] = self.df['status'].astype(pd.CategoricalDtype(categories=status_categories))
+                self._optimize_dataframe_dtypes()
             else:
-                # Используем pd.DataFrame.loc для избежания FutureWarning с pd.concat
-                new_index = len(self.df)
-                self.df.loc[new_index] = deal_data
+                # Используем pd.concat с ignore_index для избежания warnings
+                new_row_df = pd.DataFrame([deal_data])
+                self.df = pd.concat([self.df, new_row_df], ignore_index=True)
         
         # Фоновая синхронизация с PostgreSQL (не блокирует торговлю)
         if self.persistent_provider:
@@ -250,7 +285,7 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
         mask = self.df['deal_id'] == deal_id
         if mask.any():
             self.df.loc[mask, 'profit'] = profit
-            self.df.loc[mask, 'updated_at'] = datetime.now()
+            self.df.loc[mask, 'updated_at'] = pd.to_datetime(datetime.now())
             # Фоновая синхронизация
             if self.persistent_provider:
                 deal_data = self.df[mask].iloc[0].to_dict()
@@ -262,11 +297,12 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
         """Закрытие сделки"""
         mask = self.df['deal_id'] == deal_id
         if mask.any():
+            now = pd.to_datetime(datetime.now())
             self.df.loc[mask, 'status'] = Deal.STATUS_CLOSED
             self.df.loc[mask, 'sell_order_id'] = sell_order_id
             self.df.loc[mask, 'profit'] = profit
-            self.df.loc[mask, 'closed_at'] = datetime.now()
-            self.df.loc[mask, 'updated_at'] = datetime.now()
+            self.df.loc[mask, 'closed_at'] = now
+            self.df.loc[mask, 'updated_at'] = now
             # Фоновая синхронизация
             if self.persistent_provider:
                 deal_data = self.df[mask].iloc[0].to_dict()
@@ -279,7 +315,7 @@ class MemoryFirstDealsRepository(MemoryFirstRepository[Deal], IDealsRepository):
         mask = self.df['deal_id'] == deal_id
         if mask.any():
             self.df.loc[mask, 'status'] = Deal.STATUS_CANCELED
-            self.df.loc[mask, 'updated_at'] = datetime.now()
+            self.df.loc[mask, 'updated_at'] = pd.to_datetime(datetime.now())
             # Фоновая синхронизация
             if self.persistent_provider:
                 deal_data = self.df[mask].iloc[0].to_dict()

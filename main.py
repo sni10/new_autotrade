@@ -32,6 +32,8 @@ from domain.services.deals.deal_service import DealService
 from domain.services.orders.order_service import OrderService
 from domain.services.orders.order_execution_service import OrderExecutionService
 from domain.services.orders.buy_order_monitor import BuyOrderMonitor
+from domain.services.orders.order_sync_monitor import OrderSyncMonitor
+from domain.services.monitoring.system_stats_monitor import SystemStatsMonitor
 from domain.factories.order_factory import OrderFactory
 from domain.factories.deal_factory import DealFactory
 from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
@@ -108,6 +110,8 @@ async def main():
     buy_order_monitor = None
     stop_loss_monitor = None
     deal_completion_monitor = None
+    order_sync_monitor = None
+    system_stats_monitor = None
     pro_exchange_connector_prod = None
     pro_exchange_connector_sandbox = None
     repository_factory = None
@@ -188,7 +192,27 @@ async def main():
         asyncio.create_task(deal_completion_monitor.start_monitoring())
         logger.info("✅ DealCompletionMonitor запущен")
         
-        # 8. Настройка стоп-лосса (если включен)
+        # 8. Запуск синхронизации ордеров с биржей
+        order_sync_monitor = OrderSyncMonitor(
+            order_service=order_service,
+            sync_interval_seconds=30
+        )
+        asyncio.create_task(order_sync_monitor.start_monitoring())
+        logger.info("✅ OrderSyncMonitor запущен")
+        
+        # 9. Запуск системной аналитики
+        system_stats_monitor = SystemStatsMonitor(
+            order_service=order_service,
+            deal_service=deal_service,
+            buy_order_monitor=buy_order_monitor,
+            deal_completion_monitor=deal_completion_monitor,
+            order_sync_monitor=order_sync_monitor,
+            stats_interval_seconds=60
+        )
+        asyncio.create_task(system_stats_monitor.start_monitoring())
+        logger.info("✅ SystemStatsMonitor запущен")
+        
+        # 10. Настройка стоп-лосса (если включен)
         risk_config = config.get("risk_management", {})
         if risk_config.get("enable_stop_loss", False):
             smart_config = risk_config.get("smart_stop_loss", {})
@@ -207,7 +231,7 @@ async def main():
             asyncio.create_task(stop_loss_monitor.start_monitoring())
             logger.info("✅ StopLossMonitor запущен с умным анализом стакана")
         
-        # 9. Проверка подключения и баланса
+        # 11. Проверка подключения и баланса
         if not await pro_exchange_connector_sandbox.test_connection():
             logger.error("❌ Подключение к бирже неудачно. Завершение работы...")
             return
@@ -216,7 +240,7 @@ async def main():
         usdt_balance = balance.get('USDT', {}).get('free', 0.0)
         logger.info(f"💰 Доступный баланс в песочнице: {usdt_balance:.4f} USDT")
         
-        # 10. Информация о готовности системы
+        # 12. Информация о готовности системы
         logger.info("="*80)
         logger.info("🚀 СИСТЕМА ГОТОВА К ЗАПУСКУ ТОРГОВЛИ")
         logger.info(f"   - Валютная пара: {currency_pair.symbol}")
@@ -224,7 +248,7 @@ async def main():
         logger.info(f"   - Режим: Sandbox (безопасно)")
         logger.info("="*80)
         
-        # 11. Запуск торгового цикла
+        # 13. Запуск торгового цикла
         await run_realtime_trading(
             pro_exchange_connector_prod=pro_exchange_connector_prod,
             pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
@@ -245,6 +269,10 @@ async def main():
             buy_order_monitor.stop_monitoring()
         if deal_completion_monitor:
             deal_completion_monitor.stop_monitoring()
+        if order_sync_monitor:
+            order_sync_monitor.stop_monitoring()
+        if system_stats_monitor:
+            system_stats_monitor.stop_monitoring()
         if 'stop_loss_monitor' in locals() and stop_loss_monitor:
             stop_loss_monitor.stop_monitoring()
         if pro_exchange_connector_prod:

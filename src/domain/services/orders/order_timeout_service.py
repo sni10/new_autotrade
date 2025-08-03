@@ -196,7 +196,7 @@ class OrderTimeoutService:
         """Проверка отклонения цены BUY ордера от рыночной"""
         try:
             ticker = await self.exchange.fetch_ticker(order.symbol)
-            current_price = ticker['last']
+            current_price = ticker.last
             
             # Для BUY ордера: если рынок ушел значительно выше нашей цены покупки
             # Это означает что никто не продаст нам по нашей низкой цене
@@ -316,7 +316,7 @@ class OrderTimeoutService:
             
             # Получаем текущую цену
             ticker = await self.exchange.fetch_ticker(old_order.symbol)
-            current_price = ticker['last']
+            current_price = ticker.last
             
             # Для BUY ордера: ставим цену немного ниже текущей рыночной
             # чтобы увеличить вероятность исполнения

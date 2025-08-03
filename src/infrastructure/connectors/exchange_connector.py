@@ -128,7 +128,9 @@ class CcxtExchangeConnector:
             if 'id' not in raw_order and 'order_id' not in raw_order:
                 logger.warning(f"⚠️ Order response missing ID field: {raw_order}")
             
-            return Order.from_dict(raw_order)
+            # Получаем информацию о точности для округления
+            exchange_info = self.exchange_info_cache.get(normalized_symbol)
+            return Order.from_dict(raw_order, exchange_info)
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds: {e}")
             raise
@@ -146,7 +148,10 @@ class CcxtExchangeConnector:
             logger.info(f"❌ Cancelling order {order_id} for {normalized_symbol}")
             raw_order = await self.client.cancel_order(order_id, normalized_symbol)
             logger.info(f"✅ Order cancelled successfully: {order_id}")
-            return Order.from_dict(raw_order)
+            
+            # Получаем информацию о точности для округления
+            exchange_info = self.exchange_info_cache.get(normalized_symbol)
+            return Order.from_dict(raw_order, exchange_info)
         except ccxt.OrderNotFound:
             logger.warning(f"⚠️ Order not found on exchange: {order_id}")
             raise
@@ -156,13 +161,21 @@ class CcxtExchangeConnector:
 
     async def fetch_order(self, order_id: str, symbol: str) -> Order:
         """Получает ордер и возвращает объект Order."""
-        raw_order = await self.client.fetch_order(order_id, self._normalize_symbol(symbol))
-        return Order.from_dict(raw_order)
+        normalized_symbol = self._normalize_symbol(symbol)
+        raw_order = await self.client.fetch_order(order_id, normalized_symbol)
+        
+        # Получаем информацию о точности для округления
+        exchange_info = self.exchange_info_cache.get(normalized_symbol)
+        return Order.from_dict(raw_order, exchange_info)
 
     async def fetch_open_orders(self, symbol: str = None) -> List[Order]:
         """Получает открытые ордера и возвращает список объектов Order."""
-        raw_orders = await self.client.fetch_open_orders(self._normalize_symbol(symbol))
-        return [Order.from_dict(o) for o in raw_orders]
+        normalized_symbol = self._normalize_symbol(symbol) if symbol else None
+        raw_orders = await self.client.fetch_open_orders(normalized_symbol)
+        
+        # Получаем информацию о точности для округления
+        exchange_info = self.exchange_info_cache.get(normalized_symbol) if normalized_symbol else None
+        return [Order.from_dict(o, exchange_info) for o in raw_orders]
 
     async def fetch_balance(self) -> Dict[str, Any]:
         return await self.client.fetch_balance()
@@ -234,7 +247,10 @@ class CcxtExchangeConnector:
             raw_order = await self.client.create_market_sell_order(normalized_symbol, amount)
             
             logger.info(f"✅ Market SELL order created successfully: {raw_order.get('id', 'N/A')}")
-            return Order.from_dict(raw_order)
+            
+            # Получаем информацию о точности для округления
+            exchange_info = self.exchange_info_cache.get(normalized_symbol)
+            return Order.from_dict(raw_order, exchange_info)
                 
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds for market sell: {e}")

@@ -164,3 +164,35 @@ class DealService:
         """
         for deal in self.get_open_deals():
             self.close_deal(deal)
+
+    def get_statistics(self) -> dict:
+        """
+        Получение статистики сервиса сделок для SystemStatsMonitor
+        """
+        try:
+            # Получаем все сделки из репозитория
+            all_deals = self.deals_repo.get_all() if hasattr(self.deals_repo, 'get_all') else []
+            open_deals = self.get_open_deals()
+            
+            # Подсчитываем завершенные сделки
+            completed_deals = []
+            if all_deals:
+                completed_deals = [deal for deal in all_deals if deal.status == 'CLOSED' or not deal.is_open()]
+            
+            return {
+                'total_deals': len(all_deals),
+                'open_deals': len(open_deals),
+                'completed_deals': len(completed_deals),
+                'active_deals': len(open_deals)  # Дополнительная статистика
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статистики сделок: {e}")
+            # Возвращаем базовую статистику в случае ошибки
+            open_deals = self.get_open_deals()
+            return {
+                'total_deals': len(open_deals),  # Минимум что можем получить
+                'open_deals': len(open_deals),
+                'completed_deals': 0,
+                'active_deals': len(open_deals)
+            }

@@ -38,8 +38,13 @@ class MemoryFirstTickersRepository(MemoryFirstRepository[Ticker], ITickersReposi
         self._initialize_dataframe()
         self._last_dump_time = datetime.now()
         
-        # Запускаем фоновую задачу для периодических дампов
-        asyncio.create_task(self._periodic_dump_task())
+        # Запускаем фоновую задачу для периодических дампов (если есть event loop)
+        try:
+            loop = asyncio.get_running_loop()
+            self._periodic_task = loop.create_task(self._periodic_dump_task())
+        except RuntimeError:
+            # Нет активного event loop, задача будет создана позже при необходимости
+            self._periodic_task = None
     
     def _get_dataframe_columns(self) -> List[str]:
         """Определяем структуру DataFrame для тикеров"""
@@ -55,14 +60,34 @@ class MemoryFirstTickersRepository(MemoryFirstRepository[Ticker], ITickersReposi
     
     def _optimize_dataframe_dtypes(self):
         """Оптимизация типов данных для экономии памяти"""
-        if not self.df.empty:
-            # Оптимизируем типы данных для лучшей производительности
-            self.df['symbol'] = self.df['symbol'].astype('category')
-            self.df['timestamp'] = self.df['timestamp'].astype('int64')
-            self.df['last_price'] = self.df['last_price'].astype('float64')
-            self.df['bid_price'] = self.df['bid_price'].astype('float64')
-            self.df['ask_price'] = self.df['ask_price'].astype('float64')
-            self.df['volume'] = self.df['volume'].astype('float64')
+        # Устанавливаем типы данных даже для пустого DataFrame
+        dtypes = {
+            'symbol': 'category',
+            'timestamp': 'int64',
+            'last_price': 'float64',
+            'bid_price': 'float64',
+            'ask_price': 'float64',
+            'volume': 'float64',
+            'high': 'float64',
+            'low': 'float64',
+            'open': 'float64',
+            'close': 'float64',
+            'change': 'float64',
+            'change_percent': 'float64',
+            'created_at': 'datetime64[ns]'
+        }
+        
+        # Применяем типы данных к существующим колонкам
+        for col, dtype in dtypes.items():
+            if col in self.df.columns:
+                try:
+                    if dtype == 'datetime64[ns]':
+                        self.df[col] = pd.to_datetime(self.df[col], errors='coerce')
+                    else:
+                        self.df[col] = self.df[col].astype(dtype)
+                except Exception:
+                    # Если не удается преобразовать, оставляем как есть
+                    pass
     
     def _entity_to_dict(self, ticker: Ticker) -> Dict[str, Any]:
         """Преобразование Ticker в словарь для DataFrame"""
@@ -84,24 +109,23 @@ class MemoryFirstTickersRepository(MemoryFirstRepository[Ticker], ITickersReposi
     
     def _dict_to_entity(self, data: Dict[str, Any]) -> Ticker:
         """Преобразование словаря из DataFrame в Ticker"""
-        # Создаем базовый ticker объект
-        ticker = Ticker(
-            symbol=data['symbol'],
-            timestamp=data['timestamp']
-        )
+        # Создаем ticker объект с правильным форматом данных
+        ticker_data = {
+            'symbol': data['symbol'],
+            'timestamp': data['timestamp'],
+            'last': data['last_price'],
+            'bid': data['bid_price'],
+            'ask': data['ask_price'],
+            'baseVolume': data['volume'],
+            'high': data['high'],
+            'low': data['low'],
+            'open': data['open'],
+            'close': data['close'],
+            'change': data['change'],
+            'percentage': data['change_percent']
+        }
         
-        # Заполняем поля
-        ticker.last = data['last_price']
-        ticker.bid = data['bid_price']
-        ticker.ask = data['ask_price']
-        ticker.baseVolume = data['volume']
-        ticker.high = data['high']
-        ticker.low = data['low']
-        ticker.open = data['open']
-        ticker.close = data['close']
-        ticker.change = data['change']
-        ticker.percentage = data['change_percent']
-        
+        ticker = Ticker(ticker_data)
         return ticker
     
     def save(self, ticker: Ticker) -> None:
@@ -110,17 +134,23 @@ class MemoryFirstTickersRepository(MemoryFirstRepository[Ticker], ITickersReposi
         """
         ticker_data = self._entity_to_dict(ticker)
         
-        # Добавляем в DataFrame
+        # Добавляем в DataFrame без concatenation warnings
         if self.df.empty:
             self.df = pd.DataFrame([ticker_data])
+            self._optimize_dataframe_dtypes()
         else:
-            # Используем pd.DataFrame.loc для избежания FutureWarning с pd.concat
-            new_index = len(self.df)
-            self.df.loc[new_index] = ticker_data
+            # Используем pd.concat с ignore_index для избежания warnings
+            new_row_df = pd.DataFrame([ticker_data])
+            self.df = pd.concat([self.df, new_row_df], ignore_index=True)
         
         # Проверяем необходимость дампа
         if len(self.df) >= self.batch_size:
-            asyncio.create_task(self._dump_to_parquet())
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._dump_to_parquet())
+            except RuntimeError:
+                # Нет активного event loop, пропускаем асинхронный дамп
+                pass
         
         # Проверяем необходимость очистки старых данных
         if len(self.df) > self.keep_last_n:

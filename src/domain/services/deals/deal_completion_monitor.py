@@ -25,6 +25,8 @@ class DealCompletionMonitor:
             "checks_performed": 0,
             "deals_monitored": 0,
             "deals_completed": 0,
+            "sell_orders_placed": 0,
+            "sync_operations": 0,
         }
         self._is_running = False
 
@@ -47,7 +49,16 @@ class DealCompletionMonitor:
         """
         self.stats["checks_performed"] += 1
         open_deals = self.deal_service.get_open_deals()
-        self.stats["deals_monitored"] = len(open_deals)
+        
+        # ИСПРАВЛЕНИЕ: deals_monitored должно показывать текущее количество открытых сделок
+        # Добавляем отдельный счетчик для общего количества обработанных сделок
+        current_open_deals = len(open_deals)
+        self.stats["deals_monitored"] = current_open_deals
+        
+        # Обновляем максимальное количество одновременно отслеживаемых сделок
+        if "max_deals_monitored" not in self.stats:
+            self.stats["max_deals_monitored"] = 0
+        self.stats["max_deals_monitored"] = max(self.stats["max_deals_monitored"], current_open_deals)
 
         if not open_deals:
             return
@@ -61,9 +72,7 @@ class DealCompletionMonitor:
                 logger.error(f"Ошибка при проверке сделки {deal.deal_id}: {e}", exc_info=True)
 
     async def _check_single_deal(self, deal: Deal):
-        """Проверяет и обрабатывает одну сделку."""
-        # ИСПРАВЛЕНИЕ: Загружаем ордера по deal_id напрямую из репозитория
-        # вместо полагания на прямые ссылки в объекте Deal
+        """Активная проверка и обработка одной сделки с синхронизацией биржи"""
         try:
             # Получаем все ордера для данной сделки
             deal_orders = self.order_service.orders_repo.get_orders_by_deal(deal.deal_id)
@@ -84,22 +93,50 @@ class DealCompletionMonitor:
             buy_order = buy_orders[0]
             sell_order = sell_orders[0]
             
-            # Логируем текущий статус ордеров в сделке
-            logger.info(
-                f"DEAL_STATUS | DealID: {deal.deal_id} | "
-                f"BUY: {buy_order.order_id} [{buy_order.status}, {buy_order.get_fill_percentage():.0%}] | "
-                f"SELL: {sell_order.order_id} [{sell_order.status}, {sell_order.get_fill_percentage():.0%}]"
-            )
-
-            # Условие для закрытия сделки: оба ордера полностью исполнены
-            if buy_order.is_filled() and sell_order.is_filled():
-                logger.info(f"🎉 Сделка {deal.deal_id} полностью исполнена! Закрываем...")
+            # КРИТИЧНО: Обновляем статусы с биржи ПЕРЕД проверкой
+            updated_buy = await self.order_service.get_order_status(buy_order)
+            updated_sell = await self.order_service.get_order_status(sell_order) if sell_order.exchange_id else sell_order
+            
+            # Детальная аналитика состояния сделки
+            buy_fill = updated_buy.get_fill_percentage() if hasattr(updated_buy, 'get_fill_percentage') else 0.0
+            sell_fill = updated_sell.get_fill_percentage() if hasattr(updated_sell, 'get_fill_percentage') else 0.0
+            
+            logger.info(f"📈 СДЕЛКА {deal.deal_id}: "
+                       f"BUY[{updated_buy.status}, {buy_fill:.1%}] | "
+                       f"SELL[{updated_sell.status}, {sell_fill:.1%}]")
+            
+            # АКТИВНЫЕ ДЕЙСТВИЯ: Размещаем SELL ордер когда BUY исполнен
+            if updated_buy.is_filled() and updated_sell.status == 'PENDING':
+                logger.info(f"🎯 BUY исполнен! Размещаем SELL ордер на бирже...")
+                result = await self.order_service.place_existing_order(updated_sell)
+                if result.success:
+                    logger.info(f"✅ SELL ордер {updated_sell.order_id} размещен на бирже")
+                    # ИСПРАВЛЕНИЕ: Прямое увеличение счетчика без .get()
+                    self.stats["sell_orders_placed"] += 1
+                else:
+                    logger.error(f"❌ Не удалось разместить SELL: {result.error_message}")
+            
+            # Завершение сделки при полном исполнении
+            if updated_buy.is_filled() and updated_sell.is_filled():
+                logger.info(f"🎉 СДЕЛКА {deal.deal_id} ЗАВЕРШЕНА!")
                 self.deal_service.close_deal(deal.deal_id)
                 self.stats["deals_completed"] += 1
                 logger.info(f"✅ Сделка {deal.deal_id} успешно закрыта.")
+            else:
+                # ДИАГНОСТИКА: Логируем причину, почему сделка не завершается
+                buy_filled = updated_buy.is_filled()
+                sell_filled = updated_sell.is_filled()
+                logger.debug(f"🔍 СДЕЛКА {deal.deal_id} НЕ ЗАВЕРШЕНА: "
+                           f"BUY заполнен: {buy_filled}, SELL заполнен: {sell_filled}")
+                
+                # Дополнительная информация о статусах
+                if not buy_filled:
+                    logger.debug(f"   BUY ордер {updated_buy.order_id}: статус={updated_buy.status}, filled={getattr(updated_buy, 'filled', 'N/A')}")
+                if not sell_filled:
+                    logger.debug(f"   SELL ордер {updated_sell.order_id}: статус={updated_sell.status}, filled={getattr(updated_sell, 'filled', 'N/A')}")
                 
         except Exception as e:
-            logger.error(f"Ошибка при загрузке ордеров для сделки {deal.deal_id}: {e}", exc_info=True)
+            logger.error(f"❌ Ошибка при обработке сделки {deal.deal_id}: {e}", exc_info=True)
 
     def get_statistics(self) -> dict:
         """Возвращает статистику работы монитора."""

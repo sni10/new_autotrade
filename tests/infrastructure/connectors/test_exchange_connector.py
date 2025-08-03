@@ -37,6 +37,7 @@ def connector(mock_ccxt_client):
     
     conn = CcxtExchangeConnector()
     conn.client = mock_ccxt_client
+    conn.exchange_info_cache = {}  # Добавляем инициализацию кэша
     conn._normalize_symbol = lambda symbol: symbol # Упрощаем нормализацию для тестов
     
     yield conn
