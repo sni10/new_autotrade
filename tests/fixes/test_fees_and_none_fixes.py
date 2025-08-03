@@ -7,7 +7,7 @@ import os
 import asyncio
 
 # Add src to path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
 from domain.entities.order import Order
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
