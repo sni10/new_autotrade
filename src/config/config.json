@@ -1,7 +1,7 @@
 {
   "database": {
-    "host": "localhost",
-    "port": 5434,
+    "host": "postgres-test",
+    "port": 5432,
     "user": "airflow",
     "password": "airflow",
     "database": "airflow"

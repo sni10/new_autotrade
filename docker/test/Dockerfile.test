@@ -1,0 +1,54 @@
+# 📌 Dockerfile for Testing Environment with PostgreSQL Support
+FROM python:3.10-slim
+
+# 🧰 Install system dependencies for TA-Lib and PostgreSQL client
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    curl \
+    gcc \
+    make \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🧱 Install TA-Lib from source (required for trading indicators)
+RUN apt-get update && apt-get install -y \
+    wget \
+    gcc \
+    make \
+    build-essential \
+    && \
+    wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz && \
+    tar -xzf ta-lib-0.6.4-src.tar.gz && \
+    cd ta-lib-0.6.4 && \
+    ./configure --prefix=/usr && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf ta-lib-0.6.4 ta-lib-0.6.4-src.tar.gz
+
+# 🔧 Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# 📁 Set up working directory
+WORKDIR /app
+
+# 🧪 Copy test configuration and entrypoint script
+COPY src/config/config.json /app/src/config/config.json
+COPY docker/test/entrypoint.sh /app/entrypoint.sh
+
+# 🔧 Make entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
+
+# 🧪 Set environment variables for testing
+ENV PYTHONPATH=/app/src
+ENV PYTEST_CURRENT_TEST=1
+ENV PYTHONUNBUFFERED=1
+
+# 🚀 Use entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# 📋 Default command for testing
+CMD ["pytest", "tests/", "-v", "--tb=short"]

@@ -1,0 +1,70 @@
+services:
+  # PostgreSQL service for tests
+  postgres-test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow", "-d", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    tmpfs:
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=1024m
+    command: >
+      postgres
+      -c shared_preload_libraries=''
+      -c max_connections=100
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+
+  # Test runner service
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: docker/test/Dockerfile.test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    environment:
+      # Database connection for tests
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USER: airflow
+      DB_PASSWORD: airflow
+      DB_NAME: airflow
+      # Test environment variables
+      PYTHONPATH: /app/src
+      PYTEST_CURRENT_TEST: 1
+    volumes:
+      - ../..:/app
+    working_dir: /app
+    entrypoint: []
+    command: >
+      sh -c "
+        echo '🔧 Waiting for PostgreSQL to be ready...' &&
+        sleep 10 &&
+        echo '🧪 Running database tests...' &&
+        python tests/database/test_db_connection.py &&
+        echo '🧪 Running all tests...' &&
+        pytest tests/ -v --tb=short --maxfail=5
+      "
+
+networks:
+  default:
+    name: test_network
