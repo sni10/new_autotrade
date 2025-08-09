@@ -2,9 +2,12 @@
 import time
 import uuid
 import math
+import logging
 from itertools import count
 from typing import Optional, Dict, Any
 from domain.entities.order import Order, ExchangeInfo
+
+logger = logging.getLogger(__name__)
 
 # 🔧 Генератор уникальных ID на основе счетчика + timestamp
 _id_gen = count(int(time.time()*1e6))
@@ -24,14 +27,16 @@ class OrderFactory:
     🚀 РАСШИРЕННАЯ фабрика для создания ордеров с валидацией и поддержкой биржевых параметров
     """
 
-    def __init__(self, exchange_info_cache: Optional[Dict[str, ExchangeInfo]] = None):
+    def __init__(self, exchange_info_cache: Optional[Dict[str, ExchangeInfo]] = None, exchange_connector=None):
         """
         Инициализация фабрики
 
         Args:
             exchange_info_cache: Кеш информации о торговых парах с биржи
+            exchange_connector: Коннектор для получения рыночных данных (для валидации цен)
         """
         self.exchange_info_cache = exchange_info_cache or {}
+        self.exchange_connector = exchange_connector
 
     def _create_base_order(
         self,
@@ -93,7 +98,7 @@ class OrderFactory:
         metadata: Optional[Dict[str, Any]] = None
     ) -> Order:
         """
-        🛒 Создание BUY ордера с валидацией и правильным округлением
+        🛒 Создание BUY ордера с валидацией и правильным округлением (синхронно)
 
         Args:
             symbol: Торговая пара (BTCUSDT)
@@ -105,9 +110,12 @@ class OrderFactory:
             metadata: Дополнительная информация
         """
 
-        # ИСПРАВЛЕНИЕ: Применяем правильное округление согласно параметрам биржи
+        # Применяем правильное округление согласно параметрам биржи
         adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=True)
         adjusted_price = self.adjust_price_precision(symbol, float(price))
+
+        # Примечание: асинхронная валидация PERCENT_PRICE_BY_SIDE пропущена в синхронном режиме
+        # чтобы обеспечить совместимость с тестами и синхронными вызовами фабрики.
 
         # Добавляем метаданные для buy ордера
         buy_metadata = metadata or {}
@@ -143,7 +151,7 @@ class OrderFactory:
         metadata: Optional[Dict[str, Any]] = None
     ) -> Order:
         """
-        🏷️ Создание SELL ордера с валидацией и правильным округлением
+        🏷️ Создание SELL ордера с валидацией и правильным округлением (синхронно)
 
         Args:
             symbol: Торговая пара (BTCUSDT)
@@ -155,9 +163,12 @@ class OrderFactory:
             metadata: Дополнительная информация
         """
 
-        # ИСПРАВЛЕНИЕ: Применяем правильное округление согласно параметрам биржи
+        # Применяем правильное округление согласно параметрам биржи
         adjusted_amount = self.adjust_amount_precision(symbol, float(amount), round_up=False)  # SELL округляем вниз
         adjusted_price = self.adjust_price_precision(symbol, float(price))
+
+        # Примечание: асинхронная валидация PERCENT_PRICE_BY_SIDE пропущена в синхронном режиме
+        # чтобы обеспечить совместимость с тестами и синхронными вызовами фабрики.
 
         # Добавляем метаданные для sell ордера
         sell_metadata = metadata or {}
@@ -434,3 +445,110 @@ class OrderFactory:
         📊 Возвращает информацию о торговой паре
         """
         return self.exchange_info_cache.get(symbol)
+
+    async def fetch_market_price(self, symbol: str) -> Optional[Dict[str, float]]:
+        """
+        📊 Получает текущую рыночную цену для валидации PERCENT_PRICE_BY_SIDE
+        
+        Returns:
+            Dict с ключами: 'bid', 'ask', 'last' или None если не удалось получить
+        """
+        if not self.exchange_connector:
+            logger.warning(f"⚠️ Exchange connector not available for market price fetching: {symbol}")
+            return None
+            
+        try:
+            ticker = await self.exchange_connector.fetch_ticker(symbol)
+            return {
+                'bid': ticker.bid,
+                'ask': ticker.ask,
+                'last': ticker.last
+            }
+        except Exception as e:
+            logger.error(f"❌ Failed to fetch market price for {symbol}: {e}")
+            return None
+
+    async def validate_percent_price_by_side(self, symbol: str, price: float, side: str) -> tuple[bool, str, Optional[float]]:
+        """
+        🔍 Валидация цены против фильтра PERCENT_PRICE_BY_SIDE
+        
+        Args:
+            symbol: Торговая пара
+            price: Цена ордера
+            side: BUY или SELL
+            
+        Returns:
+            tuple: (is_valid, error_message, suggested_price)
+        """
+        market_prices = await self.fetch_market_price(symbol)
+        if not market_prices:
+            # Если не можем получить рыночную цену, пропускаем валидацию
+            logger.warning(f"⚠️ Cannot validate PERCENT_PRICE_BY_SIDE for {symbol}: market price unavailable")
+            return True, "", None
+            
+        # Используем консервативные лимиты (±10%) если нет точной информации о фильтрах
+        # В реальной реализации эти значения должны браться из exchange info
+        max_deviation_percent = 10.0  # 10% отклонение от рыночной цены
+        
+        if side.upper() == Order.SIDE_BUY:
+            # Для BUY ордеров проверяем относительно ask цены
+            reference_price = market_prices.get('ask') or market_prices.get('last')
+            if not reference_price:
+                return True, "", None
+                
+            min_allowed = reference_price * (1 - max_deviation_percent / 100)
+            max_allowed = reference_price * (1 + max_deviation_percent / 100)
+            
+            if price < min_allowed:
+                suggested_price = min_allowed
+                return False, f"BUY price {price} too low (min: {min_allowed:.8f}, market: {reference_price:.8f})", suggested_price
+            elif price > max_allowed:
+                suggested_price = max_allowed
+                return False, f"BUY price {price} too high (max: {max_allowed:.8f}, market: {reference_price:.8f})", suggested_price
+                
+        elif side.upper() == Order.SIDE_SELL:
+            # Для SELL ордеров проверяем относительно bid цены
+            reference_price = market_prices.get('bid') or market_prices.get('last')
+            if not reference_price:
+                return True, "", None
+                
+            min_allowed = reference_price * (1 - max_deviation_percent / 100)
+            max_allowed = reference_price * (1 + max_deviation_percent / 100)
+            
+            if price < min_allowed:
+                suggested_price = min_allowed
+                return False, f"SELL price {price} too low (min: {min_allowed:.8f}, market: {reference_price:.8f})", suggested_price
+            elif price > max_allowed:
+                suggested_price = max_allowed
+                return False, f"SELL price {price} too high (max: {max_allowed:.8f}, market: {reference_price:.8f})", suggested_price
+        
+        return True, "", None
+
+    async def adjust_price_for_percent_price_filter(self, symbol: str, price: float, side: str, auto_adjust: bool = True) -> tuple[float, bool, str]:
+        """
+        🔧 Корректирует цену для соответствия фильтру PERCENT_PRICE_BY_SIDE
+        
+        Args:
+            symbol: Торговая пара
+            price: Исходная цена
+            side: BUY или SELL
+            auto_adjust: Автоматически корректировать цену если она вне диапазона
+            
+        Returns:
+            tuple: (adjusted_price, was_adjusted, adjustment_message)
+        """
+        is_valid, error_msg, suggested_price = await self.validate_percent_price_by_side(symbol, price, side)
+        
+        if is_valid:
+            return price, False, ""
+            
+        if not auto_adjust or suggested_price is None:
+            return price, False, f"Price validation failed: {error_msg}"
+            
+        # Применяем точность биржи к скорректированной цене
+        adjusted_price = self.adjust_price_precision(symbol, suggested_price)
+        
+        adjustment_msg = f"Price adjusted from {price} to {adjusted_price} for PERCENT_PRICE_BY_SIDE compliance: {error_msg}"
+        logger.warning(f"⚠️ {adjustment_msg}")
+        
+        return adjusted_price, True, adjustment_msg

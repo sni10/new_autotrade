@@ -8,6 +8,7 @@ from domain.services.deals.deal_service import DealService
 from domain.services.orders.order_service import OrderService
 from domain.entities.deal import Deal
 from domain.entities.order import Order
+from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,10 @@ class DealCompletionMonitor:
     логирует их статус и закрывает сделку в случае полного исполнения.
     """
 
-    def __init__(self, deal_service: DealService, order_service: OrderService, check_interval_seconds: int = 30, grace_period_seconds: int = 60):
+    def __init__(self, deal_service: DealService, order_service: OrderService, exchange_connector: CcxtExchangeConnector, check_interval_seconds: int = 30, grace_period_seconds: int = 60):
         self.deal_service = deal_service
         self.order_service = order_service
+        self.exchange_connector = exchange_connector
         self.check_interval_seconds = check_interval_seconds
         self.grace_period_seconds = grace_period_seconds
         self.stats = {
@@ -95,23 +97,50 @@ class DealCompletionMonitor:
             buy_order = buy_orders[0]
             sell_order = sell_orders[0]
             
-            # КРИТИЧНО: Обновляем статусы с биржи ПЕРЕД проверкой, но с учетом grace period
+            # 🆕 СИНХРОНИЗАЦИЯ: Обновляем ордера с актуальными данными биржи
             # Проверяем возраст buy ордера
             buy_age_seconds = self._get_order_age_seconds(buy_order)
             if buy_age_seconds < self.grace_period_seconds:
-                logger.debug(f"⏳ BUY {buy_order.order_id}: пропускаем проверку статуса (возраст {buy_age_seconds:.1f}с < {self.grace_period_seconds}с)")
+                logger.debug(f"⏳ BUY {buy_order.order_id}: пропускаем синхронизацию (возраст {buy_age_seconds:.1f}с < {self.grace_period_seconds}с)")
                 updated_buy = buy_order  # Используем текущий статус без обновления
             else:
-                updated_buy = await self.order_service.get_order_status(buy_order)
+                # Синхронизируем BUY ордер с биржей
+                try:
+                    if buy_order.exchange_id:
+                        exchange_data = await self.exchange_connector.fetch_order(buy_order.exchange_id, buy_order.symbol)
+                        if exchange_data:
+                            was_updated = buy_order.sync_with_exchange_data(exchange_data)
+                            if was_updated:
+                                self.order_service.orders_repo.update_order(buy_order)
+                                self.stats["sync_operations"] += 1
+                                logger.debug(f"🔄 BUY ордер {buy_order.order_id} синхронизирован с биржей")
+                    updated_buy = buy_order
+                except Exception as e:
+                    logger.error(f"❌ Ошибка синхронизации BUY ордера {buy_order.order_id}: {e}")
+                    # Fallback: используем старый метод
+                    updated_buy = await self.order_service.get_order_status(buy_order)
             
             # Проверяем возраст sell ордера (если он есть на бирже)
             if sell_order.exchange_id:
                 sell_age_seconds = self._get_order_age_seconds(sell_order)
                 if sell_age_seconds < self.grace_period_seconds:
-                    logger.debug(f"⏳ SELL {sell_order.order_id}: пропускаем проверку статуса (возраст {sell_age_seconds:.1f}с < {self.grace_period_seconds}с)")
+                    logger.debug(f"⏳ SELL {sell_order.order_id}: пропускаем синхронизацию (возраст {sell_age_seconds:.1f}с < {self.grace_period_seconds}с)")
                     updated_sell = sell_order  # Используем текущий статус без обновления
                 else:
-                    updated_sell = await self.order_service.get_order_status(sell_order)
+                    # Синхронизируем SELL ордер с биржей
+                    try:
+                        exchange_data = await self.exchange_connector.fetch_order(sell_order.exchange_id, sell_order.symbol)
+                        if exchange_data:
+                            was_updated = sell_order.sync_with_exchange_data(exchange_data)
+                            if was_updated:
+                                self.order_service.orders_repo.update_order(sell_order)
+                                self.stats["sync_operations"] += 1
+                                logger.debug(f"🔄 SELL ордер {sell_order.order_id} синхронизирован с биржей")
+                        updated_sell = sell_order
+                    except Exception as e:
+                        logger.error(f"❌ Ошибка синхронизации SELL ордера {sell_order.order_id}: {e}")
+                        # Fallback: используем старый метод
+                        updated_sell = await self.order_service.get_order_status(sell_order)
             else:
                 updated_sell = sell_order
             
@@ -123,16 +152,20 @@ class DealCompletionMonitor:
                        f"BUY[{updated_buy.status}, {buy_fill:.1%}] | "
                        f"SELL[{updated_sell.status}, {sell_fill:.1%}]")
             
-            # АКТИВНЫЕ ДЕЙСТВИЯ: Размещаем SELL ордер когда BUY исполнен
-            if updated_buy.is_filled() and updated_sell.status == 'PENDING':
-                logger.info(f"🎯 BUY исполнен! Размещаем SELL ордер на бирже...")
+            # ИСПРАВЛЕНИЕ: Улучшенная обработка PENDING SELL ордеров
+            if updated_sell.is_pending() and updated_buy.is_filled():
+                logger.info(f"🎯 BUY исполнен! Размещаем PENDING SELL ордер {updated_sell.order_id} на бирже...")
                 result = await self.order_service.place_existing_order(updated_sell)
                 if result.success:
                     logger.info(f"✅ SELL ордер {updated_sell.order_id} размещен на бирже")
-                    # ИСПРАВЛЕНИЕ: Прямое увеличение счетчика без .get()
                     self.stats["sell_orders_placed"] += 1
+                    # Добавляем новую метрику для отслеживания исправленных PENDING ордеров
+                    if "pending_orders_fixed" not in self.stats:
+                        self.stats["pending_orders_fixed"] = 0
+                    self.stats["pending_orders_fixed"] += 1
                 else:
                     logger.error(f"❌ Не удалось разместить SELL: {result.error_message}")
+                    return
             
             # Завершение сделки при полном исполнении
             if updated_buy.is_filled() and updated_sell.is_filled():

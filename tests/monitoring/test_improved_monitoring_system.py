@@ -66,6 +66,7 @@ def test_component_creation():
         deal_monitor = DealCompletionMonitor(
             deal_service=None,
             order_service=None,
+            exchange_connector=None,
             check_interval_seconds=30
         )
         print("✅ DealCompletionMonitor создан")

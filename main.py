@@ -169,6 +169,7 @@ async def main():
         max_age_minutes = buy_order_monitor_cfg.get("max_age_minutes", 5.0)  # ИСПРАВЛЕНО: было 15.0
         max_price_deviation_percent = buy_order_monitor_cfg.get("max_price_deviation_percent", 3.0)
         check_interval_seconds = buy_order_monitor_cfg.get("check_interval_seconds", 10)
+        min_time_between_recreations_minutes = buy_order_monitor_cfg.get("min_time_between_recreations_minutes", 0.0)
         
         logger.info(f"🔧 BuyOrderMonitor настройки: max_age={max_age_minutes}мин, deviation={max_price_deviation_percent}%, interval={check_interval_seconds}с")
         
@@ -178,7 +179,8 @@ async def main():
             exchange_connector=pro_exchange_connector_sandbox,
             max_age_minutes=max_age_minutes,
             max_price_deviation_percent=max_price_deviation_percent,
-            check_interval_seconds=check_interval_seconds
+            check_interval_seconds=check_interval_seconds,
+            min_time_between_recreations_minutes=min_time_between_recreations_minutes
         )
         asyncio.create_task(buy_order_monitor.start_monitoring())
         logger.info("✅ BuyOrderMonitor запущен")
@@ -187,6 +189,7 @@ async def main():
         deal_completion_monitor = DealCompletionMonitor(
             deal_service=deal_service,
             order_service=order_service,
+            exchange_connector=pro_exchange_connector_sandbox,
             check_interval_seconds=30
         )
         asyncio.create_task(deal_completion_monitor.start_monitoring())

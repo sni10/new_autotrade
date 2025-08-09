@@ -29,11 +29,13 @@ def test_statistics_initialization():
         # Создаем мок-объекты
         mock_deal_service = Mock()
         mock_order_service = Mock()
+        mock_exchange_connector = Mock()
         
         # Создаем DealCompletionMonitor
         monitor = DealCompletionMonitor(
             deal_service=mock_deal_service,
             order_service=mock_order_service,
+            exchange_connector=mock_exchange_connector,
             check_interval_seconds=30
         )
         
@@ -71,6 +73,7 @@ async def test_statistics_counting():
         # Создаем мок-объекты
         mock_deal_service = Mock()
         mock_order_service = Mock()
+        mock_exchange_connector = Mock()
         
         # Создаем мок-сделки
         mock_deal1 = Mock()
@@ -91,6 +94,7 @@ async def test_statistics_counting():
         monitor = DealCompletionMonitor(
             deal_service=mock_deal_service,
             order_service=mock_order_service,
+            exchange_connector=mock_exchange_connector,
             check_interval_seconds=30
         )
         
@@ -140,6 +144,7 @@ async def test_sell_orders_placement_counting():
         # Создаем мок-объекты
         mock_deal_service = Mock()
         mock_order_service = Mock()
+        mock_exchange_connector = Mock()
         
         # Создаем мок-сделку
         mock_deal = Mock()
@@ -179,6 +184,7 @@ async def test_sell_orders_placement_counting():
         monitor = DealCompletionMonitor(
             deal_service=mock_deal_service,
             order_service=mock_order_service,
+            exchange_connector=mock_exchange_connector,
             check_interval_seconds=30
         )
         
@@ -210,6 +216,7 @@ async def test_diagnostic_logging():
         # Создаем мок-объекты
         mock_deal_service = Mock()
         mock_order_service = Mock()
+        mock_exchange_connector = Mock()
         
         # Создаем мок-сделку
         mock_deal = Mock()
@@ -248,6 +255,7 @@ async def test_diagnostic_logging():
         monitor = DealCompletionMonitor(
             deal_service=mock_deal_service,
             order_service=mock_order_service,
+            exchange_connector=mock_exchange_connector,
             check_interval_seconds=30
         )
         

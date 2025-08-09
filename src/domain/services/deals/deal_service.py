@@ -46,14 +46,17 @@ class DealService:
         logger.info(f"Created new deal: {deal}")
         return deal
 
-    def open_buy_order(self, price, amount, deal_id):
+    async def open_buy_order(self, symbol, price, amount, deal_id):
         """
         Создает BUY ордер и связывает его со сделкой.
         """
-        buy_order = self.order_service.create_buy_order(
-            price, amount
+        result = await self.order_service.create_and_place_buy_order(
+            symbol, amount, price, deal_id
         )
-        buy_order.deal_id = deal_id
+        if not result.success:
+            logger.error(f"❌ Failed to create BUY order for deal {deal_id}: {result.error_message}")
+            return None
+        buy_order = result.order
         
         # Связываем ордер со сделкой
         deal = self.get_deal_by_id(deal_id)
@@ -68,14 +71,17 @@ class DealService:
         return buy_order
 
 
-    def open_sell_order(self, price, amount, deal_id):
+    async def open_sell_order(self, symbol, price, amount, deal_id):
         """
         Создает SELL ордер и связывает его со сделкой.
         """
-        sell_order = self.order_service.create_sell_order(
-            price, amount
+        result = await self.order_service.create_local_sell_order(
+            symbol, amount, price, deal_id
         )
-        sell_order.deal_id = deal_id
+        if not result.success:
+            logger.error(f"❌ Failed to create SELL order for deal {deal_id}: {result.error_message}")
+            return None
+        sell_order = result.order
         
         # Связываем ордер со сделкой
         deal = self.get_deal_by_id(deal_id)

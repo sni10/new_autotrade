@@ -166,7 +166,7 @@ class MemoryFirstOrdersRepository(MemoryFirstRepository[Order], IOrdersRepositor
         """Получение открытых ордеров из DataFrame"""
         # ИСПРАВЛЕНИЕ: Добавлен статус 'open' для корректной работы BuyOrderMonitor
         # Исключаем ордера, которые не найдены на бирже
-        open_statuses = ['NEW', 'PARTIALLY_FILLED', 'open']
+        open_statuses = ['NEW', 'PARTIALLY_FILLED', 'open', 'OPEN']
         open_mask = self.df['status'].isin(open_statuses)
         open_rows = self.df[open_mask]
         
@@ -202,6 +202,15 @@ class MemoryFirstOrdersRepository(MemoryFirstRepository[Order], IOrdersRepositor
         return False
     
     # Специализированные методы для ордеров
+    
+    def update_order(self, order: Order) -> bool:
+        """Обновить все данные ордера (тонкая обертка над save)."""
+        try:
+            self.save(order)
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error updating order {getattr(order, 'order_id', None)}: {e}")
+            return False
     
     def update_order_status(self, order_id: int, status: str, 
                            filled_amount: float = None, fees: float = None) -> bool:
@@ -260,7 +269,7 @@ class MemoryFirstOrdersRepository(MemoryFirstRepository[Order], IOrdersRepositor
         stats = {
             "total_orders": len(self.df),
             # ИСПРАВЛЕНИЕ: Добавлен статус 'open' для консистентности с get_open_orders()
-            "open_orders": len(self.df[self.df['status'].isin(['NEW', 'PARTIALLY_FILLED', 'open'])]),
+            "open_orders": len(self.df[self.df['status'].isin(['NEW', 'PARTIALLY_FILLED', 'open', 'OPEN'])]),
             "filled_orders": len(self.df[self.df['status'] == 'FILLED']),
             "canceled_orders": len(self.df[self.df['status'] == 'CANCELED']),
             "total_volume": self.df['amount'].sum(),

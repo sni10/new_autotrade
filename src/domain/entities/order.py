@@ -185,8 +185,11 @@ class Order:
             self.remaining_amount = float(remaining)
 
         average = exchange_data.get('average')
-        if average is not None:
+        if average is not None and float(average) > 0:
             self.average_price = float(average)
+        elif self.status == self.STATUS_FILLED and self.average_price <= 0:
+            # Fallback: если ордер исполнен, но average_price не установлена, используем price
+            self.average_price = self.price
 
         if 'fee' in exchange_data and exchange_data['fee'] is not None:
             fee_cost = exchange_data['fee'].get('cost')
@@ -274,6 +277,208 @@ class Order:
         return True, "Valid"
 
     # 🆕 СЕРИАЛИЗАЦИЯ
+    def to_ccxt_format(self) -> Optional[Dict[str, Any]]:
+        """
+        Преобразует ордер в стандартный CCXT формат для поля 'data'.
+        Возвращает None если биржа еще не ответила (exchange_id отсутствует).
+        """
+        # Если биржа еще не ответила - возвращаем None
+        if not self.exchange_id:
+            return None
+        
+        # Преобразуем timestamp в ISO datetime
+        def timestamp_to_iso(timestamp: Optional[int]) -> Optional[str]:
+            if timestamp is None:
+                return None
+            import datetime
+            dt = datetime.datetime.fromtimestamp(timestamp / 1000, tz=datetime.timezone.utc)
+            return dt.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3] + "Z"
+        
+        # Вычисляем remaining amount
+        remaining = self.remaining_amount
+        if remaining is None and self.amount is not None and self.filled_amount is not None:
+            remaining = self.amount - self.filled_amount
+        
+        # Вычисляем cost
+        cost = self.cost
+        if cost is None and self.filled_amount and self.average_price:
+            cost = self.filled_amount * self.average_price
+        elif cost is None:
+            cost = 0.0
+        
+        return {
+            "id": str(self.exchange_id),
+            "clientOrderId": self.client_order_id,
+            "datetime": timestamp_to_iso(self.exchange_timestamp or self.created_at),
+            "timestamp": self.exchange_timestamp or self.created_at,
+            "lastTradeTimestamp": self.last_trade_timestamp,
+            "status": self.status.lower() if self.status else "unknown",
+            "symbol": self.symbol,
+            "type": self.order_type.lower() if self.order_type else "limit",
+            "timeInForce": self.time_in_force or "GTC",
+            "side": self.side.lower() if self.side else "buy",
+            "price": self.price or 0.0,
+            "average": self.average_price or 0.0,
+            "amount": self.amount or 0.0,
+            "filled": self.filled_amount or 0.0,
+            "remaining": remaining or 0.0,
+            "cost": cost,
+            "trades": self.trades or [],
+            "fee": {
+                "cost": self.fees or 0.0,
+                "currency": self.fee_currency,
+                "rate": None
+            },
+            "info": self.exchange_raw_data or {}
+        }
+
+    def sync_with_exchange_data(self, exchange_data: Any) -> bool:
+        """
+        Синхронизирует ордер с данными, полученными с биржи.
+        Поддерживает как CCXT-словарь, так и доменный объект Order.
+        
+        Args:
+            exchange_data: Данные ордера (dict в CCXT-формате) или объект Order
+            
+        Returns:
+            bool: True если данные были обновлены, False если нет изменений
+        """
+        if not exchange_data:
+            return False
+        
+        # Нормализация входных данных: если это объект ордера (в т.ч. из другого модуля),
+        # конвертируем его в CCXT-подобный словарь, чтобы далее безопасно использовать .get
+        if not isinstance(exchange_data, dict):
+            is_order_like = (
+                isinstance(exchange_data, Order)
+                or hasattr(exchange_data, 'to_ccxt_format')
+                or (hasattr(exchange_data, 'order_id') and hasattr(exchange_data, 'side'))
+            )
+            if is_order_like:
+                ccxt_like = None
+                try:
+                    if hasattr(exchange_data, 'to_ccxt_format'):
+                        ccxt_like = exchange_data.to_ccxt_format()
+                except Exception:
+                    ccxt_like = None
+                if ccxt_like is None:
+                    # Строим словарь вручную, если у ордера нет exchange_id или метод to_ccxt_format отсутствует/вернул None
+                    amount_val = getattr(exchange_data, 'amount', None)
+                    filled_val = getattr(exchange_data, 'filled_amount', None)
+                    remaining_calc = None
+                    if amount_val is not None and filled_val is not None:
+                        try:
+                            remaining_calc = float(amount_val) - float(filled_val)
+                        except Exception:
+                            remaining_calc = None
+                    ccxt_like = {
+                        'id': str(getattr(exchange_data, 'exchange_id', None)) if getattr(exchange_data, 'exchange_id', None) else None,
+                        'clientOrderId': getattr(exchange_data, 'client_order_id', None),
+                        'timestamp': getattr(exchange_data, 'exchange_timestamp', None) or getattr(exchange_data, 'created_at', None),
+                        'lastTradeTimestamp': getattr(exchange_data, 'last_trade_timestamp', None),
+                        'status': (getattr(exchange_data, 'status', '') or '').lower(),
+                        'symbol': getattr(exchange_data, 'symbol', None),
+                        'type': (getattr(exchange_data, 'order_type', '') or '').lower(),
+                        'timeInForce': getattr(exchange_data, 'time_in_force', None) or 'GTC',
+                        'side': (getattr(exchange_data, 'side', '') or '').lower(),
+                        'price': getattr(exchange_data, 'price', 0.0) or 0.0,
+                        'average': getattr(exchange_data, 'average_price', 0.0) or 0.0,
+                        'amount': amount_val or 0.0,
+                        'filled': filled_val or 0.0,
+                        'remaining': remaining_calc if remaining_calc is not None else getattr(exchange_data, 'remaining_amount', None),
+                        'cost': getattr(exchange_data, 'cost', 0.0) or 0.0,
+                        'trades': getattr(exchange_data, 'trades', None) or [],
+                        'fee': {
+                            'cost': getattr(exchange_data, 'fees', 0.0) or 0.0,
+                            'currency': getattr(exchange_data, 'fee_currency', None)
+                        },
+                        'info': getattr(exchange_data, 'exchange_raw_data', None) or {}
+                    }
+                exchange_data = ccxt_like
+        
+        updated = False
+        
+        # Обновляем exchange_id если его не было
+        if not self.exchange_id and exchange_data.get('id'):
+            self.exchange_id = exchange_data.get('id')
+            updated = True
+        
+        # Обновляем статус
+        new_status = (exchange_data.get('status') or '').upper()
+        if new_status and new_status != self.status:
+            self.status = new_status
+            updated = True
+        
+        # Обновляем filled_amount
+        new_filled = exchange_data.get('filled')
+        if new_filled is not None and float(new_filled) != float(self.filled_amount or 0.0):
+            self.filled_amount = float(new_filled)
+            updated = True
+        
+        # Обновляем remaining_amount
+        new_remaining = exchange_data.get('remaining')
+        if new_remaining is not None:
+            try:
+                new_remaining_val = float(new_remaining)
+            except Exception:
+                new_remaining_val = None
+            if new_remaining_val is not None and new_remaining_val != float(self.remaining_amount or 0.0):
+                self.remaining_amount = new_remaining_val
+                updated = True
+        
+        # Обновляем average_price
+        new_average = exchange_data.get('average')
+        if new_average is not None and float(new_average) != float(self.average_price or 0.0):
+            self.average_price = float(new_average)
+            updated = True
+        
+        # Обновляем cost
+        new_cost = exchange_data.get('cost')
+        if new_cost is not None and float(new_cost) != float(self.cost or 0.0):
+            self.cost = float(new_cost)
+            updated = True
+        
+        # Обновляем fees
+        fee_data = exchange_data.get('fee', {}) or {}
+        if isinstance(fee_data, dict):
+            new_fees = fee_data.get('cost')
+            if new_fees is not None and float(new_fees) != float(self.fees or 0.0):
+                self.fees = float(new_fees)
+                updated = True
+            new_fee_currency = fee_data.get('currency')
+            if new_fee_currency and new_fee_currency != self.fee_currency:
+                self.fee_currency = new_fee_currency
+                updated = True
+        
+        # Обновляем timestamp данные
+        new_timestamp = exchange_data.get('timestamp')
+        if new_timestamp and int(new_timestamp) != int(self.exchange_timestamp or 0):
+            self.exchange_timestamp = int(new_timestamp)
+            updated = True
+        
+        new_last_trade_timestamp = exchange_data.get('lastTradeTimestamp')
+        if new_last_trade_timestamp and int(new_last_trade_timestamp) != int(self.last_trade_timestamp or 0):
+            self.last_trade_timestamp = int(new_last_trade_timestamp)
+            updated = True
+        
+        # Обновляем trades
+        new_trades = exchange_data.get('trades')
+        if new_trades is not None and new_trades != self.trades:
+            self.trades = new_trades
+            updated = True
+        
+        # Обновляем raw data
+        new_info = exchange_data.get('info')
+        if new_info and new_info != self.exchange_raw_data:
+            self.exchange_raw_data = new_info
+            updated = True
+        
+        # Обновляем last_update если что-то изменилось
+        if updated:
+            self.last_update = int(time.time() * 1000)
+        
+        return updated
+
     def to_dict(self) -> Dict[str, Any]:
         """Преобразует ордер в словарь для сохранения"""
         return {
@@ -305,7 +510,8 @@ class Order:
             'trades': self.trades,
             'stop_price': self.stop_price,
             'post_only': self.post_only,
-            'exchange_raw_data': self.exchange_raw_data
+            'exchange_raw_data': self.exchange_raw_data,
+            'data': self.to_ccxt_format()  # ← ИЗМЕНЕНО: используем CCXT формат
         }
 
     @staticmethod

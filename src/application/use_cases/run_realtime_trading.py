@@ -53,7 +53,8 @@ async def run_realtime_trading(
     # Создаем монитор завершения сделок
     deal_completion_monitor = DealCompletionMonitor(
         deal_service=deal_service,
-        order_service=order_execution_service.order_service
+        order_service=order_execution_service.order_service,
+        exchange_connector=pro_exchange_connector_sandbox
     )
 
     counter = 0

@@ -82,7 +82,13 @@ class StopLossMonitor:
                 else:
                     price = current_price
                     
-                entry_price = deal.buy_order.average_price
+                # Используем average_price если доступна, иначе fallback на price
+                entry_price = deal.buy_order.average_price if deal.buy_order.average_price > 0 else deal.buy_order.price
+                
+                # Проверяем корректность цены входа
+                if entry_price <= 0:
+                    logger.warning(f"⚠️  Пропуск проверки stop-loss для сделки #{deal.deal_id}: некорректная цена входа {entry_price}")
+                    continue
                 
                 # Используем кешированный стакан или получаем новый
                 if cached_orderbook is not None:
@@ -175,9 +181,25 @@ class StopLossMonitor:
                     deal.sell_order = market_sell_order
                     logger.info(f"✅ Создан маркет SELL ордер #{market_sell_order.order_id} для сделки #{deal.deal_id}")
                     
-                    # Закрываем сделку
-                    await self.deal_service.close_deal(deal.deal_id)
-                    logger.info(f"Сделка #{deal.deal_id} закрыта {'принудительно' if force else 'по стоп-лоссу'}")
+                    # 🆕 СИНХРОНИЗАЦИЯ: Обновляем SELL ордер с актуальными данными биржи
+                    try:
+                        if market_sell_order.exchange_id:
+                            exchange_data = await self.exchange_connector.fetch_order(market_sell_order.exchange_id, market_sell_order.symbol)
+                            if exchange_data:
+                                was_updated = market_sell_order.sync_with_exchange_data(exchange_data)
+                                if was_updated:
+                                    logger.info(f"🔄 SELL ордер {market_sell_order.order_id} синхронизирован с биржей")
+                                    # Обновляем ордер в репозитории через deal_service
+                                    self.deal_service.update_deal_order(deal.deal_id, market_sell_order)
+                    except Exception as sync_error:
+                        logger.warning(f"⚠️ Не удалось синхронизировать SELL ордер {market_sell_order.order_id}: {sync_error}")
+                    
+                    # Закрываем сделку только если SELL ордер исполнен
+                    if market_sell_order.is_filled():
+                        await self.deal_service.close_deal(deal.deal_id)
+                        logger.info(f"Сделка #{deal.deal_id} закрыта {'принудительно' if force else 'по стоп-лоссу'}")
+                    else:
+                        logger.info(f"SELL ордер {market_sell_order.order_id} создан, ожидаем исполнения")
                 else:
                     logger.error(f"Не удалось создать маркет-ордер для сделки #{deal.deal_id}")
                     

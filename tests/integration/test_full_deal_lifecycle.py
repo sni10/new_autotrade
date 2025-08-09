@@ -31,7 +31,7 @@ async def setup_services():
     order_execution_service = OrderExecutionService(order_service, deal_service, mock_exchange)
     buy_order_monitor = BuyOrderMonitor(order_service=order_service, deal_service=deal_service, exchange_connector=mock_exchange, max_age_minutes=5, max_price_deviation_percent=10, check_interval_seconds=1, grace_period_seconds=0)
     filled_buy_handler = FilledBuyOrderHandler(order_service, deal_service)
-    deal_completion_monitor = DealCompletionMonitor(deal_service, order_service)
+    deal_completion_monitor = DealCompletionMonitor(deal_service, order_service, mock_exchange)
     return { "oes": order_execution_service, "mock_exchange": mock_exchange, "filled_handler": filled_buy_handler, "completion_monitor": deal_completion_monitor, "orders_repo": orders_repo, "deals_repo": deals_repo, "buy_monitor": buy_order_monitor, "order_service": order_service }
 
 async def test_happy_path_deal_lifecycle(setup_services):

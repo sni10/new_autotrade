@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import time
+from datetime import datetime
 from typing import List, Optional, Tuple
 from domain.entities.order import Order
 from domain.services.orders.order_service import OrderService
@@ -29,15 +30,17 @@ class BuyOrderMonitor:
         max_age_minutes: float = 15.0,
         max_price_deviation_percent: float = 3.0,
         check_interval_seconds: int = 60,
-        grace_period_seconds: int = 60  # Период ожидания перед проверкой новых ордеров
+        grace_period_seconds: int = 60,  # Период ожидания перед проверкой новых ордеров
+        min_time_between_recreations_minutes: float = 0.0
     ):
         self.order_service = order_service
         self.deal_service = deal_service # ❗️ ДОБАВЛЕНО
-        self.exchange = exchange_connector
+        self.exchange_connector = exchange_connector
         self.max_age_minutes = max_age_minutes
         self.max_price_deviation_percent = max_price_deviation_percent
         self.check_interval_seconds = check_interval_seconds
         self.grace_period_seconds = grace_period_seconds
+        self.min_time_between_recreations_minutes = min_time_between_recreations_minutes
         
         self.running = False
         self.stats = {
@@ -51,6 +54,9 @@ class BuyOrderMonitor:
         self.quiet_checks_count = 0  # Счетчик "тихих" проверок
         self.last_summary_time = 0   # Время последней сводки
         self.summary_interval_minutes = 5  # Интервал сводки в минутах
+        
+        # Анти-дерганье: последняя пересозданная метка времени по deal_id
+        self._last_recreation_by_deal = {}  # deal_id -> epoch seconds
 
     async def start_monitoring(self):
         """Запуск мониторинга в фоне"""
@@ -98,16 +104,32 @@ class BuyOrderMonitor:
                 return
             
             for order in buy_orders:
-                # Проверяем возраст ордера для определения необходимости проверки статуса
-                age_seconds = self._get_order_age_seconds(order)
-                
-                # Пропускаем проверку статуса для новых ордеров (в пределах grace period)
-                if age_seconds < self.grace_period_seconds:
-                    logger.debug(f"⏳ BUY {order.order_id}: пропускаем проверку статуса (возраст {age_seconds:.1f}с < {self.grace_period_seconds}с)")
-                    continue
-                
-                # КРИТИЧНО: Обновляем статус с биржи ТОЛЬКО после grace period
-                updated_order = await self.order_service.get_order_status(order)
+                # 🆕 СИНХРОНИЗАЦИЯ: Обновляем ордер с актуальными данными биржи
+                try:
+                    # Получаем свежие данные с биржи
+                    if order.exchange_id:
+                        exchange_data = await self.exchange_connector.fetch_order(order.exchange_id, order.symbol)
+                        if exchange_data:
+                            # Синхронизируем наш ордер с данными биржи
+                            was_updated = order.sync_with_exchange_data(exchange_data)
+                            if was_updated:
+                                # Сохраняем обновленный ордер
+                                self.order_service.orders_repo.update_order(order)
+                                logger.debug(f"🔄 Ордер {order.order_id} синхронизирован с биржей")
+                    
+                    updated_order = order  # Используем синхронизированный ордер
+                    
+                except Exception as e:
+                    logger.error(f"❌ Ошибка синхронизации ордера {order.order_id}: {e}")
+                    # Fallback: используем старый метод
+                    try:
+                        updated_order = await self.order_service.get_order_status(order)
+                        if not updated_order:
+                            logger.warning(f"⚠️ Не удалось получить статус ордера {order.order_id}")
+                            continue
+                    except Exception as e2:
+                        logger.error(f"❌ Fallback ошибка получения статуса ордера {order.order_id}: {e2}")
+                        continue
                 
                 # Детальное логирование состояния ордера
                 age_minutes = self._get_order_age_minutes(updated_order)
@@ -119,7 +141,7 @@ class BuyOrderMonitor:
                 # Проверяем на "протухание"
                 is_stale, reason = await self._is_order_stale(updated_order)
                 if is_stale:
-                    logger.warning(f"🚨 ПРОТУХШИЙ BUY: {reason}")
+                    logger.warning(f"🚨 ПРОТУХШИЙ BUY ОБНАРУЖЕН: {reason}")
                     await self._handle_stale_buy_order(updated_order)
                     
         except Exception as e:
@@ -144,79 +166,100 @@ class BuyOrderMonitor:
             self.quiet_checks_count = 0
 
     def _get_order_age_seconds(self, order: Order) -> float:
-        """Вычисляет возраст ордера в секундах"""
+        """Вычисляет возраст ордера в секундах, поддерживает int(ms), datetime, str(ISO)."""
         try:
             current_time = int(time.time() * 1000)
-            
-            # Безопасное преобразование created_at к int (миллисекунды)
-            if hasattr(order.created_at, 'timestamp'):
-                # Если это pandas Timestamp, конвертируем в миллисекунды
-                created_at_ms = int(order.created_at.timestamp() * 1000)
-            elif isinstance(order.created_at, (int, float)):
-                # Если это уже число, используем как есть
-                created_at_ms = int(order.created_at)
-            else:
-                # Fallback: возвращаем 0 (ордер считается новым)
-                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
+            created_at_ms = None
+
+            ca = getattr(order, 'created_at', None)
+            if hasattr(ca, 'timestamp'):
+                created_at_ms = int(ca.timestamp() * 1000)
+            elif isinstance(ca, (int, float)):
+                created_at_ms = int(ca)
+            elif isinstance(ca, str) and ca:
+                try:
+                    created_at_ms = int(datetime.fromisoformat(ca).timestamp() * 1000)
+                except Exception:
+                    created_at_ms = None
+
+            if created_at_ms is None:
+                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(ca)} -> считаем 0с")
                 return 0.0
-            
-            age_seconds = (current_time - created_at_ms) / 1000
-            return max(0.0, age_seconds)  # Не может быть отрицательным
-            
+
+            age_seconds = (current_time - created_at_ms) / 1000.0
+            return max(0.0, age_seconds)
         except Exception as e:
             logger.error(f"❌ Ошибка вычисления возраста ордера {order.order_id}: {e}")
             return 0.0
 
     def _get_order_age_minutes(self, order: Order) -> float:
-        """Вычисляет возраст ордера в минутах"""
+        """Вычисляет возраст ордера в минутах, поддерживает int(ms), datetime, str(ISO)."""
         try:
             current_time = int(time.time() * 1000)
-            
-            # Безопасное преобразование created_at к int (миллисекунды)
-            if hasattr(order.created_at, 'timestamp'):
-                # Если это pandas Timestamp, конвертируем в миллисекунды
-                created_at_ms = int(order.created_at.timestamp() * 1000)
-            elif isinstance(order.created_at, (int, float)):
-                # Если это уже число, используем как есть
-                created_at_ms = int(order.created_at)
-            else:
-                # Fallback: возвращаем 0 (ордер считается новым)
-                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
+            created_at_ms = None
+
+            ca = getattr(order, 'created_at', None)
+            if hasattr(ca, 'timestamp'):
+                created_at_ms = int(ca.timestamp() * 1000)
+            elif isinstance(ca, (int, float)):
+                created_at_ms = int(ca)
+            elif isinstance(ca, str) and ca:
+                try:
+                    created_at_ms = int(datetime.fromisoformat(ca).timestamp() * 1000)
+                except Exception:
+                    created_at_ms = None
+
+            if created_at_ms is None:
+                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(ca)} -> считаем 0мин")
                 return 0.0
-            
-            age_minutes = (current_time - created_at_ms) / 1000 / 60
-            return max(0.0, age_minutes)  # Не может быть отрицательным
-            
+
+            age_minutes = (current_time - created_at_ms) / 1000.0 / 60.0
+            return max(0.0, age_minutes)
         except Exception as e:
             logger.error(f"❌ Ошибка вычисления возраста ордера {order.order_id}: {e}")
             return 0.0
 
     async def _is_order_stale(self, order: Order) -> Tuple[bool, str]:
-        """Упрощенная проверка протухания BUY ордера (как в версии 2.3.4)"""
+        """ИСПРАВЛЕННАЯ проверка протухания BUY ордера с улучшенной логикой"""
         try:
             # 1. Проверка возраста ордера
             age_minutes = self._get_order_age_minutes(order)
             
+            # ИСПРАВЛЕНИЕ: Более агрессивная проверка по времени
             if age_minutes > self.max_age_minutes:
                 reason = f"ордер {order.order_id} протух по времени: {age_minutes:.1f} мин > {self.max_age_minutes} мин"
                 return True, reason
             
-            # 2. Простая проверка отклонения цены от рынка
+            # ИСПРАВЛЕНИЕ: Дополнительная проверка для ордеров с нулевым заполнением
+            fill_percentage = order.get_fill_percentage()
+            if age_minutes > (self.max_age_minutes * 0.5) and fill_percentage == 0.0:
+                reason = f"ордер {order.order_id} протух: {age_minutes:.1f} мин без заполнения (>{self.max_age_minutes * 0.5:.1f} мин)"
+                return True, reason
+            
+            # 2. Проверка отклонения цены от рынка (симметрично, используем best bid из стакана)
             try:
-                ticker = await self.exchange.fetch_ticker(order.symbol)
-                current_price = float(ticker.last)
-                
-                # Для BUY: если рынок ушел выше нашей цены
-                price_deviation = ((current_price - order.price) / order.price) * 100
-                
-                if price_deviation > self.max_price_deviation_percent:
-                    reason = f"ордер {order.order_id} протух по цене: рынок {current_price}, ордер {order.price} (+{price_deviation:.1f}%)"
-                    return True, reason
-                    
+                market_price = None
+                try:
+                    order_book = await self.exchange_connector.fetch_order_book(order.symbol)
+                    if order_book and getattr(order_book, 'bids', None) and len(order_book.bids) > 0:
+                        market_price = float(order_book.bids[0][0])
+                except Exception:
+                    market_price = None
+                if market_price is None:
+                    ticker = await self.exchange_connector.fetch_ticker(order.symbol)
+                    market_price = float(getattr(ticker, 'last', 0.0))
+
+                if order.price and market_price:
+                    price_deviation_abs = abs((market_price - float(order.price)) / float(order.price)) * 100.0
+                    if price_deviation_abs > self.max_price_deviation_percent and order.get_fill_percentage() == 0.0:
+                        direction = 'ниже' if market_price < order.price else 'выше'
+                        reason = (f"ордер {order.order_id} протух по цене: рынок {market_price}, ордер {order.price}, "
+                                  f"отклонение {price_deviation_abs:.2f}% ({direction})")
+                        return True, reason
             except Exception as e:
-                logger.warning(f"⚠️ Не удалось проверить цену для {order.symbol}: {e}")
+                logger.warning(f"⚠️ Не удалось проверить цену/стакан для {order.symbol}: {e}")
                 # Если не можем получить цену, проверяем только по времени
-                
+
             return False, ""
             
         except Exception as e:
@@ -224,17 +267,26 @@ class BuyOrderMonitor:
             return False, ""
 
     async def _handle_stale_buy_order(self, order: Order):
-        """Простая обработка протухшего BUY ордера: отмена + пересоздание (как в версии 2.3.4)"""
+        """Обработка протухшего BUY: throttle + отмена + пересоздание + обновление PENDING SELL"""
         try:
             self.stats['stale_orders_found'] += 1
-            logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id}")
+
+            # Анти-дерганье по deal_id
+            now = time.time()
+            last = self._last_recreation_by_deal.get(order.deal_id)
+            min_gap = (self.min_time_between_recreations_minutes or 0.0) * 60.0
+            if last is not None and (now - last) < min_gap:
+                wait_left = min_gap - (now - last)
+                logger.info(f"⏳ Пропускаем пересоздание BUY для сделки {order.deal_id}: подождите ещё {wait_left:.1f}с")
+                return
+
+            logger.warning(f"🚨 Обрабатываем протухший BUY ордер {order.order_id} (deal {order.deal_id})")
 
             # 1. Отменяем старый BUY ордер
             cancel_success = await self.order_service.cancel_order(order)
             if not cancel_success:
                 logger.error(f"❌ Не удалось отменить BUY ордер {order.order_id}")
                 return
-            
             self.stats['orders_cancelled'] += 1
             logger.info(f"✅ BUY ордер {order.order_id} отменен")
 
@@ -243,9 +295,48 @@ class BuyOrderMonitor:
             if not new_buy_order:
                 logger.error(f"❌ Не удалось пересоздать BUY ордер")
                 return
-                
+
             self.stats['orders_recreated'] += 1
             logger.info(f"✅ BUY ордер пересоздан: {order.order_id} -> {new_buy_order.order_id}")
+
+            # 3. Обновляем связанный PENDING SELL в рамках той же сделки
+            try:
+                deal = self.deal_service.get_deal_by_id(order.deal_id)
+                profit_markup = 0.0
+                if deal and getattr(deal, 'currency_pair', None):
+                    profit_markup = float(getattr(deal.currency_pair, 'profit_markup', 0.0) or 0.0)
+
+                # Ищем PENDING SELL ордер по той же сделке
+                deal_orders = self.order_service.orders_repo.get_orders_by_deal(order.deal_id)
+                pending_sells = [o for o in deal_orders if o.side == Order.SIDE_SELL and o.is_pending()]
+                if pending_sells:
+                    sell = pending_sells[0]
+                    # Пересчитываем цену SELL
+                    raw_new_sell_price = float(new_buy_order.price) * (1.0 + profit_markup)
+                    # Корректируем точность цены/количества через фабрику
+                    try:
+                        adj_price = self.order_service.order_factory.adjust_price_precision(new_buy_order.symbol, raw_new_sell_price)
+                    except Exception:
+                        adj_price = raw_new_sell_price
+                    try:
+                        adj_amount = self.order_service.order_factory.adjust_amount_precision(new_buy_order.symbol, new_buy_order.amount)
+                    except Exception:
+                        adj_amount = new_buy_order.amount
+
+                    sell.price = adj_price
+                    sell.amount = adj_amount
+                    sell.last_update = int(time.time() * 1000)
+                    # Оставляем статус PENDING, exchange_id = None
+                    sell.exchange_id = None
+                    self.order_service.orders_repo.update_order(sell)
+                    logger.info(f"🔁 Обновлён PENDING SELL {sell.order_id} в сделке {order.deal_id}: новая цена {adj_price}, объём {adj_amount}")
+                else:
+                    logger.debug(f"ℹ️ В сделке {order.deal_id} нет PENDING SELL для обновления")
+
+                # Сохраняем таймер анти-дерганья
+                self._last_recreation_by_deal[order.deal_id] = time.time()
+            except Exception as e:
+                logger.error(f"❌ Ошибка обновления связанного SELL для сделки {order.deal_id}: {e}")
 
         except Exception as e:
             logger.error(f"❌ Ошибка обработки протухшего BUY ордера {order.order_id}: {e}", exc_info=True)
@@ -254,7 +345,7 @@ class BuyOrderMonitor:
         """Простое пересоздание BUY ордера по текущей рыночной цене (как в версии 2.3.4)"""
         try:
             # Получаем текущую цену
-            ticker = await self.exchange.fetch_ticker(old_order.symbol)
+            ticker = await self.exchange_connector.fetch_ticker(old_order.symbol)
             new_price = float(ticker.last) * 0.999  # Небольшая скидка для быстрого исполнения
 
             logger.info(f"🔄 Пересоздаем BUY ордер: старая цена {old_order.price}, новая цена {new_price}")
