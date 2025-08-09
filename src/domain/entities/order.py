@@ -103,30 +103,44 @@ class Order:
         self.exchange_raw_data = exchange_raw_data
 
     # 🆕 РАСШИРЕННЫЕ МЕТОДЫ ПРОВЕРКИ СТАТУСА
+    def _status_upper(self) -> str:
+        """Нормализует статус к верхнему регистру для устойчивых сравнений."""
+        try:
+            return str(self.status or "").strip().upper()
+        except Exception:
+            return ""
+
     def is_open(self) -> bool:
         """Ордер открыт и ожидает исполнения"""
-        return self.status == self.STATUS_OPEN
+        s = self._status_upper()
+        # Считаем открытыми также частично исполненные ордера
+        return s in [self.STATUS_OPEN, self.STATUS_PARTIALLY_FILLED]
 
     def is_closed(self) -> bool:
         """Ордер закрыт (исполнен или отменен)"""
-        return self.status in [self.STATUS_CLOSED, self.STATUS_FILLED, self.STATUS_CANCELED, self.STATUS_NOT_FOUND_ON_EXCHANGE]
+        s = self._status_upper()
+        return s in [self.STATUS_CLOSED, self.STATUS_FILLED, self.STATUS_CANCELED, self.STATUS_NOT_FOUND_ON_EXCHANGE]
 
     def is_filled(self) -> bool:
         """Ордер полностью исполнен"""
-        # ИСПРАВЛЕНИЕ: Учитываем статус "closed" от биржи как исполненный ордер
-        return self.status in [self.STATUS_FILLED, 'closed']
+        s = self._status_upper()
+        # Учитываем CLOSED как синоним FILLED (биржи часто присылают closed)
+        return s in [self.STATUS_FILLED, self.STATUS_CLOSED]
 
     def is_partially_filled(self) -> bool:
         """Ордер частично исполнен"""
-        return self.status == self.STATUS_PARTIALLY_FILLED
+        s = self._status_upper()
+        return s == self.STATUS_PARTIALLY_FILLED
 
     def is_pending(self) -> bool:
         """Ордер ожидает размещения на бирже"""
-        return self.status == self.STATUS_PENDING
+        s = self._status_upper()
+        return s == self.STATUS_PENDING
 
     def is_failed(self) -> bool:
         """Ордер не смог быть размещен"""
-        return self.status == self.STATUS_FAILED
+        s = self._status_upper()
+        return s == self.STATUS_FAILED
 
     # 🆕 МЕТОДЫ РАБОТЫ С ИСПОЛНЕНИЕМ
     def get_fill_percentage(self) -> float:
