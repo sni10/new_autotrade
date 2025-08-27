@@ -93,9 +93,41 @@ class DealCompletionMonitor:
                 logger.debug(f"Сделка {deal.deal_id}: BUY ордеров: {len(buy_orders)}, SELL ордеров: {len(sell_orders)}. Ожидаем оба типа.")
                 return
             
-            # Берем первые ордера каждого типа (обычно должен быть только один)
-            buy_order = buy_orders[0]
-            sell_order = sell_orders[0]
+            # Выбираем наиболее релевантные ордера по весу статуса и свежести
+            def _status_weight(o: Order) -> int:
+                s = o._status_upper() if hasattr(o, '_status_upper') else str(getattr(o, 'status', '')).upper()
+                if s in [Order.STATUS_FILLED, Order.STATUS_CLOSED]:
+                    return 100
+                if s == Order.STATUS_PARTIALLY_FILLED:
+                    return 80
+                if s == Order.STATUS_OPEN:
+                    return 60
+                if s == Order.STATUS_PENDING:
+                    return 40
+                if s in [Order.STATUS_CANCELED, Order.STATUS_FAILED, Order.STATUS_NOT_FOUND_ON_EXCHANGE]:
+                    return 0
+                return 10
+
+            def _recency(o: Order) -> int:
+                return int(getattr(o, 'last_update', getattr(o, 'created_at', 0)) or 0)
+
+            buy_orders_sorted = sorted(buy_orders, key=lambda o: (_status_weight(o), _recency(o)), reverse=True)
+            sell_orders_sorted = sorted(sell_orders, key=lambda o: (_status_weight(o), _recency(o)), reverse=True)
+
+            buy_order = buy_orders_sorted[0]
+            sell_order = sell_orders_sorted[0]
+
+            if len(buy_orders) > 1 or len(sell_orders) > 1:
+                logger.debug(
+                    f"Deal {deal.deal_id}: выбраны BUY {buy_order.order_id} [{buy_order.status}] и SELL {sell_order.order_id} [{sell_order.status}] из {len(buy_orders)}/{len(sell_orders)} вариантов"
+                )
+                try:
+                    buy_list = ", ".join([f"{o.order_id}[{o.status}]@{getattr(o, 'price', 'n/a')}" for o in buy_orders_sorted])
+                    sell_list = ", ".join([f"{o.order_id}[{o.status}]@{getattr(o, 'price', 'n/a')}" for o in sell_orders_sorted])
+                    logger.debug(f"   BUY варианты: {buy_list}")
+                    logger.debug(f"   SELL варианты: {sell_list}")
+                except Exception:
+                    pass
             
             # 🆕 СИНХРОНИЗАЦИЯ: Обновляем ордера с актуальными данными биржи
             # Проверяем возраст buy ордера
@@ -109,11 +141,10 @@ class DealCompletionMonitor:
                     if buy_order.exchange_id:
                         exchange_data = await self.exchange_connector.fetch_order(buy_order.exchange_id, buy_order.symbol)
                         if exchange_data:
-                            was_updated = buy_order.sync_with_exchange_data(exchange_data)
-                            if was_updated:
-                                self.order_service.orders_repo.update_order(buy_order)
-                                self.stats["sync_operations"] += 1
-                                logger.debug(f"🔄 BUY ордер {buy_order.order_id} синхронизирован с биржей")
+                            buy_order.update_from_exchange(exchange_data)
+                            self.order_service.orders_repo.update_order(buy_order)
+                            self.stats["sync_operations"] += 1
+                            logger.debug(f"🔄 BUY ордер {buy_order.order_id} синхронизирован с биржей")
                     updated_buy = buy_order
                 except Exception as e:
                     logger.error(f"❌ Ошибка синхронизации BUY ордера {buy_order.order_id}: {e}")
@@ -131,11 +162,10 @@ class DealCompletionMonitor:
                     try:
                         exchange_data = await self.exchange_connector.fetch_order(sell_order.exchange_id, sell_order.symbol)
                         if exchange_data:
-                            was_updated = sell_order.sync_with_exchange_data(exchange_data)
-                            if was_updated:
-                                self.order_service.orders_repo.update_order(sell_order)
-                                self.stats["sync_operations"] += 1
-                                logger.debug(f"🔄 SELL ордер {sell_order.order_id} синхронизирован с биржей")
+                            sell_order.update_from_exchange(exchange_data)
+                            self.order_service.orders_repo.update_order(sell_order)
+                            self.stats["sync_operations"] += 1
+                            logger.debug(f"🔄 SELL ордер {sell_order.order_id} синхронизирован с биржей")
                         updated_sell = sell_order
                     except Exception as e:
                         logger.error(f"❌ Ошибка синхронизации SELL ордера {sell_order.order_id}: {e}")
@@ -167,24 +197,48 @@ class DealCompletionMonitor:
                     logger.error(f"❌ Не удалось разместить SELL: {result.error_message}")
                     return
             
-            # Завершение сделки при полном исполнении
-            if updated_buy.is_filled() and updated_sell.is_filled():
+            # Завершение сделки при полном исполнении (агрегатная проверка)
+            buy_any_filled = any(o.is_filled() for o in buy_orders)
+            sell_any_filled = any(o.is_filled() for o in sell_orders)
+
+            # Если SELL уже filled, а BUY по выбранному не filled — сделаем разовую жесткую синхронизацию всех ордеров сделки
+            if sell_any_filled and not buy_any_filled:
+                try:
+                    logger.debug(f"🔄 Форс-синхронизация всех ордеров сделки {deal.deal_id} (SELL filled, BUY нет)")
+                    for o in buy_orders + sell_orders:
+                        if getattr(o, 'exchange_id', None):
+                            try:
+                                data = await self.exchange_connector.fetch_order(o.exchange_id, o.symbol)
+                                if data:
+                                    # Используем update_from_exchange для совместимости
+                                    o.update_from_exchange(data)
+                                    self.order_service.orders_repo.update_order(o)
+                                    self.stats["sync_operations"] += 1
+                            except Exception as e:
+                                logger.debug(f"   ⚠️ Ошибка форс-синхронизации ордера {o.order_id}: {e}")
+                    # Пересчитываем
+                    buy_any_filled = any(o.is_filled() for o in buy_orders)
+                    sell_any_filled = any(o.is_filled() for o in sell_orders)
+                except Exception as e:
+                    logger.debug(f"⚠️ Ошибка при форс-синхронизации сделки {deal.deal_id}: {e}")
+
+            if buy_any_filled and sell_any_filled:
                 logger.info(f"🎉 СДЕЛКА {deal.deal_id} ЗАВЕРШЕНА!")
                 self.deal_service.close_deal(deal.deal_id)
                 self.stats["deals_completed"] += 1
                 logger.info(f"✅ Сделка {deal.deal_id} успешно закрыта.")
             else:
                 # ДИАГНОСТИКА: Логируем причину, почему сделка не завершается
-                buy_filled = updated_buy.is_filled()
-                sell_filled = updated_sell.is_filled()
+                buy_filled = buy_any_filled
+                sell_filled = sell_any_filled
                 logger.debug(f"🔍 СДЕЛКА {deal.deal_id} НЕ ЗАВЕРШЕНА: "
                            f"BUY заполнен: {buy_filled}, SELL заполнен: {sell_filled}")
                 
                 # Дополнительная информация о статусах
                 if not buy_filled:
-                    logger.debug(f"   BUY ордер {updated_buy.order_id}: статус={updated_buy.status}, filled={getattr(updated_buy, 'filled', 'N/A')}")
+                    logger.debug(f"   BUY ордера: {[f'{o.order_id}:{o.status}' for o in buy_orders]}")
                 if not sell_filled:
-                    logger.debug(f"   SELL ордер {updated_sell.order_id}: статус={updated_sell.status}, filled={getattr(updated_sell, 'filled', 'N/A')}")
+                    logger.debug(f"   SELL ордера: {[f'{o.order_id}:{o.status}' for o in sell_orders]}")
                 
         except Exception as e:
             logger.error(f"❌ Ошибка при обработке сделки {deal.deal_id}: {e}", exc_info=True)

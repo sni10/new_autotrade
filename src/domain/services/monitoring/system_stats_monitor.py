@@ -84,10 +84,10 @@ class SystemStatsMonitor:
             order_stats = self.order_service.get_statistics()
             open_orders = self.order_service.get_open_orders()
             
-            # Разделяем по типам
-            buy_orders = [o for o in open_orders if o.side == 'BUY']
-            sell_orders = [o for o in open_orders if o.side == 'SELL']
-            pending_orders = [o for o in open_orders if o.status == 'PENDING']
+            # Разделяем по типам (нормализуем регистр и используем предикаты)
+            buy_orders = [o for o in open_orders if str(getattr(o, 'side', '')).upper() == 'BUY']
+            sell_orders = [o for o in open_orders if str(getattr(o, 'side', '')).upper() == 'SELL']
+            pending_orders = [o for o in open_orders if getattr(o, 'is_pending', lambda: False)()]
             
             logger.info(f"📋 ОРДЕРА:")
             logger.info(f"   • Всего: {order_stats['total_orders']}")

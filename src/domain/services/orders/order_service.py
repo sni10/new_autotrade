@@ -112,7 +112,7 @@ class OrderService:
         return {
             'total_orders': len(all_orders),
             'open_orders': len(open_orders),
-            'completed_orders': len([o for o in all_orders if o.status == 'FILLED']),
-            'cancelled_orders': len([o for o in all_orders if o.status == 'CANCELLED']),
-            'failed_orders': len([o for o in all_orders if o.status == 'FAILED'])
+            'completed_orders': len([o for o in all_orders if getattr(o, 'is_filled', lambda: False)()]),
+            'cancelled_orders': len([o for o in all_orders if getattr(o, '_status_upper', lambda: '')() == Order.STATUS_CANCELED]),
+            'failed_orders': len([o for o in all_orders if getattr(o, '_status_upper', lambda: '')() == Order.STATUS_FAILED])
         }

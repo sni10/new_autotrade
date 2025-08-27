@@ -46,10 +46,10 @@
     "max_price_deviation_percent": 3.0,
     "check_interval_seconds": 5,
     "auto_recreate_orders": true,
-    "min_time_between_recreations_minutes": 0.0
+    "min_time_between_recreations_minutes": 1.0
   },
   "currency_pair": {
-    "base_currency": "BIO",
+    "base_currency": "GTC",
     "quote_currency": "USDT",
     "order_life_time": 1,
     "deal_quota": 25.0,
