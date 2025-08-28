@@ -45,5 +45,5 @@ ENV PYTHONUNBUFFERED=1
 # 🚀 Use entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]
 
-# 📋 Default command for testing
-CMD ["pytest", "tests/", "-v", "--tb=short"]
+# 📋 Default command - will be overridden by docker-compose
+CMD ["echo", "Container is ready for testing"]

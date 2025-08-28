@@ -25,10 +25,10 @@ jobs:
           mkdir -p htmlcov
           mkdir -p .pytest_cache
 
-      - name: 🧪 Run tests with PostgreSQL using docker-compose
+      - name: 🧪 Run tests with PostgreSQL using docker compose
         run: |
           echo "🚀 Starting PostgreSQL and running tests..."
-          docker-compose -f docker/test/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-runner
+          docker compose -f docker/test/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-runner
         env:
           COMPOSE_DOCKER_CLI_BUILD: 1
           DOCKER_BUILDKIT: 1
@@ -37,10 +37,10 @@ jobs:
         if: failure()
         run: |
           echo "📋 PostgreSQL logs:"
-          docker-compose -f docker/test/docker-compose.test.yml logs postgres-test || echo "No PostgreSQL logs available"
+          docker compose -f docker/test/docker-compose.test.yml logs postgres-test || echo "No PostgreSQL logs available"
           echo ""
           echo "📋 Test runner logs:"
-          docker-compose -f docker/test/docker-compose.test.yml logs test-runner || echo "No test runner logs available"
+          docker compose -f docker/test/docker-compose.test.yml logs test-runner || echo "No test runner logs available"
 
       - name: 📊 Upload coverage reports
         if: always()
@@ -55,5 +55,5 @@ jobs:
       - name: 🧹 Clean up containers
         if: always()
         run: |
-          docker-compose -f docker/test/docker-compose.test.yml down -v --remove-orphans || true
+          docker compose -f docker/test/docker-compose.test.yml down -v --remove-orphans || true
           docker system prune -f || true
