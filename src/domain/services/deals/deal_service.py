@@ -4,7 +4,7 @@ from domain.entities.deal import Deal
 from domain.entities.currency_pair import CurrencyPair
 from domain.factories.deal_factory import DealFactory
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
-from infrastructure.repositories.deals_repository import DealsRepository
+from infrastructure.repositories.interfaces.deals_repository_interface import IDealsRepository
 from domain.services.orders.order_service import OrderService
 from typing import List, Optional
 import logging
@@ -20,7 +20,7 @@ class DealService:
     - Взаимодействие с OrderService для управления ордерами.
     """
 
-    def __init__(self, deals_repo: DealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
+    def __init__(self, deals_repo: IDealsRepository, order_service: OrderService, deal_factory: DealFactory, exchange_connector: CcxtExchangeConnector):
         self.deals_repo = deals_repo
         self.order_service = order_service
         self.deal_factory = deal_factory
@@ -46,26 +46,52 @@ class DealService:
         logger.info(f"Created new deal: {deal}")
         return deal
 
-    def open_buy_order(self, price, amount, deal_id):
+    async def open_buy_order(self, symbol, price, amount, deal_id):
         """
-        Проверяет и обрабатывает все открытые сделки.
+        Создает BUY ордер и связывает его со сделкой.
         """
-        buy_order = self.order_service.create_buy_order(
-            price, amount
+        result = await self.order_service.create_and_place_buy_order(
+            symbol, amount, price, deal_id
         )
-        buy_order.deal_id = deal_id
+        if not result.success:
+            logger.error(f"❌ Failed to create BUY order for deal {deal_id}: {result.error_message}")
+            return None
+        buy_order = result.order
+        
+        # Связываем ордер со сделкой
+        deal = self.get_deal_by_id(deal_id)
+        if deal:
+            deal.buy_order = buy_order
+            self.deals_repo.save(deal)  # Сохраняем обновленную сделку
+            logger.info(f"✅ BUY Order linked to deal {deal_id}: {buy_order}")
+        else:
+            logger.warning(f"⚠️ Deal {deal_id} not found when linking BUY order")
+        
         logger.info(f"Create BUY Order: {buy_order}")
         return buy_order
 
 
-    def open_sell_order(self, price, amount, deal_id):
+    async def open_sell_order(self, symbol, price, amount, deal_id):
         """
-        Проверяет и обрабатывает все открытые сделки.
+        Создает SELL ордер и связывает его со сделкой.
         """
-        sell_order = self.order_service.create_sell_order(
-            price, amount
+        result = await self.order_service.create_local_sell_order(
+            symbol, amount, price, deal_id
         )
-        sell_order.deal_id = deal_id
+        if not result.success:
+            logger.error(f"❌ Failed to create SELL order for deal {deal_id}: {result.error_message}")
+            return None
+        sell_order = result.order
+        
+        # Связываем ордер со сделкой
+        deal = self.get_deal_by_id(deal_id)
+        if deal:
+            deal.sell_order = sell_order
+            self.deals_repo.save(deal)  # Сохраняем обновленную сделку
+            logger.info(f"✅ SELL Order linked to deal {deal_id}: {sell_order}")
+        else:
+            logger.warning(f"⚠️ Deal {deal_id} not found when linking SELL order")
+        
         logger.info(f"Create SELL Order: {sell_order}")
         return sell_order
 
@@ -144,3 +170,35 @@ class DealService:
         """
         for deal in self.get_open_deals():
             self.close_deal(deal)
+
+    def get_statistics(self) -> dict:
+        """
+        Получение статистики сервиса сделок для SystemStatsMonitor
+        """
+        try:
+            # Получаем все сделки из репозитория
+            all_deals = self.deals_repo.get_all() if hasattr(self.deals_repo, 'get_all') else []
+            open_deals = self.get_open_deals()
+            
+            # Подсчитываем завершенные сделки
+            completed_deals = []
+            if all_deals:
+                completed_deals = [deal for deal in all_deals if deal.status == 'CLOSED' or not deal.is_open()]
+            
+            return {
+                'total_deals': len(all_deals),
+                'open_deals': len(open_deals),
+                'completed_deals': len(completed_deals),
+                'active_deals': len(open_deals)  # Дополнительная статистика
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка получения статистики сделок: {e}")
+            # Возвращаем базовую статистику в случае ошибки
+            open_deals = self.get_open_deals()
+            return {
+                'total_deals': len(open_deals),  # Минимум что можем получить
+                'open_deals': len(open_deals),
+                'completed_deals': 0,
+                'active_deals': len(open_deals)
+            }

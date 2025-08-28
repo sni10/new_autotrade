@@ -1,0 +1,84 @@
+services:
+  # PostgreSQL service for tests
+  postgres-test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow", "-d", "airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    tmpfs:
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=1024m
+    command: >
+      postgres
+      -c shared_preload_libraries=''
+      -c max_connections=100
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+    networks:
+      - test_network
+
+  # Test runner service - NO FUCKING ENTRYPOINT!
+  test-runner:
+    image: ${TEST_IMAGE_TAG:-local-test-runner}
+    build:
+      context: ../..
+      dockerfile: docker/test/Dockerfile.test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    environment:
+      # Database connection for tests
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_USER: airflow
+      DB_PASSWORD: airflow
+      DB_NAME: airflow
+      # Test environment variables
+      PYTHONPATH: /app
+      PYTEST_CURRENT_TEST: 1
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ../..:/app
+    networks:
+      - test_network
+    # Run everything in one command - fuck entrypoint!
+    command: >
+      bash -c "
+        echo '🔧 AutoTrade Test Container Starting...' &&
+        echo '🔧 Updating config.json for test database...' &&
+        sed -i 's/\"host\": \"localhost\"/\"host\": \"postgres-test\"/' /app/src/config/config.json &&
+        sed -i 's/\"port\": 5434/\"port\": 5432/' /app/src/config/config.json &&
+        sed -i 's/\"user\": \".*\"/\"user\": \"airflow\"/' /app/src/config/config.json &&
+        sed -i 's/\"password\": \".*\"/\"password\": \"airflow\"/' /app/src/config/config.json &&
+        sed -i 's/\"database\": \".*\"/\"database\": \"airflow\"/' /app/src/config/config.json &&
+        echo '🔧 Waiting for PostgreSQL to be ready...' &&
+        until pg_isready -h postgres-test -p 5432 -U airflow -d airflow; do
+          echo '⏳ PostgreSQL is unavailable - sleeping'
+          sleep 2
+        done &&
+        echo '✅ PostgreSQL is ready!' &&
+        echo '🚀 Starting tests...' &&
+        python -m pytest tests/ -v --tb=short --maxfail=5 --cov=src --cov-report=html:/app/htmlcov --cov-report=term-missing --cov-report=xml:/app/coverage.xml -x
+      "
+
+networks:
+  test_network:
+    driver: bridge

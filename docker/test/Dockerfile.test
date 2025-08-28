@@ -1,0 +1,50 @@
+# 📌 Dockerfile for Testing Environment with PostgreSQL Support
+# Simplified version without entrypoint for maximum reliability
+FROM python:3.10-slim
+
+# 🏷️ Add labels for better cache management
+LABEL org.opencontainers.image.source="https://github.com/sni10/new_autotrade"
+LABEL org.opencontainers.image.description="AutoTrade Test Runner with PostgreSQL and TA-Lib"
+
+# 🧰 Install system dependencies (cached layer - changes rarely)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    curl \
+    gcc \
+    make \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🧱 Install TA-Lib from source (heavy operation - cached layer)
+RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz && \
+    tar -xzf ta-lib-0.6.4-src.tar.gz && \
+    cd ta-lib-0.6.4 && \
+    ./configure --prefix=/usr && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf ta-lib-0.6.4 ta-lib-0.6.4-src.tar.gz
+
+# 📁 Set up working directory
+WORKDIR /app
+
+# 🔧 Install Python dependencies (separate layer for better caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir pytest-cov pytest-xdist
+
+# 🧪 Create directories for configuration
+RUN mkdir -p /app/src/config
+
+# 🔧 Copy configuration files
+COPY src/config/config.json /app/src/config/config.json
+
+# 🧪 Set environment variables for testing
+ENV PYTHONPATH=/app
+ENV PYTEST_CURRENT_TEST=1
+ENV PYTHONUNBUFFERED=1
+
+# 📋 Default command - will be overridden by docker-compose
+CMD ["echo", "🐳 AutoTrade test container ready"]

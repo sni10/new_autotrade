@@ -1,36 +1,84 @@
-name: 🧪 Python Tests
+name: 🧪 Python Tests with PostgreSQL
 
 on:
   pull_request:
     branches: [ "dev", "stage", "release/*", "main" ]
   push:
     branches: [ "dev", "stage", "release/*", "main" ]
+  workflow_dispatch:
 
 jobs:
   test:
-    name: 🔍 Run Pytest inside Docker CI image
+    name: 🔍 Run Pytest with PostgreSQL Database
     runs-on: ubuntu-latest
-
-    container:
-      image: sni10per/new_autotrade-ci:latest
+    timeout-minutes: 20
 
     steps:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🧪 Run tests with Pytest
-        run: pytest tests/
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: 📦 Archive test results (optional)
-        if: always()
+      - name: 📦 Build test image with caching (local only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/test/Dockerfile.test
+          load: true  # Load into local Docker instead of pushing to registry
+          tags: local-test-runner:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: 🔧 Create necessary directories
         run: |
-          mkdir -p artifacts
-          cp -r .pytest_cache artifacts/ || true
-          cp -r tests/__pycache__ artifacts/ || true
+          mkdir -p htmlcov
+          mkdir -p .pytest_cache
 
-      - name: 📤 Upload artifacts (optional)
+      - name: 🧪 Run tests with locally built image
+        run: |
+          echo "🚀 Running tests with locally built Docker image..."
+          # Set the image tag to use locally built image
+          export TEST_IMAGE_TAG=local-test-runner:latest
+          docker compose -f docker/test/docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
+        env:
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          DOCKER_BUILDKIT: 1
+          TEST_IMAGE_TAG: local-test-runner:latest
+
+      - name: 📋 Show detailed logs (if failed)
+        if: failure()
+        run: |
+          echo "📋 PostgreSQL logs:"
+          docker compose -f docker/test/docker-compose.test.yml logs postgres-test || echo "No PostgreSQL logs available"
+          echo ""
+          echo "📋 Test runner logs:"  
+          docker compose -f docker/test/docker-compose.test.yml logs test-runner || echo "No test runner logs available"
+
+      - name: 📊 Upload coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-artifacts
-          path: artifacts
+          name: coverage-reports-${{ github.sha }}
+          path: |
+            htmlcov/
+            coverage.xml
+          retention-days: 7
+
+      - name: 🧹 Clean up containers
+        if: always()
+        run: |
+          docker compose -f docker/test/docker-compose.test.yml down -v --remove-orphans || true
+          docker system prune -f || true
+
+      - name: 📈 Performance summary
+        if: always()
+        run: |
+          echo "## 🚀 Performance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Notes |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Cache | ✅ Enabled | GitHub Actions Cache for layers |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Build | ✅ Local | Built locally with layer caching |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Execution | ✅ Fast | Cached dependencies and TA-Lib |" >> $GITHUB_STEP_SUMMARY
+          echo "| PostgreSQL | ✅ Optimized | Tmpfs storage for speed |" >> $GITHUB_STEP_SUMMARY

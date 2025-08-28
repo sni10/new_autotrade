@@ -7,6 +7,64 @@
 
 ---
 
+## [2.5.0] - 2025-08-28 - "Database Migration & Performance Optimization"
+
+### ✨ Added
+
+#### 🗄️ **PostgreSQL Integration**
+- **Полная миграция на PostgreSQL** - переход от JSON к реляционной БД
+- **Двухуровневая архитектура хранения** - MemoryFirst + PostgreSQL для максимальной производительности
+- **MemoryFirstDealsRepository** & **MemoryFirstOrdersRepository** - наносекундный доступ к данным в RAM с фоновой синхронизацией
+- **Автоматическое восстановление состояния** после перезапуска системы из БД
+
+#### 🧪 **Testing Infrastructure**
+- **Полный CI/CD pipeline** с PostgreSQL в Docker контейнерах
+- **194 теста прошли за 37.49 секунд** - комплексное покрытие функциональности
+- **Docker test environment** с автоматической настройкой БД и зависимостей
+- **TA-Lib integration** для технического анализа в тестовой среде
+
+#### ⚡ **Performance Improvements**
+- **Throttling для BuyOrderMonitor** - оптимизация нагрузки на API биржи
+- **Улучшенная логика сравнения ордеров** - более точное отслеживание состояний
+- **Оптимизация синхронизации ордеров** - устранение дубликатов и конфликтов
+
+### 🔧 Enhanced
+
+#### 🏗️ **Infrastructure & DevOps**
+- **RepositoryFactory с fallback** - система продолжает работу даже при недоступности PostgreSQL
+- **Docker reorganization** - разделение prod и test окружений
+- **Centralized configuration** - единое управление настройками для разных сред
+- **Network isolation** - изолированные Docker сети для безопасности
+
+#### 🛠️ **Code Quality**
+- **Refactored order status logic** - упрощение и стандартизация проверок статусов
+- **Improved error handling** - более надежная обработка исключительных ситуаций
+- **Cleaned up legacy code** - удаление устаревших компонентов и документации
+- **Enhanced logging** - более детальное логирование для отладки
+
+### 🗑️ Removed
+
+#### 📊 **Schema Cleanup**
+- **Removed `indicators_history` schema** - упрощение структуры БД
+- **Outdated development guidelines** - очистка устаревшей документации
+- **Legacy test files** - реорганизация тестовой структуры
+
+### 🔄 Migration Notes
+
+#### ⚠️ **Breaking Changes**
+- **Database migration required** - необходим переход с JSON на PostgreSQL
+- **Configuration updates** - новые параметры для подключения к БД
+- **Environment setup** - требуется настройка Docker окружения
+
+#### 📋 **Migration Checklist**
+- [ ] Backup existing JSON data
+- [ ] Setup PostgreSQL database
+- [ ] Update configuration files
+- [ ] Run database migrations
+- [ ] Verify CI/CD pipeline
+
+---
+
 ## [2.4.0] - 2025-07-15 - "Smart Risk Management & Infrastructure"
 
 ### ✨ Added

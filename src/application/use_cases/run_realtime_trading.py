@@ -11,6 +11,7 @@ from domain.services.deals.deal_service import DealService
 from domain.services.market_data.orderbook_analyzer import OrderBookSignal
 from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from infrastructure.repositories.tickers_repository import InMemoryTickerRepository
+from infrastructure.repositories.indicators_repository import InMemoryIndicatorsRepository
 from domain.services.market_data.ticker_service import TickerService
 from application.utils.performance_logger import PerformanceLogger
 from domain.services.trading.signal_cooldown_manager import SignalCooldownManager
@@ -35,25 +36,27 @@ async def run_realtime_trading(
     """Simplified trading loop using OrderExecutionService and BuyOrderMonitor."""
 
     repository = InMemoryTickerRepository(max_size=5000)
-    ticker_service = TickerService(repository)
+    indicators_repo = InMemoryIndicatorsRepository()
+    ticker_service = TickerService(repository, indicators_repo)
     logger_perf = PerformanceLogger(log_interval_seconds=10)
     cooldown_manager = SignalCooldownManager()
-    
+
     # Создаем кеш для стакана заявок (TTL 30 секунд)
     orderbook_cache = OrderBookCache(ttl_seconds=30)
-    
+
     # Создаем обработчик исполненных BUY ордеров
     filled_buy_order_handler = FilledBuyOrderHandler(
         order_service=order_execution_service.order_service,
         deal_service=deal_service
     )
-    
+
     # Создаем монитор завершения сделок
     deal_completion_monitor = DealCompletionMonitor(
         deal_service=deal_service,
-        order_service=order_execution_service.order_service
+        order_service=order_execution_service.order_service,
+        exchange_connector=pro_exchange_connector_sandbox
     )
-    
+
     counter = 0
     last_orderbook_update = 0
     orderbook_update_interval = 10  # Обновляем стакан каждые 10 тиков
@@ -61,6 +64,9 @@ async def run_realtime_trading(
     logger.info("🚀 Запуск расширенного торгового цикла с OrderExecutionService + BuyOrderMonitor")
 
     try:
+        logger.info("🔄 Начинаем основной торговый цикл...")
+        logger.info(f"🎯 Подключаемся к тикеру для символа: {currency_pair.symbol}")
+
         while True:
             try:
                 ticker_data = await pro_exchange_connector_prod.watch_ticker(currency_pair.symbol)
@@ -110,9 +116,12 @@ async def run_realtime_trading(
                     if orderbook_metrics.signal in [OrderBookSignal.REJECT, OrderBookSignal.WEAK_SELL, OrderBookSignal.STRONG_SELL]:
                         logger.info(f"🚫 Сигнал MACD отклонен анализатором стакана: {orderbook_metrics.signal.value}")
                         continue
-                    
+
                     # Синхронизация ордеров перед принятием решения
-                    await order_execution_service.monitor_active_orders()
+                    # Вместо вызова несуществующего метода, будем напрямую использовать BuyOrderMonitor
+                    # для проверки статуса ордеров. Это соответствует новой архитектуре, 
+                    # где каждый сервис выполняет свою четко определенную задачу.
+                    await buy_order_monitor.check_stale_buy_orders()
 
                     if len(repository.tickers) > 0:
                         last_ticker = repository.tickers[-1]
@@ -183,17 +192,7 @@ async def run_realtime_trading(
                                 logger.info("🚀 Выполнение стратегии через OrderExecutionService...")
                                 execution_result = await order_execution_service.execute_trading_strategy(
                                     currency_pair=currency_pair,
-                                    strategy_result=strategy_result,
-                                    metadata={
-                                        'trigger': 'macd_signal',
-                                        'macd_data': {
-                                            'macd': macd,
-                                            'signal': signal,
-                                            'histogram': hist,
-                                        },
-                                        'market_price': current_price,
-                                        'timestamp': int(time.time() * 1000),
-                                    },
+                                    strategy_result=strategy_result
                                 )
 
                                 if execution_result.success:
@@ -232,13 +231,33 @@ async def run_realtime_trading(
                     all_orders = order_execution_service.order_service.orders_repo.get_all()
                     if all_orders:
                         logger.info("   🔍 ДЕТАЛИ ПО ОРДЕРАМ:")
-                        # Динамическое создание строки формата для логов
+                        
+                        # Вычисляем precision для правильного форматирования
+                        from decimal import Decimal
+                        price_step = Decimal(str(currency_pair.precision.get('price', '0.000001')))
+                        amount_step = Decimal(str(currency_pair.precision.get('amount', '0.0001')))
+                        price_precision = int(price_step.normalize().as_tuple().exponent * -1)
+                        amount_precision = int(amount_step.normalize().as_tuple().exponent * -1)
+                        
+                        # Создаем строку формата с биржевыми precision
                         log_format = (
                             "     - ID: {} | DealID: {} | {} | {} | {} | "
-                            "Цена: {:g} | Кол-во: {:g} | ExchangeID: {} | Filled: {:g} | AvgPrice: {:g} | Fees: {:g}"
+                            "Цена: {:.{}f} | Кол-во: {:.{}f} | ExchangeID: {} | Filled: {:.{}f} | AvgPrice: {:.{}f} | Fees: {:.8f}"
                         )
 
                         for order in all_orders:
+                            # Безопасно обрабатываем fees - может быть списком, числом или None
+                            try:
+                                if isinstance(order.fees, list):
+                                    # Если fees - список, берем первый элемент или 0
+                                    fees_value = float(order.fees[0]) if order.fees and order.fees[0] is not None else 0.0
+                                elif isinstance(order.fees, (int, float)):
+                                    fees_value = float(order.fees)
+                                else:
+                                    fees_value = 0.0
+                            except (ValueError, TypeError, IndexError):
+                                fees_value = 0.0
+                            
                             logger.info(
                                 log_format.format(
                                     order.order_id,
@@ -246,12 +265,12 @@ async def run_realtime_trading(
                                     order.symbol,
                                     order.side.upper(),
                                     order.status,
-                                    float(order.price),
-                                    float(order.amount),
+                                    float(order.price), price_precision,
+                                    float(order.amount), amount_precision,
                                     order.exchange_id,
-                                    float(order.filled_amount),
-                                    float(order.average_price),
-                                    float(order.fees)
+                                    float(order.filled_amount), amount_precision,
+                                    float(order.average_price), price_precision,
+                                    fees_value
                                 )
                             )
 
@@ -270,7 +289,7 @@ async def run_realtime_trading(
                     logger.info("   🚨 Тухляков найдено: %s", monitor_stats["stale_orders_found"])
                     logger.info("   ❌ Ордеров отменено: %s", monitor_stats["orders_cancelled"])
                     logger.info("   🔄 Ордеров пересоздано: %s", monitor_stats["orders_recreated"])
-                    
+
                     # Добавляем статистику для нашего нового DealCompletionMonitor
                     if deal_completion_monitor:
                         try:
@@ -281,24 +300,24 @@ async def run_realtime_trading(
                             logger.info("   ✅ Сделок завершено: %s", completion_stats["deals_completed"])
                         except Exception as e:
                             logger.debug("⚠️ DealCompletionMonitor статистика недоступна: %s", e)
-                    
+
                     # Оптимизированная проверка стоп-лосса с кешированными данными
                     if stop_loss_monitor and counter % 50 == 0:  # Проверяем каждые 50 тиков
                         try:
-                            current_price = float(ticker_data.get('close', 0))
+                            current_price = ticker_data.close or 0.0
                             cached_orderbook = orderbook_cache.get(currency_pair.symbol)
-                            
+
                             # Передаем кешированные данные в стоп-лосс
                             await stop_loss_monitor.check_open_deals(
                                 current_price=current_price,
                                 cached_orderbook=cached_orderbook
                             )
-                            
+
                             if counter % 500 == 0:  # Логируем раз в 500 тиков
                                 logger.debug("🛡️ Проверен стоп-лосс с кешированными данными")
                         except Exception as e:
                             logger.debug(f"⚠️ Ошибка в оптимизированном стоп-лоссе: {e}")
-                    
+
                     # Добавляем статистику для StopLossMonitor
                     if stop_loss_monitor:
                         try:
@@ -309,7 +328,7 @@ async def run_realtime_trading(
                             logger.info("   🔴 Пробитий поддержки: %s", stop_loss_stats["support_breaks"])
                             logger.info("   🚨 Экстренных ликвидаций: %s", stop_loss_stats["emergency_liquidations"])
                             logger.info("   💥 Стоп-лоссов сработало: %s", stop_loss_stats["stop_loss_triggered"])
-                            
+
                             # Статистика кеша
                             cache_stats = orderbook_cache.get_stats()
                             logger.info("   📦 Кеш стакана: %s валидных записей (TTL: %ss)", cache_stats["valid_entries"], cache_stats["ttl_seconds"])
