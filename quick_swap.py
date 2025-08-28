@@ -78,7 +78,7 @@ async def main():
                 return
         else:  # buy
             ticker = await connector.fetch_ticker(SYMBOL)
-            current_price = Decimal(str(ticker['last']))
+            current_price = Decimal(str(ticker.last))
             required_quote_amount = amount_dec * current_price
 
             if required_quote_amount > quote_balance:

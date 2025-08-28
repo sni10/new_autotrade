@@ -1,85 +1,91 @@
-# --- Безопасность --- #
-# Никогда не добавляйте в образ приватные ключи и переменные окружения!
-.env
-.env.*
+# 📁 Docker ignore file for faster builds and smaller context
+# Exclude files that aren't needed in Docker build context
 
-# --- Контроль версий --- #
-# Исключаем всю историю Git и воркфлоу GitHub
+# Git files
 .git/
-.github/
 .gitignore
+.github/
 
-# --- Виртуальные окружения --- #
-# Исключаем любые venv, чтобы не смешивать с системными библиотеками в образе
-venv/
-.venv/
-env/
-
-# --- Кэш и артефакты Python --- #
-# Стандартные файлы кэша, которые не нужны в production
+# Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# --- Конфигурации IDE и локальные настройки --- #
-# Исключаем настройки редакторов и IDE
-.idea/
-.vscode/
-.run/
-*.run.xml
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# --- Тестирование --- #
-# Тесты и их артефакты не нужны в production-образе
-tests/
+# Testing artifacts
 .pytest_cache/
-htmlcov/
 .coverage
+htmlcov/
+.tox/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
 
-# --- Документация и проектные файлы --- #
-# Вся документация не нужна для работы приложения
-project_management/
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+data/
+logs/
+*.log
 *.md
+ANALYTICS_*
+GEMINI.md
+CLAUDE.md
+INFRASTRUCTURE_*
+SAFE_MIGRATION_*
+MY_SAFE_*
+exchange_*
 *.puml
 *.svg
 
-# --- Данные runtime --- #
-# JSON файлы репозиториев (не нужны в образе)
-deals.json
-orders.json
-tickers.json
-tickers_dump.json
+# Binance keys (security)
+binance_keys/
 
-# База данных (не должна быть в образе)
-data/
-*.db
-*.sqlite
-*.sqlite3
+# Docker files (avoid recursion)
+docker-compose*.yml
+Dockerfile*
 
-# Backup файлы и экспорт данных
-*.backup
-backup/
-backups/
-exports/
-export_*.json
-
-# --- Временные и системные файлы --- #
-# Логи, временные файлы и системный мусор
-*.log
-order_book_analysis.log
-*.tmp
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# --- Скрипты и утилиты для разработки --- #
-# Песочницы и тестовые скрипты не должны быть в образе
-sandbox*.py
-test_prod.py
-
-# --- Файлы сборки Docker --- #
-# Сам Dockerfile и docker-compose не должны копироваться внутрь образа
-Dockerfile
-docker-compose.yml
-.dockerignore
+# Documentation
+docs/
+README.md

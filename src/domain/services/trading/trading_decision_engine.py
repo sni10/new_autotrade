@@ -2,13 +2,13 @@
 from typing import Dict, Optional
 
 from src.domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer, OrderBookMetrics, OrderBookSignal
-from src.infrastructure.connectors.exchange_connector import ExchangeConnector
+from src.infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 
 
 class TradingDecisionEngine:
     """Движок принятия торговых решений с учетом MACD + стакана"""
 
-    def __init__(self, orderbook_analyzer: OrderBookAnalyzer, exchange_connector: ExchangeConnector):
+    def __init__(self, orderbook_analyzer: OrderBookAnalyzer, exchange_connector: CcxtExchangeConnector):
         self.orderbook_analyzer = orderbook_analyzer
         self.exchange_connector = exchange_connector
 
