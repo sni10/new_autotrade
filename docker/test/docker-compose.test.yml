@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:16
+    container_name: postgres-test
+    environment:
+      POSTGRES_DB: autotrade_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - test_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d autotrade_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  test-runner:
+    build:
+      context: ../../
+      dockerfile: docker/test/Dockerfile.test
+    container_name: test-runner
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres-test
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=autotrade_test
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - PYTHONPATH=/app
+    volumes:
+      - ../../:/app
+      - test_coverage:/app/htmlcov
+    networks:
+      - test_network
+    command: >
+      sh -c "
+        echo '🔧 AutoTrade Test Container Starting...'
+        echo '🔧 Waiting for PostgreSQL to be ready...'
+        
+        # Update config for tests
+        python -c \"
+import json
+import os
+config_path = '/app/src/config/config.json'
+if os.path.exists(config_path):
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    config['database'] = {
+        'host': 'postgres-test',
+        'port': 5432,
+        'database': 'autotrade_test',
+        'username': 'test_user',
+        'password': 'test_password'
+    }
+    with open(config_path, 'w') as f:
+        json.dump(config, f, indent=2)
+    print('✅ Config updated for tests')
+        \"
+        
+        echo '🚀 Starting tests...'
+        python -m pytest tests/ -v --tb=short
+        echo '✅ Tests completed'
+      "
+
+volumes:
+  postgres_test_data:
+  test_coverage:
+
+networks:
+  test_network:
+    driver: bridge
