@@ -5,102 +5,80 @@ on:
     branches: [ "dev", "stage", "release/*", "main" ]
   push:
     branches: [ "dev", "stage", "release/*", "main" ]
+  workflow_dispatch:
 
 jobs:
   test:
-    name: 🔍 Run Tests with PostgreSQL
+    name: 🔍 Run Pytest with PostgreSQL Database
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: autotrade_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+    timeout-minutes: 20
 
     steps:
       - name: ⬇️ Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 📦 Build test image with caching (local only)
+        uses: docker/build-push-action@v5
         with:
-          python-version: '3.10'
-          cache: 'pip'
+          context: .
+          file: docker/test/Dockerfile.test
+          load: true  # Load into local Docker instead of pushing to registry
+          tags: local-test-runner:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      - name: 🏗️ Install system dependencies
+      - name: 🔧 Create necessary directories
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential wget postgresql-client
+          mkdir -p htmlcov
+          mkdir -p .pytest_cache
 
-      - name: 📦 Install TA-Lib
+      - name: 🧪 Run tests with locally built image
         run: |
-          wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
-          tar -xzf ta-lib-0.4.0-src.tar.gz
-          cd ta-lib/
-          ./configure --prefix=/usr
-          make
-          sudo make install
-          cd ..
-          rm -rf ta-lib ta-lib-0.4.0-src.tar.gz
-
-      - name: 📦 Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-cov pytest-xdist pytest-asyncio
-
-      - name: 🔧 Configure test database
-        run: |
-          # Update config.json for tests
-          python -c "
-          import json
-          import os
-          config_path = 'src/config/config.json'
-          if os.path.exists(config_path):
-              with open(config_path, 'r') as f:
-                  config = json.load(f)
-              config['database'] = {
-                  'host': 'localhost',
-                  'port': 5432,
-                  'database': 'autotrade_test',
-                  'username': 'test_user',
-                  'password': 'test_password'
-              }
-              with open(config_path, 'w') as f:
-                  json.dump(config, f, indent=2)
-              print('✅ Config updated for tests')
-          "
-
-      - name: 🧪 Run tests with pytest
-        run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
-          python -m pytest tests/ -v --tb=short --maxfail=5
+          echo "🚀 Running tests with locally built Docker image..."
+          # Set the image tag to use locally built image
+          export TEST_IMAGE_TAG=local-test-runner:latest
+          docker compose -f docker/test/docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
         env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: autotrade_test
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          DOCKER_BUILDKIT: 1
+          TEST_IMAGE_TAG: local-test-runner:latest
 
-      - name: 📊 Generate coverage report
-        if: always()
+      - name: 📋 Show detailed logs (if failed)
+        if: failure()
         run: |
-          python -m pytest tests/ --cov=src --cov-report=html --cov-report=xml --cov-report=term-missing || true
+          echo "📋 PostgreSQL logs:"
+          docker compose -f docker/test/docker-compose.test.yml logs postgres-test || echo "No PostgreSQL logs available"
+          echo ""
+          echo "📋 Test runner logs:"  
+          docker compose -f docker/test/docker-compose.test.yml logs test-runner || echo "No test runner logs available"
 
-      - name: 📤 Upload coverage to artifacts
+      - name: 📊 Upload coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-reports-${{ github.sha }}
           path: |
             htmlcov/
             coverage.xml
+          retention-days: 7
+
+      - name: 🧹 Clean up containers
+        if: always()
+        run: |
+          docker compose -f docker/test/docker-compose.test.yml down -v --remove-orphans || true
+          docker system prune -f || true
+
+      - name: 📈 Performance summary
+        if: always()
+        run: |
+          echo "## 🚀 Performance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Notes |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Cache | ✅ Enabled | GitHub Actions Cache for layers |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Build | ✅ Local | Built locally with layer caching |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Execution | ✅ Fast | Cached dependencies and TA-Lib |" >> $GITHUB_STEP_SUMMARY
+          echo "| PostgreSQL | ✅ Optimized | Tmpfs storage for speed |" >> $GITHUB_STEP_SUMMARY

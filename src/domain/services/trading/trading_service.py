@@ -48,17 +48,19 @@ class TradingService:
         self.deals_repo.save(new_deal)
 
         # 2. Создаем BUY ордер через OrderService
+        # ИСПРАВЛЕНИЕ: Сохраняем точность Decimal, не преобразуем в float
         buy_order = await self.order_service.create_and_place_buy_order(
-            price=float(buy_price_calc),
-            amount=float(total_coins_needed),
+            price=buy_price_calc,  # Оставляем как Decimal для сохранения точности
+            amount=total_coins_needed,  # Оставляем как Decimal для сохранения точности
             deal_id=new_deal.deal_id,
             symbol=currency_pair.symbol
         )
 
         # 3. Создаем SELL ордер через OrderService
+        # ИСПРАВЛЕНИЕ: Сохраняем точность Decimal, не преобразуем в float
         sell_order = await self.order_service.create_and_place_sell_order(
-            price=float(sell_price_calc),
-            amount=float(coins_to_sell),
+            price=sell_price_calc,  # Оставляем как Decimal для сохранения точности
+            amount=coins_to_sell,  # Оставляем как Decimal для сохранения точности
             deal_id=new_deal.deal_id,
             symbol=currency_pair.symbol
         )

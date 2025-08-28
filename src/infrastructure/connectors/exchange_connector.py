@@ -5,8 +5,10 @@ from typing import Dict, List, Any, Tuple
 from pathlib import Path
 import ccxt.pro as ccxtpro
 import ccxt
-from config.config_loader import load_config
-from domain.entities.order import ExchangeInfo
+from src.config.config_loader import load_config
+from src.domain.entities.order import ExchangeInfo, Order
+from src.domain.entities.ticker import Ticker
+from src.domain.entities.order_book import OrderBook
 
 logger = logging.getLogger(__name__)
 
@@ -76,16 +78,21 @@ class CcxtExchangeConnector:
         if symbol.endswith('USDC'): return f"{symbol[:-4]}/USDC"
         return symbol
 
-    async def watch_order_book(self, symbol: str):
-        return await self.client.watch_order_book(self._normalize_symbol(symbol))
+    async def watch_order_book(self, symbol: str) -> OrderBook:
+        """Смотрит за стаканом и возвращает объект OrderBook."""
+        raw_book = await self.client.watch_order_book(self._normalize_symbol(symbol))
+        return OrderBook.from_dict(raw_book)
 
-    async def fetch_order_book(self, symbol: str, limit: int = 100) -> Dict[str, Any]:
-        """Получение стакана заявок (разовый запрос)"""
+    async def fetch_order_book(self, symbol: str, limit: int = 100) -> OrderBook:
+        """Получение стакана заявок и возврат объекта OrderBook."""
         normalized_symbol = self._normalize_symbol(symbol)
-        return await self.client.fetch_order_book(normalized_symbol, limit)
+        raw_book = await self.client.fetch_order_book(normalized_symbol, limit)
+        return OrderBook.from_dict(raw_book)
 
-    async def watch_ticker(self, symbol: str):
-        return await self.client.watch_ticker(self._normalize_symbol(symbol))
+    async def watch_ticker(self, symbol: str) -> Ticker:
+        """Смотрит за тикером и возвращает объект Ticker."""
+        raw_ticker = await self.client.watch_ticker(self._normalize_symbol(symbol))
+        return Ticker.from_dict(raw_ticker)
 
     async def watch_trades(self, symbol: str):
         return await self.client.watch_trades(self._normalize_symbol(symbol))
@@ -96,13 +103,34 @@ class CcxtExchangeConnector:
     async def load_markets(self, reload=False):
         return await self.client.load_markets(reload)
 
-    async def create_order(self, symbol: str, side: str, order_type: str, amount: float, price: float = None, params: Dict[str, Any] = None):
+    async def create_order(self, symbol: str, side: str, order_type: str, amount: float, price: float = None, params: Dict[str, Any] = None) -> Order:
+        """Создает ордер и возвращает объект Order."""
         try:
             normalized_symbol = self._normalize_symbol(symbol)
             logger.info(f"📤 Creating {side.upper()} {order_type} order: {amount} {normalized_symbol} @ {price}")
-            result = await self.client.create_order(normalized_symbol, order_type, side, amount, price, params or {})
-            logger.info(f"✅ Order created successfully: {result.get('id', 'N/A')}")
-            return result
+            raw_order = await self.client.create_order(normalized_symbol, order_type, side, amount, price, params or {})
+            
+            # Проверяем, что raw_order не None и является словарем
+            if raw_order is None:
+                error_msg = f"Exchange returned None for {side.upper()} {order_type} order: {amount} {normalized_symbol} @ {price}"
+                logger.error(f"❌ {error_msg}")
+                raise Exception(error_msg)
+            
+            if not isinstance(raw_order, dict):
+                error_msg = f"Exchange returned invalid data type {type(raw_order)} instead of dict for order"
+                logger.error(f"❌ {error_msg}")
+                raise Exception(error_msg)
+            
+            order_id = raw_order.get('id', 'N/A')
+            logger.info(f"✅ Order created successfully: {order_id}")
+            
+            # Additional validation before creating Order object
+            if 'id' not in raw_order and 'order_id' not in raw_order:
+                logger.warning(f"⚠️ Order response missing ID field: {raw_order}")
+            
+            # Получаем информацию о точности для округления
+            exchange_info = self.exchange_info_cache.get(normalized_symbol)
+            return Order.from_dict(raw_order, exchange_info)
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds: {e}")
             raise
@@ -113,26 +141,41 @@ class CcxtExchangeConnector:
             logger.error(f"❌ Unexpected error creating order: {e}")
             raise
 
-    async def cancel_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
+    async def cancel_order(self, order_id: str, symbol: str) -> Order:
+        """Отменяет ордер и возвращает объект Order."""
         try:
             normalized_symbol = self._normalize_symbol(symbol)
             logger.info(f"❌ Cancelling order {order_id} for {normalized_symbol}")
-            result = await self.client.cancel_order(order_id, normalized_symbol)
+            raw_order = await self.client.cancel_order(order_id, normalized_symbol)
             logger.info(f"✅ Order cancelled successfully: {order_id}")
-            return result
+            
+            # Получаем информацию о точности для округления
+            exchange_info = self.exchange_info_cache.get(normalized_symbol)
+            return Order.from_dict(raw_order, exchange_info)
         except ccxt.OrderNotFound:
             logger.warning(f"⚠️ Order not found on exchange: {order_id}")
-            raise  # Пробрасываем исключение дальше
+            raise
         except Exception as e:
             logger.error(f"❌ Error cancelling order {order_id}: {e}")
             raise
 
-    async def fetch_order(self, order_id: str, symbol: str) -> Dict[str, Any]:
-        result = await self.client.fetch_order(order_id, self._normalize_symbol(symbol))
-        return result
+    async def fetch_order(self, order_id: str, symbol: str) -> Order:
+        """Получает ордер и возвращает объект Order."""
+        normalized_symbol = self._normalize_symbol(symbol)
+        raw_order = await self.client.fetch_order(order_id, normalized_symbol)
+        
+        # Получаем информацию о точности для округления
+        exchange_info = self.exchange_info_cache.get(normalized_symbol)
+        return Order.from_dict(raw_order, exchange_info)
 
-    async def fetch_open_orders(self, symbol: str = None) -> List[Dict[str, Any]]:
-        return await self.client.fetch_open_orders(self._normalize_symbol(symbol))
+    async def fetch_open_orders(self, symbol: str = None) -> List[Order]:
+        """Получает открытые ордера и возвращает список объектов Order."""
+        normalized_symbol = self._normalize_symbol(symbol) if symbol else None
+        raw_orders = await self.client.fetch_open_orders(normalized_symbol)
+        
+        # Получаем информацию о точности для округления
+        exchange_info = self.exchange_info_cache.get(normalized_symbol) if normalized_symbol else None
+        return [Order.from_dict(o, exchange_info) for o in raw_orders]
 
     async def fetch_balance(self) -> Dict[str, Any]:
         return await self.client.fetch_balance()
@@ -162,8 +205,10 @@ class CcxtExchangeConnector:
             logger.error(f"❌ Error checking balance: {e}")
             return False, "UNKNOWN", 0.0
 
-    async def fetch_ticker(self, symbol: str) -> Dict[str, Any]:
-        return await self.client.fetch_ticker(self._normalize_symbol(symbol))
+    async def fetch_ticker(self, symbol: str) -> Ticker:
+        """Получает тикер и возвращает объект Ticker."""
+        raw_ticker = await self.client.fetch_ticker(self._normalize_symbol(symbol))
+        return Ticker.from_dict(raw_ticker)
 
     async def get_symbol_info(self, symbol: str) -> ExchangeInfo:
         normalized_symbol = self._normalize_symbol(symbol)
@@ -192,40 +237,30 @@ class CcxtExchangeConnector:
         self.exchange_info_cache[normalized_symbol] = exchange_info
         return exchange_info
 
-    async def create_market_sell_order(self, symbol: str, amount: float):
-        """🚨 Создание маркет-ордера на продажу для стоп-лосса"""
+    async def create_market_sell_order(self, symbol: str, amount: float) -> Order:
+        """🚨 Создание маркет-ордера на продажу для стоп-лосса и возврат объекта Order."""
         try:
             normalized_symbol = self._normalize_symbol(symbol)
             logger.info(f"🚨 Creating MARKET SELL order: {amount} {normalized_symbol}")
             
             # Создаем маркет-ордер на продажу
-            result = await self.client.create_market_sell_order(normalized_symbol, amount)
+            raw_order = await self.client.create_market_sell_order(normalized_symbol, amount)
             
-            if result:
-                logger.info(f"✅ Market SELL order created successfully: {result.get('id', 'N/A')}")
-                # Возвращаем результат в стандартном формате
-                from domain.entities.order import OrderExecutionResult
-                return OrderExecutionResult(
-                    success=True,
-                    exchange_order_id=result.get('id'),
-                    filled_amount=result.get('filled', amount),
-                    average_price=result.get('average'),
-                    fees=result.get('fee', {}).get('cost', 0.0),
-                    timestamp=result.get('timestamp')
-                )
-            else:
-                logger.error("❌ Failed to create market sell order - no result")
-                return None
+            logger.info(f"✅ Market SELL order created successfully: {raw_order.get('id', 'N/A')}")
+            
+            # Получаем информацию о точности для округления
+            exchange_info = self.exchange_info_cache.get(normalized_symbol)
+            return Order.from_dict(raw_order, exchange_info)
                 
         except ccxt.InsufficientFunds as e:
             logger.error(f"💸 Insufficient funds for market sell: {e}")
-            return None
+            raise
         except ccxt.InvalidOrder as e:
             logger.error(f"❌ Invalid market sell order: {e}")
-            return None
+            raise
         except Exception as e:
             logger.error(f"❌ Unexpected error creating market sell order: {e}")
-            return None
+            raise
 
     async def test_connection(self) -> bool:
         try:
