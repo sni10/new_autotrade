@@ -1,7 +1,7 @@
-# 🚀 AutoTrade v2.5.0 - "MemoryFirst Architecture & PostgreSQL Integration"
+# 🚀 AutoTrade v2.4.1-dev - "Database Migration & Performance Optimization"
 
 > **Интеллектуальная торговая система** с революционной двухуровневой архитектурой хранения  
-> **Архитектура**: Предметно-ориентированное проектирование (DDD) + MemoryFirst репозитории  
+> **Архитектура**: Предметно-ориентированное проектирование (DDD) + PostgreSQL Integration  
 > **Статус**: Готов к работе с персистентным хранением
 
 [![Тесты](https://github.com/sni10/new_autotrade/actions/workflows/python-tests.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
@@ -34,7 +34,7 @@
 
 **AutoTrade** - профессиональная система для автоматической торговли криптовалютами с интеллектуальным анализом биржевого стакана и техническими индикаторами. Система построена на принципах предметно-ориентированного проектирования (DDD) и использует асинхронную архитектуру для максимальной производительности.
 
-### 🔥 Последний релиз: v2.5.0 - "MemoryFirst Architecture & PostgreSQL Integration"
+### 🔥 Последний релиз: v2.4.1-dev - "Database Migration & Performance Optimization"
 - 🚀 **Революционная двухуровневая архитектура** - RAM (наносекунды) + PostgreSQL (надежность).
 - 🏗️ **MemoryFirst репозитории** - `MemoryFirstDealsRepository`, `MemoryFirstOrdersRepository` с фоновой синхронизацией.
 - 🛡️ **Автоматическое восстановление состояния** после перезапуска системы.

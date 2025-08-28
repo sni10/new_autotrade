@@ -32,6 +32,8 @@ services:
       -c work_mem=4MB
       -c min_wal_size=1GB
       -c max_wal_size=4GB
+    networks:
+      - test_network
 
   # Test runner service
   test-runner:
@@ -49,22 +51,25 @@ services:
       DB_PASSWORD: airflow
       DB_NAME: airflow
       # Test environment variables
-      PYTHONPATH: /app/src
+      PYTHONPATH: /app
       PYTEST_CURRENT_TEST: 1
+      PYTHONUNBUFFERED: 1
     volumes:
       - ../..:/app
-    working_dir: /app
-    entrypoint: []
+    networks:
+      - test_network
+    # Run pytest with coverage
     command: >
-      sh -c "
-        echo '🔧 Waiting for PostgreSQL to be ready...' &&
-        sleep 10 &&
-        echo '🧪 Running database tests...' &&
-        python tests/database/test_db_connection.py &&
-        echo '🧪 Running all tests...' &&
-        pytest tests/ -v --tb=short --maxfail=5
+      bash -c "
+        echo '🚀 Starting tests...' &&
+        python -m pytest tests/ -v --tb=short --maxfail=5 
+          --cov=src 
+          --cov-report=html:/app/htmlcov 
+          --cov-report=term-missing 
+          --cov-report=xml:/app/coverage.xml
+          -x
       "
 
 networks:
-  default:
-    name: test_network
+  test_network:
+    driver: bridge
