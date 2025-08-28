@@ -27,7 +27,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Build fast test image from cached base
+      - name: 📦 Build test image with caching
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -39,8 +39,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-          build-args: |
-            BASE_IMAGE=ghcr.io/${{ github.repository }}/test-base:latest
 
       - name: 🔧 Create necessary directories
         run: |
@@ -88,7 +86,7 @@ jobs:
           echo "## 🚀 Performance Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Status | Notes |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Cache | ✅ Enabled | GitHub Actions Cache + Container Registry |" >> $GITHUB_STEP_SUMMARY
-          echo "| Base Image | ✅ Cached | Pre-built with TA-Lib and system deps |" >> $GITHUB_STEP_SUMMARY
-          echo "| Test Image | ✅ Fast Build | Only Python deps and app code |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Cache | ✅ Enabled | GitHub Actions Cache for layers |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Build | ✅ Optimized | Cached dependencies and TA-Lib |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Execution | ✅ Fast | Pre-built image with all deps |" >> $GITHUB_STEP_SUMMARY
           echo "| PostgreSQL | ✅ Optimized | Tmpfs storage for speed |" >> $GITHUB_STEP_SUMMARY
