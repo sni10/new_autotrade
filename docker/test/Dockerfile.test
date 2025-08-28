@@ -1,5 +1,5 @@
 # 📌 Dockerfile for Testing Environment with PostgreSQL Support
-# Optimized for Docker layer caching in CI/CD
+# Simplified version without entrypoint for maximum reliability
 FROM python:3.10-slim
 
 # 🏷️ Add labels for better cache management
@@ -35,42 +35,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir pytest-cov pytest-xdist
 
-# 🧪 Create directories and inline entrypoint script
-RUN mkdir -p /app/src/config && \
-    echo '#!/bin/bash' > /app/entrypoint.sh && \
-    echo 'set -e' >> /app/entrypoint.sh && \
-    echo 'echo "🔧 AutoTrade Test Container Starting..."' >> /app/entrypoint.sh && \
-    echo 'if [ -n "$DB_HOST" ]; then' >> /app/entrypoint.sh && \
-    echo '    echo "🔧 Updating database host to: $DB_HOST"' >> /app/entrypoint.sh && \
-    echo '    sed -i "s/\"host\": \"localhost\"/\"host\": \"$DB_HOST\"/" /app/src/config/config.json' >> /app/entrypoint.sh && \
-    echo 'fi' >> /app/entrypoint.sh && \
-    echo 'if [ -n "$DB_PORT" ]; then' >> /app/entrypoint.sh && \
-    echo '    echo "🔧 Updating database port to: $DB_PORT"' >> /app/entrypoint.sh && \
-    echo '    sed -i "s/\"port\": 5434/\"port\": $DB_PORT/" /app/src/config/config.json' >> /app/entrypoint.sh && \
-    echo 'fi' >> /app/entrypoint.sh && \
-    echo 'if [ -n "$DB_USER" ]; then' >> /app/entrypoint.sh && \
-    echo '    echo "🔧 Updating database user to: $DB_USER"' >> /app/entrypoint.sh && \
-    echo '    sed -i "s/\"user\": \".*\"/\"user\": \"$DB_USER\"/" /app/src/config/config.json' >> /app/entrypoint.sh && \
-    echo 'fi' >> /app/entrypoint.sh && \
-    echo 'if [ -n "$DB_PASSWORD" ]; then' >> /app/entrypoint.sh && \
-    echo '    echo "🔧 Updating database password"' >> /app/entrypoint.sh && \
-    echo '    sed -i "s/\"password\": \".*\"/\"password\": \"$DB_PASSWORD\"/" /app/src/config/config.json' >> /app/entrypoint.sh && \
-    echo 'fi' >> /app/entrypoint.sh && \
-    echo 'if [ -n "$DB_NAME" ]; then' >> /app/entrypoint.sh && \
-    echo '    echo "🔧 Updating database name to: $DB_NAME"' >> /app/entrypoint.sh && \
-    echo '    sed -i "s/\"database\": \".*\"/\"database\": \"$DB_NAME\"/" /app/src/config/config.json' >> /app/entrypoint.sh && \
-    echo 'fi' >> /app/entrypoint.sh && \
-    echo 'if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then' >> /app/entrypoint.sh && \
-    echo '    echo "🔧 Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."' >> /app/entrypoint.sh && \
-    echo '    until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"; do' >> /app/entrypoint.sh && \
-    echo '        echo "⏳ PostgreSQL is unavailable - sleeping"' >> /app/entrypoint.sh && \
-    echo '        sleep 2' >> /app/entrypoint.sh && \
-    echo '    done' >> /app/entrypoint.sh && \
-    echo '    echo "✅ PostgreSQL is ready!"' >> /app/entrypoint.sh && \
-    echo 'fi' >> /app/entrypoint.sh && \
-    echo 'echo "🚀 Container ready - executing command: $@"' >> /app/entrypoint.sh && \
-    echo 'exec "$@"' >> /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
+# 🧪 Create directories for configuration
+RUN mkdir -p /app/src/config
 
 # 🔧 Copy configuration files
 COPY src/config/config.json /app/src/config/config.json
@@ -79,9 +45,6 @@ COPY src/config/config.json /app/src/config/config.json
 ENV PYTHONPATH=/app
 ENV PYTEST_CURRENT_TEST=1
 ENV PYTHONUNBUFFERED=1
-
-# 🚀 Use inline entrypoint script
-ENTRYPOINT ["/app/entrypoint.sh"]
 
 # 📋 Default command - will be overridden by docker-compose
 CMD ["echo", "🐳 AutoTrade test container ready"]

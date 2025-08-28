@@ -35,9 +35,8 @@ services:
     networks:
       - test_network
 
-  # Test runner service - now using pre-built image
+  # Test runner service - NO FUCKING ENTRYPOINT!
   test-runner:
-    # Use pre-built image from GitHub Container Registry or build locally as fallback
     image: ${TEST_IMAGE_TAG:-local-test-runner}
     build:
       context: ../..
@@ -60,9 +59,22 @@ services:
       - ../..:/app
     networks:
       - test_network
-    # Run pytest with coverage
+    # Run everything in one command - fuck entrypoint!
     command: >
       bash -c "
+        echo '🔧 AutoTrade Test Container Starting...' &&
+        echo '🔧 Updating config.json for test database...' &&
+        sed -i 's/\"host\": \"localhost\"/\"host\": \"postgres-test\"/' /app/src/config/config.json &&
+        sed -i 's/\"port\": 5434/\"port\": 5432/' /app/src/config/config.json &&
+        sed -i 's/\"user\": \".*\"/\"user\": \"airflow\"/' /app/src/config/config.json &&
+        sed -i 's/\"password\": \".*\"/\"password\": \"airflow\"/' /app/src/config/config.json &&
+        sed -i 's/\"database\": \".*\"/\"database\": \"airflow\"/' /app/src/config/config.json &&
+        echo '🔧 Waiting for PostgreSQL to be ready...' &&
+        until pg_isready -h postgres-test -p 5432 -U airflow -d airflow; do
+          echo '⏳ PostgreSQL is unavailable - sleeping'
+          sleep 2
+        done &&
+        echo '✅ PostgreSQL is ready!' &&
         echo '🚀 Starting tests...' &&
         python -m pytest tests/ -v --tb=short --maxfail=5 
           --cov=src 
