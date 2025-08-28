@@ -1,0 +1,427 @@
+
+========================================
+--- 1. Анализ объекта биржи ---
+========================================
+ID Биржи: binance
+Название: Binance
+Поддерживаемые возможности (has):
+{'addMargin': True,
+ 'borrowCrossMargin': True,
+ 'borrowIsolatedMargin': True,
+ 'cancelAllOrders': True,
+ 'cancelAllOrdersWs': True,
+ 'cancelOrder': True,
+ 'cancelOrderWs': True,
+ 'cancelOrders': True,
+ 'createConvertTrade': True,
+ 'createLimitBuyOrder': True,
+ 'createLimitOrder': True,
+ 'createLimitSellOrder': True,
+ 'createMarketBuyOrder': True,
+ 'createMarketBuyOrderWithCost': True,
+ 'createMarketOrder': True,
+ 'createMarketOrderWithCost': True,
+ 'createMarketOrderWs': True,
+ 'createMarketSellOrder': True,
+ 'createMarketSellOrderWithCost': True,
+ 'createOrder': True,
+ 'createOrderWs': True,
+ 'createOrders': True,
+ 'createPostOnlyOrder': True,
+ 'createReduceOnlyOrder': True,
+ 'createStopLimitOrder': True,
+ 'createStopLossOrder': True,
+ 'createStopOrder': True,
+ 'createTakeProfitOrder': True,
+ 'createTrailingPercentOrder': True,
+ 'createTriggerOrder': True,
+ 'editOrder': True,
+ 'editOrderWs': True,
+ 'editOrders': True,
+ 'fetchAllGreeks': True,
+ 'fetchBalance': True,
+ 'fetchBalanceWs': True,
+ 'fetchBidsAsks': True,
+ 'fetchBorrowInterest': True,
+ 'fetchBorrowRateHistory': True,
+ 'fetchCanceledAndClosedOrders': 'emulated',
+ 'fetchCanceledOrders': 'emulated',
+ 'fetchClosedOrders': 'emulated',
+ 'fetchConvertCurrencies': True,
+ 'fetchConvertQuote': True,
+ 'fetchConvertTrade': True,
+ 'fetchConvertTradeHistory': True,
+ 'fetchCrossBorrowRate': True,
+ 'fetchCurrencies': True,
+ 'fetchCurrenciesWs': 'emulated',
+ 'fetchDepositAddress': True,
+ 'fetchDepositWithdrawFee': 'emulated',
+ 'fetchDepositWithdrawFees': True,
+ 'fetchDeposits': True,
+ 'fetchFundingHistory': True,
+ 'fetchFundingInterval': 'emulated',
+ 'fetchFundingIntervals': True,
+ 'fetchFundingRate': True,
+ 'fetchFundingRateHistory': True,
+ 'fetchFundingRates': True,
+ 'fetchGreeks': True,
+ 'fetchIndexOHLCV': True,
+ 'fetchIsolatedBorrowRate': 'emulated',
+ 'fetchIsolatedBorrowRates': True,
+ 'fetchL2OrderBook': True,
+ 'fetchLastPrices': True,
+ 'fetchLedger': True,
+ 'fetchLedgerEntry': True,
+ 'fetchLeverage': 'emulated',
+ 'fetchLeverageTiers': True,
+ 'fetchLeverages': True,
+ 'fetchLongShortRatioHistory': True,
+ 'fetchMarginAdjustmentHistory': True,
+ 'fetchMarginMode': True,
+ 'fetchMarginModes': True,
+ 'fetchMarkOHLCV': True,
+ 'fetchMarkPrice': True,
+ 'fetchMarkPrices': True,
+ 'fetchMarketLeverageTiers': 'emulated',
+ 'fetchMarkets': True,
+ 'fetchMyLiquidations': True,
+ 'fetchMySettlementHistory': True,
+ 'fetchMyTrades': True,
+ 'fetchMyTradesWs': True,
+ 'fetchOHLCV': True,
+ 'fetchOHLCVWs': True,
+ 'fetchOpenInterest': True,
+ 'fetchOpenInterestHistory': True,
+ 'fetchOpenOrder': True,
+ 'fetchOpenOrders': True,
+ 'fetchOpenOrdersWs': True,
+ 'fetchOption': True,
+ 'fetchOrder': True,
+ 'fetchOrderBook': True,
+ 'fetchOrderBookWs': True,
+ 'fetchOrderTrades': True,
+ 'fetchOrderWs': True,
+ 'fetchOrders': True,
+ 'fetchOrdersWs': True,
+ 'fetchPosition': True,
+ 'fetchPositionForSymbolWs': True,
+ 'fetchPositionMode': True,
+ 'fetchPositionWs': True,
+ 'fetchPositions': True,
+ 'fetchPositionsRisk': True,
+ 'fetchPositionsWs': True,
+ 'fetchPremiumIndexOHLCV': True,
+ 'fetchSettlementHistory': True,
+ 'fetchStatus': True,
+ 'fetchTicker': True,
+ 'fetchTickerWs': True,
+ 'fetchTickers': True,
+ 'fetchTime': True,
+ 'fetchTrades': True,
+ 'fetchTradesWs': True,
+ 'fetchTradingFee': True,
+ 'fetchTradingFees': True,
+ 'fetchTradingLimits': 'emulated',
+ 'fetchTransactionFee': 'emulated',
+ 'fetchTransactionFees': True,
+ 'fetchTransfers': True,
+ 'fetchWithdrawals': True,
+ 'future': True,
+ 'margin': True,
+ 'option': True,
+ 'privateAPI': True,
+ 'publicAPI': True,
+ 'reduceMargin': True,
+ 'repayCrossMargin': True,
+ 'repayIsolatedMargin': True,
+ 'sandbox': True,
+ 'setLeverage': True,
+ 'setMarginMode': True,
+ 'setPositionMode': True,
+ 'spot': True,
+ 'swap': True,
+ 'transfer': True,
+ 'watchBalance': True,
+ 'watchBidsAsks': True,
+ 'watchLiquidations': True,
+ 'watchLiquidationsForSymbols': True,
+ 'watchMarkPrice': True,
+ 'watchMarkPrices': True,
+ 'watchMyLiquidations': True,
+ 'watchMyLiquidationsForSymbols': True,
+ 'watchMyTrades': True,
+ 'watchOHLCV': True,
+ 'watchOHLCVForSymbols': True,
+ 'watchOrderBook': True,
+ 'watchOrderBookForSymbols': True,
+ 'watchOrders': True,
+ 'watchOrdersForSymbols': True,
+ 'watchPositions': True,
+ 'watchTicker': True,
+ 'watchTickers': True,
+ 'watchTrades': True,
+ 'watchTradesForSymbols': True,
+ 'withdraw': True,
+ 'ws': True}
+
+
+========================================
+--- 2. Анализ рынков (валютных пар) ---
+========================================
+Всего загружено рынков: 2047
+
+Анализ конкретного рынка: ETH/USDT
+{
+  'active': True,
+  'base': 'ETH',
+  'baseId': 'ETH',
+  'contract': False,
+  'contractSize': None,
+  'created': None,
+  'expiry': None,
+  'expiryDatetime': None,
+  'feeSide': 'get',
+  'future': False,
+  'id': 'ETHUSDT',
+  'index': None,
+  'info': {
+    'allowTrailingStop': True,
+    'allowedSelfTradePreventionModes': [
+      'NONE',
+      'EXPIRE_TAKER',
+      'EXPIRE_MAKER',
+      'EXPIRE_BOTH',
+      'DECREMENT'
+    ],
+    'amendAllowed': True,
+    'baseAsset': 'ETH',
+    'baseAssetPrecision': '8',
+    'baseCommissionPrecision': '8',
+    'cancelReplaceAllowed': True,
+    'defaultSelfTradePreventionMode': 'EXPIRE_MAKER',
+    'filters': [
+      {
+        'filterType': 'PRICE_FILTER',
+        'maxPrice': '1000000.00000000',
+        'minPrice': '0.01000000',
+        'tickSize': '0.01000000'
+      },
+      {
+        'filterType': 'LOT_SIZE',
+        'maxQty': '9000.00000000',
+        'minQty': '0.00010000',
+        'stepSize': '0.00010000'
+      },
+      {
+        'filterType': 'ICEBERG_PARTS',
+        'limit': '10'
+      },
+      {
+        'filterType': 'MARKET_LOT_SIZE',
+        'maxQty': '3730.93834769',
+        'minQty': '0.00000000',
+        'stepSize': '0.00000000'
+      },
+      {
+        'filterType': 'TRAILING_DELTA',
+        'maxTrailingAboveDelta': '2000',
+        'maxTrailingBelowDelta': '2000',
+        'minTrailingAboveDelta': '10',
+        'minTrailingBelowDelta': '10'
+      },
+      {
+        'askMultiplierDown': '0.2',
+        'askMultiplierUp': '5',
+        'avgPriceMins': '5',
+        'bidMultiplierDown': '0.2',
+        'bidMultiplierUp': '5',
+        'filterType': 'PERCENT_PRICE_BY_SIDE'
+      },
+      {
+        'applyMaxToMarket': False,
+        'applyMinToMarket': True,
+        'avgPriceMins': '5',
+        'filterType': 'NOTIONAL',
+        'maxNotional': '9000000.00000000',
+        'minNotional': '5.00000000'
+      },
+      {
+        'filterType': 'MAX_NUM_ORDERS',
+        'maxNumOrders': '200'
+      },
+      {
+        'filterType': 'MAX_NUM_ALGO_ORDERS',
+        'maxNumAlgoOrders': '5'
+      }
+    ],
+    'icebergAllowed': True,
+    'isMarginTradingAllowed': False,
+    'isSpotTradingAllowed': True,
+    'ocoAllowed': True,
+    'orderTypes': [
+      'LIMIT',
+      'LIMIT_MAKER',
+      'MARKET',
+      'STOP_LOSS',
+      'STOP_LOSS_LIMIT',
+      'TAKE_PROFIT',
+      'TAKE_PROFIT_LIMIT'
+    ],
+    'otoAllowed': True,
+    'permissionSets': [
+      [
+        'SPOT'
+      ]
+    ],
+    'permissions': [],
+    'quoteAsset': 'USDT',
+    'quoteAssetPrecision': '8',
+    'quoteCommissionPrecision': '8',
+    'quoteOrderQtyMarketAllowed': True,
+    'quotePrecision': '8',
+    'status': 'TRADING',
+    'symbol': 'ETHUSDT'
+  },
+  'inverse': None,
+  'limits': {
+    'amount': {
+      'max': 9000.0,
+      'min': 0.0001
+    },
+    'cost': {
+      'max': 9000000.0,
+      'min': 5.0
+    },
+    'leverage': {
+      'max': None,
+      'min': None
+    },
+    'market': {
+      'max': 3730.93834769,
+      'min': 0.0
+    },
+    'price': {
+      'max': 1000000.0,
+      'min': 0.01
+    }
+  },
+  'linear': None,
+  'lowercaseId': 'ethusdt',
+  'maker': 0.001,
+  'margin': False,
+  'marginModes': {
+    'cross': False,
+    'isolated': False
+  },
+  'option': False,
+  'optionType': None,
+  'percentage': True,
+  'precision': {
+    'amount': 0.0001,
+    'base': 1e-08,
+    'cost': None,
+    'price': 0.01,
+    'quote': 1e-08
+  },
+  'quote': 'USDT',
+  'quoteId': 'USDT',
+  'settle': None,
+  'settleId': None,
+  'spot': True,
+  'strike': None,
+  'subType': None,
+  'swap': False,
+  'symbol': 'ETH/USDT',
+  'taker': 0.001,
+  'tierBased': False,
+  'type': 'spot'
+}
+
+========================================
+--- 3. Анализ тикера (ETH/USDT) ---
+========================================
+Ожидание первого тикера для ETH/USDT...
+Структура объекта тикера:
+{
+  'ask': 2993.89,
+  'askVolume': 3.1682,
+  'average': 2966.37,
+  'baseVolume': 60101.529,
+  'bid': 2993.88,
+  'bidVolume': 2.9678,
+  'change': 55.28,
+  'close': 2994.01,
+  'datetime': '2025-07-13T17:44:01.597Z',
+  'high': 3044.83,
+  'indexPrice': None,
+  'info': {
+    'A': '3.16820000',
+    'B': '2.96780000',
+    'C': 1752428641597,
+    'E': 1752428642006,
+    'F': 569112,
+    'L': 615980,
+    'O': 1752342241597,
+    'P': '1.881',
+    'Q': '1.24260000',
+    'a': '2993.89000000',
+    'b': '2993.88000000',
+    'c': '2994.01000000',
+    'e': '24hrTicker',
+    'h': '3044.83000000',
+    'l': '2916.54000000',
+    'n': 46869,
+    'o': '2938.73000000',
+    'p': '55.28000000',
+    'q': '177833162.42208800',
+    's': 'ETHUSDT',
+    'v': '60101.52900000',
+    'w': '2958.87917298',
+    'x': '2938.73000000'
+  },
+  'last': 2994.01,
+  'low': 2916.54,
+  'markPrice': None,
+  'open': 2938.73,
+  'percentage': 1.881,
+  'previousClose': 2938.73,
+  'quoteVolume': 177833162.422088,
+  'symbol': 'ETH/USDT',
+  'timestamp': 1752428641597,
+  'vwap': 2958.87917298
+}
+
+
+========================================
+--- 5. Анализ стакана ордеров (ETH/USDT) ---
+========================================
+Ожидание первого обновления стакана для ETH/USDT...
+Структура объекта стакана:
+{
+  'asks_count': 129,
+  'bids_count': 19,
+  'datetime': None,
+  'nonce': 5920183,
+  'sample_asks': [
+    [
+      2993.89,
+      3.1682
+    ],
+    [
+      2993.9,
+      3.2634
+    ]
+  ],
+  'sample_bids': [
+    [
+      2993.88,
+      2.9678
+    ],
+    [
+      2993.87,
+      2.9327
+    ]
+  ],
+  'symbol': 'ETH/USDT',
+  'timestamp': None
+}

@@ -1,134 +1,224 @@
-# 🚀 AutoTrade v2.3.0 - "Refactoring & Docs Edition"
+# 🚀 AutoTrade v2.4.1-dev - "Database Migration & Performance Optimization"
 
-> **Intelligent Trading System** with OrderBook Analysis & MACD Indicators  
-> **Architecture**: Domain-Driven Design (DDD)  
-> **Status**: Production Ready
+> **Интеллектуальная торговая система** с революционной двухуровневой архитектурой хранения  
+> **Архитектура**: Предметно-ориентированное проектирование (DDD) + PostgreSQL Integration  
+> **Статус**: Готов к работе с персистентным хранением
 
-[![Tests](https://github.com/sni10/new_autotrade/actions/workflows/python-tests.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
-[![Versioning](https://github.com/sni10/new_autotrade/actions/workflows/versioning.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
+[![Тесты](https://github.com/sni10/new_autotrade/actions/workflows/python-tests.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
+[![Версионирование](https://github.com/sni10/new_autotrade/actions/workflows/versioning.yml/badge.svg)](https://github.com/sni10/new_autotrade/actions)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://www.python.org/)
 
-![Trading System](schema-app.svg)
+![Торговая система](schema-app.svg)
 
 ---
 
-## 📋 Table of Contents
-- [🎯 Overview](#-overview)
-- [✨ Key Features](#-key-features)
-- [🏗️ Architecture](#️-architecture)
-- [🚀 Quick Start](#-quick-start)
-- [📊 Performance](#-performance)
-- [🔧 Configuration](#-configuration)
-- [📈 Trading Process](#-trading-process)
-- [🛡️ Safety Features](#️-safety-features)
-- [📋 Development Roadmap](#-development-roadmap)
-- [🎯 Issues Overview](#-issues-overview)
-- [📖 Documentation](#-documentation)
+## 📋 Содержание
+- [🎯 Обзор](#-обзор)
+- [📖 Документация](#-документация)
+- [✨ Ключевые возможности](#-ключевые-возможности)
+- [���️ Архитектура](#️-архитектура)
+- [🚀 Быстрый старт](#-быстрый-старт)
+- [📊 Производительность](#-производительность)
+- [🔧 Конфигурация](#-конфигурация)
+- [📈 Торговый процесс](#-торговый-процесс)
+- [🛡️ Системы безопасности](#️-системы-безопасности)
+- [📋 План развития](#-план-развития)
+- [🎯 Обзор задач](#-обзор-задач)
+- [🌿 Стратегия ветвления](#-стратегия-ветвления)
+- [🚀 Развертывание](#-развертывание)
+- [💎 Заключение](#-заключение)
 
 ---
 
-## 🎯 Overview
+## 🎯 Обзор
 
-**AutoTrade** - профессиональная система автоматической торговли криптовалютами с интеллектуальным анализом биржевого стакана и техническими индикаторами. Система построена на принципах Domain-Driven Design и использует асинхронную архитектуру для максимальной производительности.
+**AutoTrade** - профессиональная система для автоматической торговли криптовалютами с интеллектуальным анализом биржевого стакана и техническими индикаторами. Система построена на принципах предметно-ориентированного проектирования (DDD) и использует асинхронную архитектуру для максимальной производительности.
 
-### 🔥 Latest Release: v2.3.0 - "Refactoring & Docs Edition"
-- 📚 **Полная актуализация документации** и создание руководств по реализации.
-- ⚙️ **Улучшенная конфигурация** с поддержкой переменных окружения.
-- 💾 **Персистентность данных** через JSON-репозитории.
-- 🛡️ **Уточненные механизмы риска**, включая мониторинг "протухших" ордеров.
-
----
-
-## ✨ Key Features
-
-### 🧠 Intelligent Trading
-- **MACD Technical Analysis** с histogram анализом
-- **OrderBook Intelligence** - анализ спреда, ликвидности, поддержки/сопротивления
-- **Smart Order Modifications** - корректировка цен на основе технических уровней  
-- **Signal Confidence Scoring** - система оценки уверенности сигналов
-
-### ⚡ Performance & Reliability
-- **Async Architecture** на базе asyncio для максимальной скорости
-- **WebSocket Integration** через ccxt.pro для real-time данных
-- **Performance Monitoring** с детальными метриками
-- **JSON-based Persistence** для сохранения состояния.
-
-### 🛡️ Safety Systems  
-- **Signal Cooldown Manager** - защита от переторговки.
-- **Stale Order Monitoring** (`BuyOrderMonitor`) - отмена и пересоздание "застрявших" ордеров.
-- **OrderBook Validation** - отклонение сделок при плохой ликвидности.
-- **Environment-based Configuration** через `.env` файлы.
-
-### 📊 Analytics & Monitoring
-- **Market Analysis Service** - анализ волатильности и трендов
-- **Real-time Performance Logging** 
-- **Trading Recommendations** на основе рыночных условий
-- **OrderBook Health Monitoring**
+### 🔥 Последний релиз: v2.4.1-dev - "Database Migration & Performance Optimization"
+- 🚀 **Революционная двухуровневая архитектура** - RAM (наносекунды) + PostgreSQL (надежность).
+- 🏗️ **MemoryFirst репозитории** - `MemoryFirstDealsRepository`, `MemoryFirstOrdersRepository` с фоновой синхронизацией.
+- 🛡️ **Автоматическое восстановление состояния** после перезапуска системы.
+- 🔧 **RepositoryFactory с fallback** - система работает даже при недоступности PostgreSQL.
+- ✅ **Критические исправления** - PostgreSQL constraint violation и asyncio event loop проблемы.
 
 ---
 
-## 🏗️ Architecture
+## 📖 Документация
 
-### 📐 Domain-Driven Design Structure (Реальная структура проекта)
+### 📚 **Полное руководство**
+- [📖 Центр документации](docs/README.md) - Главная страница документации
+
+### 🚀 **Быстрый старт**
+- [📦 Установка и настройка](docs/getting-started/INSTALLATION.md)
+- [⚙️ Конфигурация системы](docs/getting-started/CONFIGURATION.md)
+- [🏃 Быстрый запуск](docs/getting-started/QUICK_START.md)
+
+### 🛠️ **Практические руководства**
+- [📊 Инте��рация анализа стакана](docs/guides/ORDERBOOK_INTEGRATION.md)
+- [🔍 Мониторинг BUY ордеров](docs/guides/BUY_ORDER_MONITOR.md)
+
+### 🏗️ **Архитектура и разработка**
+- [🏗️ Архитектура проекта](docs/architecture/PROJECT_OVERVIEW.md)
+- [📋 Обзор модулей](docs/architecture/MODULE_OVERVIEW.md)
+- [📂 Структура файлов](docs/architecture/FILE_STRUCTURE.md)
+
+### 🔧 **API и интеграция**
+- [🔧 Справочник API](docs/api/API_REFERENCE.md)
+- [🏪 Интеграция с биржами](docs/api/EXCHANGE_INTEGRATION.md)
+
+### 📋 **Разработка**
+- [📋 Руководства по реализации](docs/development/IMPLEMENTATION_GUIDES.md)
+- [📊 Управление проектом](docs/development/project_management/)
+
+### 📦 **Релизы**
+- [📝 История изменений](docs/releases/CHANGELOG.md)
+- [🗺️ Дорожная карта](docs/releases/ROADMAP.md)
+- [📦 Заметки о релизах](docs/releases/release-notes/)
+
+### 🛠️ **Помощь**
+- [🔧 Устранение неполадок](docs/troubleshooting/TROUBLESHOOTING.md)
+- [❓ Часто задаваемые вопросы](docs/troubleshooting/FAQ.md)
+
+### ���️ **Технические спецификации**
+**Язык**: Python 3.10
+**Основные зависимости**: `requirements.txt`
+
+- **Архитектура**: Clean Architecture / DDD
+- **Конкурентность**: на базе asyncio
+
+### 🔗 **Полезные ссылки**
+- **Биржа**: Binance API
+- **Технический анализ**: TA-Lib
+- **WebSocket**: ccxt.pro
+- **Синхронизация времени**: Binance Time API
+
+## 🌿 Стратегия ветвления
+AutoTrade теперь следует рабочему процессу **GitFlow**:
+- `main` – готовый к продакшену код
+- `stage` – предпродакшн тестирование
+- `dev` – интеграционная ветка для новых фич
+- `feature/*` – новая функциональность на основе `dev`
+- `release/*` – подготовка релиза на основе `stage`
+- `hotfix/*` – срочные исправления на основе `main`
+
+```
+feature/*   -> dev
+dev         -> stage
+stage       -> release/*
+release/*   -> main + dev
+hotfix/*    -> main + dev
+```
+
+### 🔖 Версионирование
+Релизы создаются автоматически при п��ше в `main`. Рабочий процесс анализирует коммиты
+и увеличивает **мажорную**, **минорную** или **патч** версию соответственно, тегируя репозиторий
+`vX.Y.Z` и генерируя заметки о релизе.
+
+---
+
+## ✨ Ключевые возможности
+
+### 🧠 Интеллектуальная торговля
+- **Технический анализ `MACD`** с анализом гистограммы
+- **Анализ биржевого стакана (`OrderBook Intelligence`)** - спред, ликвидность, поддержка/сопротивление
+- **Умные модификации ордеров (`Smart Order Modifications`)** - корректировка цен на основе технических уровней  
+- **Оценка уверенности сигнала (`Signal Confidence Scoring`)** - система скоринга сигналов
+
+### ⚡ Производительность и надежность
+- **Асинхронная архитектура** на базе `asyncio` для максимальной скорости
+- **Интеграция `WebSocket`** через `ccxt.pro` для real-time данных
+- **Мониторинг производительности (`Performance Monitoring`)** с детальными метриками
+- **Сохранение состояния (`JSON-based Persistence`)** на основе JSON.
+
+### 🛡️ Системы безопасности  
+- **`Smart StopLossMonitor`** - трёхуровневая защита от убытков с анализом стакана.
+- **`SignalCooldownManager`** - защита от переторговки.
+- **`Enhanced BuyOrderMonitor`** - синхронизация виртуальных `SELL` ордеров при пересоздании.
+- **Валидация по стакану (`OrderBook Validation`)** - отклонение сделок при плохой ликвидности.
+- **Конфигурация через окружение (`Environment-based`)** с помощью `.env` файлов.
+
+### 📊 Аналитика и мониторинг
+- **`MarketAnalysisService`** - анализ волатильности и трендов
+- **Логирование производительности (`Real-time Performance Logging`)** в реальном времени 
+- **Торговые рекомендации (`Trading Recommendations`)** на основе рыночных условий
+- **Мониторинг состояния стакана (`OrderBook Health Monitoring`)**
+
+---
+
+## 🏗️ Архитектура
+
+### 📐 Структура на основе Domain-Driven Design (Реальная структура проекта)
 
 ```
 new_autotrade/
+├── src/                       # 🎯 Основной исходный код
+│   ├── domain/                # 🧠 Бизнес-логика
+│   │   ├── entities/          # Ключевые бизнес-сущности
+│   │   │   ├── deal.py       # Торговые сделки
+│   │   │   ├── order.py      # Биржевые ордера  
+│   │   │   ├── currency_pair.py # Торговые пары
+│   │   │   └── ticker.py     # Рыночные тикеры
+│   │   ├── factories/         # Создание объектов
+│   │   │   ├── deal_factory.py
+│   │   │   └── order_factory.py
+│   │   └── services/          # Бизнес-сервисы
+│   │       ├── deals/
+│   │       │   ├── deal_service.py           # Управление сделками
+│   │       │   └── deal_completion_monitor.py # 🆕 Завершение сделок
+│   │       ├── orders/
+│   │       │   ├── order_service.py          # Уп��авление ордерами
+│   │       │   ├── order_execution_service.py # Исполнение ордеров
+│   │       │   ├── buy_order_monitor.py      # 🔄 Улучшенный мониторинг
+│   │       │   └── filled_buy_order_handler.py # 🆕 Обработчик BUY ордеров
+│   │       ├── market_data/
+│   │       │   ├── ticker_service.py         # Рыночные данные
+│   │       │   ├── orderbook_analyzer.py     # Анализ стакана
+│   │       │   ├── orderbook_service.py      # Мониторинг стакана
+│   │       │   └── market_analysis_service.py # Анализ рынка
+│   │       ├── trading/
+│   │       │   ├── trading_service.py        # Основная логика торговли
+│   │       │   ├── trading_decision_engine.py # Механизм принятия решений
+│   │       │   └── signal_cooldown_manager.py # Система защиты
+│   │       ├── risk/
+│   │       │   └── stop_loss_monitor.py      # 🆕 Умный стоп-лосс
+│   │       ├── indicators/
+│   │       │   └── cached_indicator_service.py # Оптимизаци�� производительности
+│   │       └── utils/
+│   │           ├── decimal_rounding_service.py # 🆕 Точное округление
+│   │           └── orderbook_cache.py         # 🆕 Кеширование стакана
+│   │
+│   ├── application/           # 🚀 Сценарии использования  
+│   │   ├── use_cases/
+│   │   │   └── run_realtime_trading.py # Торговля в реальном времени
+│   │   └── utils/
+│   │       └── performance_logger.py   # Логирование производительности
+│   │
+│   ├── infrastructure/        # 🔌 Внешние интеграции
+│   │   ├── repositories/      # Хранение данных (на основе JSON)
+│   │   │   ├── deals_repository.py
+│   │   │   ├── orders_repository.py
+│   │   │   └── tickers_repository.py
+│   │   └── connectors/        # Внешние сервисы
+│   │       └── exchange_connector.py   # API биржи
+│   │
+│   └── config/
+│       ├── config.json        # Основная конфигурация
+│       └── config_loader.py   # Загрузчик конфигурации
 │
-├── domain/                    # 🧠 Business Logic
-│   ├── entities/              # Core business objects
-│   │   ├── deal.py           # Trading deals
-│   │   ├── order.py          # Exchange orders  
-│   │   ├── currency_pair.py  # Trading pairs
-│   │   └── ticker.py         # Market tickers
-│   ├── factories/             # Object creation
-│   │   ├── deal_factory.py
-│   │   └── order_factory.py
-│   └── services/              # Business services
-│       ├── trading_service.py        # Core trading logic
-│       ├── deal_service.py           # Deal management
-│       ├── order_service.py          # Order management
-│       ├── signal_service.py         # Signal processing
-│       ├── ticker_service.py         # Market data
-│       ├── orderbook_analyzer.py     # 🆕 OrderBook analysis
-│       ├── orderbook_service.py      # 🆕 OrderBook monitoring
-│       ├── trading_decision_engine.py # 🆕 Decision engine
-│       ├── market_analysis_service.py # Market analysis
-│       ├── cached_indicator_service.py # Performance optimization
-│       └── signal_cooldown_manager.py # Protection system
-│
-├── application/               # 🚀 Use Cases  
-│   ├── use_cases/
-│   │   └── run_realtime_trading.py   # 🆕 Real-time with OrderBook
-│   └── utils/
-│       └── performance_logger.py     # Performance monitoring
-│
-├── infrastructure/            # 🔌 External Integrations
-│   ├── repositories/          # Data storage (JSON-based)
-│   │   ├── deals_repository.py
-│   │   ├── orders_repository.py
-│   │   └── tickers_repository.py
-│   └── connectors/            # External services
-│       ├── exchange_connector.py     # Exchange API
-│       └── pro_exchange_connector.py # 🆕 WebSocket ccxt.pro
-│
-├── config/
-│   └── config_loader.py       # Configuration loader
-│
-├── binance_keys/              # 🔐 API Keys storage
-│
-├── project_management/        # Project docs & issues
-│
-├── sandbox*.py                # Testing scripts
-├── main.py                    # 🎯 Application entry point
-└── *.md                       # Documentation
+├── binance_keys/              # 🔐 Хранилище API ключей
+├── project_management/        # Документация и задачи
+├── tests/                     # 🧪 Наборы тестов
+├── .env.example              # Шаблон переменных окружения
+├── main.py                   # 🎯 Точка входа в приложение
+└── *.md                      # Документация
 ```
 
-### 🎨 Architecture Diagram
+### 🎨 Схема архитектуры
 
 [schema-app.puml](schema-app.puml)
 
 <details>
-  <summary>📐 Plant UML Schema</summary>
+  <summary>📐 Схема Plant UML</summary>
 
 ```
 @startuml
@@ -267,285 +357,243 @@ namespace infrastructure.repositories {
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Быстрый старт
 
-### 📦 Installation
+### 📦 Установка
 
 ```bash
-# Clone repository
+# Клонировать репозиторий
 git clone <repository-url>
 cd new_autotrade
 
-# Install dependencies
+# Установить зависимости
 pip install -r requirements.txt
 
-# Configure API keys
-# Create `.env` from `.env.example` and add your API keys
+# Настроить API ключи
+# Создайте `.env` из `.env.example` и добавьте ваши API ключи
 ```
 
-### ⚙️ Configuration
+### ⚙️ Конфигурация
 
-Configuration is loaded from `config/config.json` and can be overridden by creating a `.env` file in the project root. See `.env.example` for required variables.
+Конфигурация загружается из `config/config.json` и может быть переопределена созданием файла `.env` в корне проекта. Смотрите `.env.example` для необходимых переменны��.
 
-### 🎯 Run Trading
+### 🎯 Запуск торговли
 
 ```bash
-# Start the trading system
+# Запустить торговую систему
 python main.py
 ```
 
 ---
 
-## 📊 Performance
+## 📊 Производительность
 
-### 📈 **Real-time Metrics**
-- **Tick Processing**: < 1ms под нормальными условиями
-- **WebSocket Latency**: минимальная задержка данных  
-- **Memory Efficiency**: оптимизированное хранение истории
-- **CPU Optimization**: эффективные вычисления индикаторов
+### 📈 **Метрики в реальном времени**
+- **Обработка тика**: < 1ms в нормальных условиях
+- **Задержка WebSocket**: минимальная задержка данных  
+- **Эффективность памяти**: оптимизированное хранение истории
+- **Оптимизация CPU**: эффективные вычисления индикаторов
 
-### 🎯 **Trading Statistics**
-- **Signal Accuracy**: улучшена благодаря OrderBook анализу
-- **Slippage Control**: автоматическая валидация ликвидности
-- **Risk Management**: многоуровневая система защиты
+### 🎯 **Торговая статистика**
+- **Точность сигнала**: улучшена благодаря анализу стакана
+- **Контроль проскальзывания**: автоматическая валидация ликвидности
+- **Управление рисками**: многоуровневая система защиты
 
-### 📊 **System Components**
-- **~500+ lines** основного торгового кода
-- **11+ domain services** для разных аспектов торговли
-- **4 types of analysis**: MACD, volatility, trends, orderbook
-- **3 protection levels**: cooldown, limits, liquidity validation
+### 📊 **Компоненты системы**
+- **~500+ строк** основного торгового кода
+- **11+ доменных сервисов** для разных аспектов торговли
+- **4 типа анализа**: MACD, волатильность, тренды, стак��н
+- **3 уровня защиты**: "остывание", лимиты, валидация ликвидности
 
 ---
 
-## 🔧 Configuration
+## 🔧 Конфигурация
 
-### 🎛️ **OrderBook Analysis Settings**
+### 🎛️ **Настройки анализа стакана**
 
-| Parameter | Description | Default |
+| Параметр | Описание | По умолчанию |
 |-----------|-------------|---------|
-| `min_volume_threshold` | Minimum volume for analysis | 1000 |
-| `big_wall_threshold` | Big wall detection threshold | 5000 |
-| `max_spread_percent` | Max allowed spread | 0.3% |
-| `min_liquidity_depth` | Min liquidity depth | 15 |
-| `typical_order_size` | Typical order size | 10 USDT |
-| `monitoring_interval` | Monitoring interval | 0.1 sec |
+| `min_volume_threshold` | Минимальный объем для анализа | 1000 |
+| `big_wall_threshold` | Порог для определения "стенки" | 5000 |
+| `max_spread_percent` | Максимально допустимый спред | 0.3% |
+| `min_liquidity_depth` | Минимальная глубина ликвидности | 15 |
+| `typical_order_size` | Типичный размер ордера | 10 USDT |
+| `monitoring_interval` | Интервал мониторинга | 0.1 сек |
 
-### 🛡️ **Trading Protection Settings**
+### 🛡️ **Настройки защиты**
 
-| Parameter | Description | Default |
+| Параметр | Описание | По умолчанию |
 |-----------|-------------|---------|
-| `enable_orderbook_validation` | Enable orderbook validation | true |
-| `orderbook_confidence_threshold` | Confidence threshold | 0.6 |
-| `require_orderbook_support` | Require orderbook support | false |
-| `log_orderbook_analysis` | Log orderbook analysis | true |
+| `enable_orderbook_validation` | Включить валидацию по стакану | true |
+| `orderbook_confidence_threshold` | Порог уверенности | 0.6 |
+| `require_orderbook_support` | Требовать поддержку от стакана | false |
+| `log_orderbook_analysis` | Л��гировать анализ стакана | true |
 
 ---
 
-## 📈 Trading Process
+## 📈 Торговый процесс
 
-### 🔄 **Main Trading Loop**
+Система работает по асинхронной, событийно-ориентированной модели, что делает ее надежной и быстрой. Жизненный цикл сделки разделен на несколько независимых этапов, управляемых разными сервисами.
 
-```python
-🟢🔥 MACD СИГНАЛ → 📊 АНАЛИЗ СТАКАНА → ✅/❌ РЕШЕНИЕ → 🧮 КАЛЬКУЛЯТОР → 🆕 СДЕЛКА
+### 🔄 **Асинхронный жизненный цикл сделки (v2.4.0)**
+
+**Революционное изменение**: Отказ от одновременного размещения `BUY` и `SELL` ордеров в пользу поэтапного исполнения.
+
+1.  **Сигнал и Валидация**:
+    -   `TickerService` анализирует график и генерирует первичный сигнал `BUY` по индикатору MACD.
+    -   `OrderBookAnalyzer` немедленно проверяет сигнал по стакану. Если ликвидность низкая или дисбаланс объемов негативный, сигнал отклоняется.
+
+2.  **Инициация Сделки**:
+    -   Если сигнал подтвержден, `OrderExecutionService` с��здает `Deal` (сделку).
+    -   На биржу отправляется **только `BUY` ордер**.
+    -   `SELL` ордер создается "виртуально" (в памяти, со статусом `PENDING`) и ждет своего часа.
+
+3.  **Мониторинг и Адаптация (параллельные процессы)**:
+    -   **`BuyOrderMonitor`**: Если `BUY` ордер "застрял" (цена ушла), этот сервис отменит его, создаст новый по актуальной цене и, что важно, **обновит** параметры "виртуального" `SELL` ордера в локальной памяти.
+    -   **`FilledBuyOrderHandler`** (🆕): Как только `BUY` ордер исполняется, этот сервис "замечает" это и **отправляет на биржу** связанный с ним `SELL` ордер.
+
+4.  **Завершение Сделки**:
+    -   **`DealCompletionMonitor`** (🆕): Этот сервис отслеживает общее состояние сделок. Когда и `BUY`, и `SELL` ордера исполнены (`FILLED`), он закрывает сделку, меняя ее статус на `CLOSED`.
+
+5.  **Защита от потерь**:
+    -   **`StopLossMonitor`** (🆕): Трёхуровневая система защиты с анализом стакана перед принятием решений о закрытии убыточных позиций.
+
+Эта архитектура гарантирует, что система не "забывает" про сделки и гибко адаптируется к рыночным изменениям, при этом обеспечивая максимальную безопасность.
+
+### ✅ **Пример успешного сигнала**
+```
+🟢🔥 MACD СИГНАЛ ПОКУПКИ → 📊 АНАЛИЗ СТАКАНА: OK → 🚀 OrderExecutionService:
+   - Создана сделка #123
+   - На биржу отправлен BUY ордер #BUY-A
+   - В памяти создан PENDING SELL ордер #SELL-A
 ```
 
-### ✅ **Successful Signal Example**
+### ❌ **Пример отклоненного сигнала**
 ```
-🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ПРОВЕРЯЕМ СТАКАН...
-   📈 MACD > Signal: -0.000050 > -0.000064
-   📊 Анализ стакана: спред 0.23%, дисбаланс +15.3% (покупатели)
-   ✅ СТАКАН ПОДДЕРЖИВАЕТ: strong_buy (доверие: 85%)
-   🔧 Используем цену поддержки: 0.3255 вместо 0.3259
-   💰 Создана оптимизированная сделка с прибылью 0.80%
-```
-
-### ❌ **Rejected Signal Example**
-```
-🟢🔥 MACD СИГНАЛ ПОКУПКИ ОБНАРУЖЕН! ПРОВЕРЯЕМ СТАКАН...
-   📊 Анализ стакана: спред 0.85%, слиппедж 2.45%
-   ❌ СТАКАН: Отклонено (критические проблемы ликвидности)
+🟢🔥 MACD СИГНАЛ ПОКУПКИ → 📊 АНАЛИЗ СТАКАНА: ОТКЛОНЕНО (слабый спрос) → 🚫 Сделка отменена
 ```
 
 ---
 
-## 🛡️ Safety Features
+## 🛡️ Системы безопасности
 
-### 🔒 **Protection Mechanisms**
-- **SignalCooldownManager** - предотвращение переторговки.
-- **Position Limits** - ограничение количества активных сделок.
-- **OrderBook Validation** - проверка качества стакана.
-- **Stale Order Monitoring** - отмена "застрявших" ордеров для предотвращения потерь.
+### 🔒 **Механизмы защиты**
+- **`SignalCooldownManager`** - предотвращение переторговки.
+- **Лимит�� позиций** - ограничение количества активных сделок.
+- **Валидация по стакану** - проверка качества стакана.
+- **Мониторинг "тухлых" ордеров** - отмена "застрявших" ордеров для предотвращения потерь.
 
-### ⚠️ **Risk Management**
-- **Stale Order Monitoring** - отмена "застрявших" ордеров по времени и отклонению цены.
-- **Emergency Shutdown** - возможность экстренно остановить всю торговлю и отменить ордера.
-- **Price Deviation Check** - часть мониторинга "протухших" ордеров.
-- **Position Sizing** - адаптивный размер позиций.
-- **Market Analysis** - анализ рыночных условий.
+### ⚠️ **Управление рисками**
+- **Мониторинг "тухлых" ордеров** - отмена "застрявших" ордеров по времени и отклонению цены.
+- **Экстренное отключение** - возможность экстренно остановить всю торговлю и отменить ордера.
+- **Проверка отклонения цены** - часть мониторинга "протухших" ордеров.
+- **Размер позиции** - адаптивный размер позиций.
+- **Анализ рынка** - анализ рыночных условий.
 
-### 🔐 **Security Features**
-- **Separate API Keys** для sandbox и production.
-- **Environment-based Configuration** - безопасное управление ключами через переменные окружения.
-- **Private Key Storage** в отдельной папке binance_keys/.
+### 🔐 **Функции безопасности**
+- **Раздельные API ключи** для песочницы и продакшена.
+- **Конфигурация через окружение** - безопасное управление ключами через перемен��ые окружения.
+- **Хранение приватных ключей** в отдельной папке `binance_keys/`.
 
 ---
 
-## 📋 Development Roadmap
+## 📋 План развития
 
-### ✅ **Phase 1 & 2: Foundation & Core Logic (Completed)**
+### ✅ **Фаза 1 и 2: Основа и ядро логики (Завершено)**
 - [x] **Асинхронная архитектура**
 - [x] **Безопасная конфигурация** (через .env)
 - [x] **Реализация торговой логики** (размещение ордеров)
-- [x] **Управление рисками** (мониторинг ордеров, cooldown)
-- [x] **Персистентность данных** (через JSON)
+- [x] **Управление рисками** (мониторинг ордеров, "остывание")
+- [x] **Сохранение данных** (через JSON)
 
-### 🚀 **Phase 3: Production Readiness (Next Steps)**
-- [ ] **Продвинутая обработка ошибок** (Reconnect, Retry)
-- [ ] **Мониторинг и алерты** (Health checks, Telegram)
-- [ ] **Комплексное тестирование** (Unit, Integration, Backtests)
-- [ ] **State Management** (восстановление состояния при перезапуске)
+### 🚀 **Фаза 3: Готовность к продакшену (Следующие шаги)**
+- [ ] **Продвинутая обработка ошибок** (переподключение, повторные попытки)
+- [ ] **Мониторинг и оповещения** (проверки состояния, Telegram)
+- [ ] **Комплексное тестирование** (модульное, интеграционное, бэктесты)
+- [ ] **Управление состоянием** (восстановление состояния при перезапуске)
 
-### ✨ **Phase 4: Advanced Features (Future)**
-- [ ] **Multi-pair торговля**
-- [ ] **ML-предсказания**
+### ✨ **Фаза 4: Продвинутые возможности (��удущее)**
+- [ ] **Торговля несколькими парами**
+- [ ] **ML-прогнозирование**
 - [ ] **REST API** для управления ботом
 
 ---
 
-## 🎯 Issues Overview
+## 🎯 Обзор задач
 
 
-### 🔥 **Critical Issues** (Must Have для v3.0.0)
+### 🔥 **Критические задачи** (Обязательно для v3.0.0)
 
-🏗️ **M1** | [x] Главный дирижер - разделить монолитную логику run_realtime_trading.py на управляемые компоненты
+🏗️ **M1** | ✅ **ЗАВЕРШЕНО** - [Issue #20](https://github.com/sni10/new_autotrade/issues/20) - Главный дирижер - разделить монолитную логику `run_realtime_trading.py` на управляемые компоненты
 
-🏗️ **M1** | [x] Реальное выставление ордеров - бот фактически торгует и зарабатывает деньги
+🏗️ **M1** | ✅ **ЗАВЕРШЕНО** - [Issue #19](https://github.com/sni10/new_autotrade/issues/19) - Реальное выставление ордеров - бот фактически торгует и зарабатывает деньги
 
-🏗️ **M2** | [x] Система хранения данных - данные не теряются при перезапуске
+🏗️ **M2** | ✅ **ЗАВЕРШЕНО** - [Issue #6](https://github.com/sni10/new_autotrade/issues/6) - Система хранения данных - данные не теряются при перезапуске
 
-### ⚡ **High Priority Issues** (Important для стабильности)
+### ⚡ **Высокоприоритетные задачи** (Важно для стабильности)
 
-🏗️ **M1** | [x] Управление рисками - защита от потери средств через stop-loss и лимиты
+🏗️ **M1** | ✅ **ЗАВЕРШЕНО** - [Issue #18](https://github.com/sni10/new_autotrade/issues/18) - Управление рисками - защита от потери средств через stop-loss и лимиты
 
-🏗️ **M2** | [ ] Управление состоянием - graceful restart без потери контекста
+🏗️ **M2** | [ ] [Issue #16](https://github.com/sni10/new_autotrade/issues/16) - Управление состоянием - "грациозный" перезапуск без потери контекста
 
-🏗️ **M2** | [x] Управление конфигурацией - security compliance и удобство настройки
+🏗️ **M2** | ✅ **ЗАВЕРШЕНО** - [Issue #15](https://github.com/sni10/new_autotrade/issues/15) - Управление конфигурацией - соответствие стандартам безопасности и удобство настройки
 
-🏗️ **M3** | [ ] Обработка ошибок - устойчивость к сбоям и автовосстановление
+🏗️ **M3** | [ ] [Issue #14](https://github.com/sni10/new_autotrade/issues/14) - Обработка ошибок - устойчивость к сбоям и автовосстановление
 
-🏗️ **M3** | [ ] Безопасность - шифрование sensitive данных и защита от атак
+🏗️ **M3** | [ ] [Issue #13](https://github.com/sni10/new_autotrade/issues/13) - Безопасность - шифрование чувствительных данных и защита от атак
 
-### 📈 **Medium Priority Issues** (Nice to Have улучшения)
+### 📈 **Среднеприоритетные задачи** (Желательные улучшения)
 
-🏗️ **M1** | [x] Улучшенный анализ рынка - лучшие торговые решения
+🏗️ **M1** | ✅ **ЗАВЕРШЕНО** - [Issue #8](https://github.com/sni10/new_autotrade/issues/8) - Улучшенный анализ рынка - лучшие торговые решения
 
-🏗️ **M1** | [x] Агрегация сигналов - меньше ложных сигналов
+🏗️ **M1** | ✅ **ЗАВЕРШЕНО** - [Issue #7](https://github.com/sni10/new_autotrade/issues/7) - Агрегация сигналов - меньше ложных сигналов
 
-🏗️ **M3** | [ ] Мониторинг системы - proactive обнаружение проблем
+🏗️ **M3** | [ ] [Issue #21](https://github.com/sni10/new_autotrade/issues/21) - Мониторинг системы - проактивное об��аружение проблем
 
-🏗️ **M4** | [ ] Оптимизация производительности - < 1ms обработка тика в 95% случаев
+🏗️ **M4** | [ ] [Issue #12](https://github.com/sni10/new_autotrade/issues/12) - Оптимизация производительности - < 1ms обработка тика в 95% случаев
 
-### 🎯 **Low Priority Issues** (Future Features)
+### 🎯 **Низкоприоритетные задачи** (Будущие возможности)
 
-🏗️ **M2** | [x] Улучшенные репозитории - быстрые database операции
+🏗️ **M2** | ✅ **ЗАВЕРШЕНО** - [Issue #6](https://github.com/sni10/new_autotrade/issues/6) - Улучшенные репозитории - быстрые операции с данными
 
-🏗️ **M3** | Резервное копирование - защита от потери данных
+🏗️ **M3** | [ ] [Issue #5](https://github.com/sni10/new_autotrade/issues/5) - Резервное копирование - защита от потери данных
 
-🏗️ **M4** | Мульти-валютная торговля - масштабирование на множественные активы
+🏗️ **M4** | [ ] [Issue #11](https://github.com/sni10/new_autotrade/issues/11) - Мультивалютная торговля - масштабирование на множественные активы
 
 
-
----
-
-## 📖 Documentation
-
-### 📋 **Available Documents**
-- [`RELEASE_NOTES.md`](RELEASE_NOTES.md) - Полные релизные заметки v2.2.0
-- [`RELEASE_NOTES_v2.1.0.md`](RELEASE_NOTES_v2.1.0.md) - Детальная документация релиза
-- [`ROADMAP.md`](ROADMAP.md) - Детальная техническая оценка и планы развития
-- [`ORDERBOOK_INTEGRATION.md`](ORDERBOOK_INTEGRATION.md) - Документация по интеграции анализа стакана
-- [`CHANGELOG.md`](CHANGELOG.md) - История изменений
-
-### 🗂️ **Project Management**
-- [`project_management/issues_summary.md`](project_management/issues_summary.md) - Полный список всех issues
-- [`project_management/milestones.md`](project_management/milestones.md) - 4 milestone с временными рамками
-- [`project_management/implementation_plan.md`](project_management/implementation_plan.md) - Готовый план реализации
-- [`project_management/issues/`](project_management/issues/) - 15 детальных технических заданий
-- [`ISSUE_06_IMPLEMENTATION_GUIDE.md`](ISSUE_06_IMPLEMENTATION_GUIDE.md) - отчет по реализации #6
-- [`ISSUE_07_IMPLEMENTATION_GUIDE.md`](ISSUE_07_IMPLEMENTATION_GUIDE.md) - отчет по реализации #7
-- [`ISSUE_08_IMPLEMENTATION_GUIDE.md`](ISSUE_08_IMPLEMENTATION_GUIDE.md) - отчет по реализации #8
-- [`ISSUE_15_IMPLEMENTATION_GUIDE.md`](ISSUE_15_IMPLEMENTATION_GUIDE.md) - отчет по реализации #15
-- [`ISSUE_18_IMPLEMENTATION_GUIDE.md`](ISSUE_18_IMPLEMENTATION_GUIDE.md) - отчет по реализации #18
-- [`ISSUE_19_IMPLEMENTATION_GUIDE.md`](ISSUE_19_IMPLEMENTATION_GUIDE.md) - пример полного отчета по реализации
-- [`ISSUE_20_IMPLEMENTATION_GUIDE.md`](ISSUE_20_IMPLEMENTATION_GUIDE.md) - отчет по реализации #20
-
-### 🛠️ **Technical Specs**
-**Language**: Python 3.10
-**Main Dependencies**: `requirements.txt`
-
-- **Architecture**: Clean Architecture / DDD
-- **Concurrency**: asyncio-based
-
-### 🔗 **Useful Links**
-- **Exchange**: Binance API
-- **Technical Analysis**: TA-Lib
-- **WebSocket**: ccxt.pro
-- **Time Sync**: Binance Time API
-
-## 🌿 Branch Strategy
-AutoTrade now follows the **GitFlow** workflow:
-- `main` – production ready code
-- `stage` – pre-production testing
-- `dev` – integration branch for features
-- `feature/*` – new functionality based on `dev`
-- `release/*` – release preparation based on `stage`
-- `hotfix/*` – urgent fixes based on `main`
-
-```
-feature/*   -> dev
-dev         -> stage
-stage       -> release/*
-release/*   -> main + dev
-hotfix/*    -> main + dev
-```
-
-### 🔖 Versioning
-Releases are created automatically on pushes to `main`. The workflow analyzes commit messages
-and increments **major**, **minor** or **patch** version accordingly, tagging the repository with
-`vX.Y.Z` and generating release notes.
 
 ---
 
-## 🚀 Deployment
+## 🚀 Развертывание
 
-### 📦 **Real File Structure**
+### 📦 **Реальная структура файлов**
 ```
 new_autotrade/
-├── main.py              # Start here
-├── config/config.json   # Main configuration
-├── .env.example         # Environment overrides
-├── binance_keys/        # Your API keys here
-├── domain/              # Core business logic
-├── application/         # Use cases & utilities
-├── infrastructure/      # External integrations
-├── project_management/  # Issues & planning docs
-└── *.md                # Documentation
+├── main.py              # Начать здесь
+├── config/config.json   # Основная конфигурация
+├── .env.example         # Переопределения окружения
+├── binance_keys/        # Ваши API кл��чи здесь
+├── domain/              # Основная бизнес-логика
+├── application/         # Сценарии использования и утилиты
+├── infrastructure/      # Внешние интеграции
+├── project_management/  # Документация и задачи
+└── *.md                # Документация
 ```
 
-### 🎯 **Getting Started**
-1. **Configure API Keys** in `binance_keys/`
-2. **Create `.env`** based on `.env.example` to override settings
-3. **Run** `python main.py`
-4. **Monitor** logs for trading activity
+### 🎯 **Начало работы**
+1. **Настройте API ключи** в `binance_keys/`
+2. **Создайте `.env`** на основе `.env.example` для переопределения настроек
+3. **Запустите** `python main.py`
+4. **Отслеживайте** логи для мониторинга торговой активности
 
 ---
 
-## 💎 Conclusion
+## 💎 Заключение
 
-**AutoTrade v2.3.0** представляет собой профессиональную торговую систему с интеллектуальным анализом рынка. Интеграция анализа биржевого стакана в сочетании с MACD индикаторами создает мощный инструмент для автоматической торговли.
+**AutoTrade v2.3.0** представляет собой профессиональную торговую систему с интеллектуальным анализом рынка. Интеграция анализа биржевого ��такана в сочетании с индикаторами MACD создает мощный инструмент для автоматической торговли.
 
 **Ключевые преимущества:**
-- ✅ **Умные решения** на основе анализа ликвидности
+- ✅ **��мные решения** на основе анал��за ликвидности
 - ✅ **Высокая производительность** благодаря асинхронной архитектуре  
 - ✅ **Надежная защита** от переторговки и плохих сигналов
 - ✅ **Гибкая конфигурация** под разные торговые стратегии

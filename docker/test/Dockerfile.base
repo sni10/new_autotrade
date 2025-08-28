@@ -1,0 +1,68 @@
+# 🏗️ Multi-stage Dockerfile для максимального кеширования
+# Базовый образ с системными зависимостями и TA-Lib
+
+# Stage 1: Base image with system dependencies and TA-Lib
+FROM python:3.10-slim as base-builder
+
+# 🏷️ Labels for better cache management
+LABEL org.opencontainers.image.source="https://github.com/sni10/new_autotrade"
+LABEL org.opencontainers.image.description="AutoTrade Base Image with TA-Lib"
+
+# 🧰 Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    wget \
+    curl \
+    gcc \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🧱 Install TA-Lib from source (this is the heaviest operation)
+RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz && \
+    tar -xzf ta-lib-0.6.4-src.tar.gz && \
+    cd ta-lib-0.6.4 && \
+    ./configure --prefix=/usr && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf ta-lib-0.6.4 ta-lib-0.6.4-src.tar.gz
+
+# Stage 2: Final test image
+FROM python:3.10-slim as test-runner
+
+# 🏷️ Final image labels
+LABEL org.opencontainers.image.source="https://github.com/sni10/new_autotrade"
+LABEL org.opencontainers.image.description="AutoTrade Test Runner"
+LABEL org.opencontainers.image.version="2.5.0"
+
+# 📦 Install only runtime dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# 📂 Copy TA-Lib from builder stage
+COPY --from=base-builder /usr/lib/libta_lib* /usr/lib/
+COPY --from=base-builder /usr/include/ta-lib/ /usr/include/ta-lib/
+
+# 📁 Set working directory
+WORKDIR /app
+
+# 🔧 Copy and install Python dependencies first (for better caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir pytest-cov pytest-xdist
+
+# 🧪 Copy configuration and scripts
+COPY src/config/config.json /app/src/config/config.json
+COPY docker/test/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# 🌍 Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTEST_CURRENT_TEST=1
+ENV PYTHONUNBUFFERED=1
+
+# 🚀 Set entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["echo", "🐳 AutoTrade test container ready"]

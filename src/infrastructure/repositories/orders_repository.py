@@ -138,6 +138,10 @@ class InMemoryOrdersRepository(OrdersRepository):
         order_ids = self._deal_index.get(deal_id, [])
         return [self._storage[oid] for oid in order_ids if oid in self._storage]
 
+    def get_orders_by_deal(self, deal_id: int) -> List[Order]:
+        """Получить все ордера по сделке (алиас для get_all_by_deal)"""
+        return self.get_all_by_deal(deal_id)
+
     def get_all(self) -> List[Order]:
         """Получить все ордера"""
         self.stats['total_queries'] += 1

@@ -1,308 +1,291 @@
-# main.py.new - ИНТЕГРАЦИЯ Issue #7 OrderExecutionService + BuyOrderMonitor
+# main.py - Clean version for AutoTrade v2.3.4
 import asyncio
 import sys
 import os
 import logging
-from datetime import datetime
-import pytz
 import requests
-import win32api
+import pytz
+from datetime import datetime
+try:
+    import win32api
+except ImportError:
+    win32api = None
 import time
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения из .env файла
-load_dotenv()
+# --- Условная настройка для Windows ---
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    try:
+        import win32api
+    except ImportError:
+        win32api = None
+        print("ПРЕДУПРЕЖДЕНИЕ: Модуль 'pywin32' не найден. Синхронизация времени будет пропущена.")
+else:
+    win32api = None
 
-# Добавляем src в sys.path
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
+# --- Основные импорты проекта ---
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-# 🆕 НОВЫЕ ИМПОРТЫ для Issue #7
 from domain.entities.currency_pair import CurrencyPair
 from domain.services.deals.deal_service import DealService
+from domain.services.orders.order_service import OrderService
+from domain.services.orders.order_execution_service import OrderExecutionService
+from domain.services.orders.buy_order_monitor import BuyOrderMonitor
+from domain.services.orders.order_sync_monitor import OrderSyncMonitor
+from domain.services.monitoring.system_stats_monitor import SystemStatsMonitor
+from domain.factories.order_factory import OrderFactory
+from domain.factories.deal_factory import DealFactory
+from domain.services.market_data.orderbook_analyzer import OrderBookAnalyzer
+from domain.services.risk.stop_loss_monitor import StopLossMonitor
+from domain.services.deals.deal_completion_monitor import DealCompletionMonitor
 
-# 🚀 ОБНОВЛЕННЫЕ СЕРВИСЫ
-from domain.services.orders.order_service import OrderService  # Используем .new версию
-from domain.services.orders.order_execution_service import OrderExecutionService  # НОВЫЙ главный сервис
-from domain.services.orders.buy_order_monitor import BuyOrderMonitor  # 🆕 МОНИТОРИНГ ТУХЛЯКОВ
-from domain.factories.order_factory import OrderFactory  # Используем .new версию
-
-# 🚀 ОБНОВЛЕННЫЕ РЕПОЗИТОРИИ
-from infrastructure.repositories.deals_repository import InMemoryDealsRepository
-from infrastructure.repositories.orders_repository import InMemoryOrdersRepository  # Используем .new версию
-
-# 🚀 ОБНОВЛЕННЫЕ КОННЕКТОРЫ
-from infrastructure.connectors.pro_exchange_connector import CcxtProMarketDataConnector
-from infrastructure.connectors.exchange_connector import CcxtExchangeConnector  # Используем .new версию
+# Новая двухуровневая архитектура репозиториев (DataFrame + PostgreSQL/Parquet)
+from infrastructure.repositories.factory.repository_factory import RepositoryFactory
+from infrastructure.connectors.exchange_connector import CcxtExchangeConnector
 from config.config_loader import load_config
-
-# Use-case запуска торговли
 from application.use_cases.run_realtime_trading import run_realtime_trading
 
-# Настройка логирования
+# Настройка логирования с поддержкой Unicode
+import sys
+
+# Создаем обработчики с правильной кодировкой
+file_handler = logging.FileHandler(
+    f'logs/autotrade_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log',
+    encoding='utf-8'
+)
+
+# Для консоли используем UTF-8 с обработкой ошибок
+console_handler = logging.StreamHandler(sys.stdout)
+if sys.platform == "win32":
+    # На Windows устанавливаем UTF-8 для stdout
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        # Для старых версий Python
+        pass
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[file_handler, console_handler]
 )
 logger = logging.getLogger(__name__)
 
-if sys.platform == "win32":
-    # Для Windows-асинхронного цикла
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
-def time_sync():
-    """Синхронизация времени с серверами Binance"""
+def sync_time():
+    """Синхронизация времени для Windows"""
+    if win32api is None:
+        logger.warning("⚠️ win32api недоступен, синхронизация времени пропущена")
+        return
+    
     try:
-        response = requests.get('https://api.binance.com/api/v3/time')
-        server_time = response.json()['serverTime']
-
-        current_time = datetime.fromtimestamp(server_time / 1000)
-        tz = pytz.timezone('Europe/Kiev')
-        current_time = tz.localize(current_time)
-
-        # Convert to UTC
-        utc_dt = current_time.astimezone(pytz.utc)
-
-        # Use the UTC datetime to set the system time
-        win32api.SetSystemTime(
-            utc_dt.year,
-            utc_dt.month,
-            utc_dt.weekday(),
-            utc_dt.day,
-            utc_dt.hour,
-            utc_dt.minute,
-            utc_dt.second,
-            utc_dt.microsecond // 1000
-        )
-        logger.info("⏰ Time synchronized with Binance servers")
-
+        logger.info("Попытка синхронизации времени для Windows...")
+        response = requests.get('http://worldtimeapi.org/api/timezone/UTC', timeout=5)
+        if response.status_code == 200:
+            utc_time = datetime.fromisoformat(response.json()['datetime'].replace('Z', '+00:00'))
+            win32api.SetSystemTime(utc_time.timetuple()[:8])
+            logger.info("✅ Время синхронизировано с UTC")
+        else:
+            logger.warning("⚠️ Не удалось получить время с сервера")
     except Exception as e:
-        logger.warning(f"⚠️ Failed to sync time: {e}")
-
+        logger.warning(f"⚠️ Не удалось синхронизировать время: {e}")
 
 async def main():
-    """
-    🚀 ГЛАВНАЯ функция с интеграцией OrderExecutionService (Issue #7) + BuyOrderMonitor
-    """
-
+    """Главная функция запуска AutoTrade"""
+    
     # Синхронизация времени
-    time_sync()
-
-    # Настройки торговой пары из конфигурации
+    sync_time()
+    
+    # Загрузка конфигурации
     config = load_config()
     pair_cfg = config.get("currency_pair", {})
-    base_currency = pair_cfg.get("base_currency", "ETH")
+    
+    base_currency = pair_cfg.get("base_currency", "MAGIC")
     quote_currency = pair_cfg.get("quote_currency", "USDT")
-    symbol_ccxt = f"{base_currency}{quote_currency}"
+    symbol_ccxt = f"{base_currency}/{quote_currency}"
     symbol_display = f"{base_currency}/{quote_currency}"
-
-    logger.info("🚀 ЗАПУСК AutoTrade v2.2.0+ с OrderExecutionService + BuyOrderMonitor")
-    logger.info(f"   💱 Валютная пара: {symbol_display} ({symbol_ccxt})")
-    logger.info(f"   📊 Issue #7: Реальная торговля ВКЛЮЧЕНА")
-    logger.info(f"   🕒 BuyOrderMonitor: Проверка протухших BUY ордеров ВКЛЮЧЕНА")
-    logger.info("="*60)
-
-    # Инициализация переменных для finally блока
+    
+    logger.info(f"🚀 ЗАПУСК AutoTrade v2.3.4 для {symbol_display}")
+    
     buy_order_monitor = None
-
+    stop_loss_monitor = None
+    deal_completion_monitor = None
+    order_sync_monitor = None
+    system_stats_monitor = None
+    pro_exchange_connector_prod = None
+    pro_exchange_connector_sandbox = None
+    repository_factory = None
+    
     try:
-        # 1. 🏗️ СОЗДАНИЕ ВАЛЮТНОЙ ПАРЫ
+        # 1. Инициализация коннекторов
+        pro_exchange_connector_prod = CcxtExchangeConnector(use_sandbox=False)
+        pro_exchange_connector_sandbox = CcxtExchangeConnector(use_sandbox=True)
+        logger.info("✅ Коннекторы инициализированы (Production, Sandbox)")
+        
+        # 2. Инициализация двухуровневой архитектуры репозиториев (DataFrame + PostgreSQL/Parquet)
+        repository_factory = RepositoryFactory()
+        await repository_factory.initialize()
+        
+        deals_repo = await repository_factory.get_deals_repository()
+        orders_repo = await repository_factory.get_orders_repository()
+        
+        storage_info = repository_factory.get_storage_info()
+        logger.info(f"✅ Репозитории созданы: {storage_info['deals_type']}, {storage_info['orders_type']}")
+        logger.info(f"📊 PostgreSQL: {'✅' if storage_info['postgresql_available'] else '❌'}")
+        
+        # 3. Инициализация фабрик с exchange info
+        order_factory = OrderFactory()
+        symbol_info = await pro_exchange_connector_prod.get_symbol_info(symbol_ccxt)
+        order_factory.update_exchange_info(symbol_ccxt, symbol_info)
+        deal_factory = DealFactory(order_factory)
+        logger.info(f"✅ Фабрики созданы, Exchange info для {symbol_ccxt} загружена")
+        
+        # 4. Создание CurrencyPair с правильными данными биржи
         currency_pair = CurrencyPair(
             base_currency=base_currency,
             quote_currency=quote_currency,
             symbol=symbol_ccxt,
             order_life_time=pair_cfg.get("order_life_time", 1),
-            deal_quota=pair_cfg.get("deal_quota", 15.0),
-            min_step=pair_cfg.get("min_step", 0.1),
-            price_step=pair_cfg.get("price_step", 0.0001),
-            profit_markup=pair_cfg.get("profit_markup", 1.5),
+            deal_quota=pair_cfg.get("deal_quota", 25.0),
+            profit_markup=pair_cfg.get("profit_markup", 0.015),  # 1.5%
             deal_count=pair_cfg.get("deal_count", 3),
         )
-        logger.info(f"✅ Валютная пара создана: {currency_pair.symbol}")
-
-        # 2. 🚀 СОЗДАНИЕ КОННЕКТОРОВ (Production + Sandbox)
-        logger.info("🔗 Инициализация коннекторов...")
-
-        # Production коннектор для live данных (тикеры, стаканы)
-        pro_exchange_connector_prod = CcxtExchangeConnector(
-            exchange_name="binance",
-            use_sandbox=False
-        )
-
-        # Sandbox коннектор для торговых операций (ордера, балансы)
-        pro_exchange_connector_sandbox = CcxtExchangeConnector(
-            exchange_name="binance",
-            use_sandbox=True
-        )
-
-        logger.info("✅ Коннекторы инициализированы")
-        logger.info(f"   📡 Production connector: ✅ (live data)")
-        logger.info(f"   🧪 Sandbox connector: ✅ (trading operations)")
-        logger.info(f"   🚀 Enhanced connector: ✅ (real API calls)")
-
-        # 3. 💾 СОЗДАНИЕ РЕПОЗИТОРИЕВ (Enhanced версии)
-        logger.info("💾 Инициализация репозиториев...")
-
-        deals_repo = InMemoryDealsRepository()
-
-        # 🆕 ENHANCED Orders Repository с индексами и поиском
-        orders_repo = InMemoryOrdersRepository(max_orders=50000)
-
-        logger.info("✅ Репозитории созданы")
-        logger.info(f"   📋 Deals repository: InMemory")
-        logger.info(f"   📦 Orders repository: Enhanced InMemory (max: 50K)")
-
-        # 4. 🏭 СОЗДАНИЕ ФАБРИК (Enhanced версии)
-        logger.info("🏭 Инициализация фабрик...")
-
-        # 🆕 ENHANCED Order Factory с валидацией
-        order_factory = OrderFactory()
-
-        # Загружаем exchange info для фабрики
-        try:
-
-            symbol_info = await pro_exchange_connector_prod.get_symbol_info(symbol_ccxt)
-            order_factory.update_exchange_info(symbol_ccxt, symbol_info)
-            logger.info(f"✅ Exchange info загружена для {symbol_ccxt}")
-        except Exception as e:
-            logger.warning(f"⚠️ Failed to load exchange info: {e}")
-
-        # Deal Factory (остается старой)
-        from domain.factories.deal_factory import DealFactory
-        deal_factory = DealFactory(order_factory)
-
-        logger.info("✅ Фабрики созданы")
-        logger.info(f"   🏭 Order Factory: Enhanced с валидацией")
-        logger.info(f"   🏭 Deal Factory: Standard")
-
-        # 5. 🎛️ СОЗДАНИЕ СЕРВИСОВ (Issue #7)
-        logger.info("🎛️ Создание торговых сервисов...")
-
-        # 🚀 ENHANCED Order Service с реальным API
-        order_service = OrderService(
-            orders_repo=orders_repo,
-            order_factory=order_factory,
-            exchange_connector=pro_exchange_connector_sandbox  # Подключаем реальный API
-        )
-
-        # Deal Service (остается старым)
-        deal_service = DealService(deals_repo, order_service, deal_factory)
-
-        # 🆕 ГЛАВНЫЙ OrderExecutionService (Issue #7)
-        order_execution_service = OrderExecutionService(
-            order_service=order_service,
-            deal_service=deal_service,
-            exchange_connector=pro_exchange_connector_sandbox
-        )
-
-        # 🕒 НОВЫЙ BuyOrderMonitor (мониторинг тухляков)
+        
+        # КРИТИЧЕСКИ ВАЖНО: Обновляем CurrencyPair данными с биржи
+        currency_pair.update_exchange_info(symbol_info)
+        logger.info(f"✅ CurrencyPair создан и обновлен данными биржи для {currency_pair.symbol}")
+        
+        # 5. Инициализация сервисов
+        order_service = OrderService(orders_repo, order_factory, pro_exchange_connector_sandbox)
+        deal_service = DealService(deals_repo, order_service, deal_factory, pro_exchange_connector_sandbox)
+        order_execution_service = OrderExecutionService(order_service, deal_service, pro_exchange_connector_sandbox)
+        orderbook_analyzer = OrderBookAnalyzer(config.get("orderbook_analyzer", {}))
+        logger.info("✅ Основные сервисы созданы")
+        
+        # 6. Инициализация мониторинга
+        buy_order_monitor_cfg = config.get("buy_order_monitor", {})
+        
+        # Извлекаем параметры из конфига с правильными дефолтными значениями
+        max_age_minutes = buy_order_monitor_cfg.get("max_age_minutes", 5.0)  # ИСПРАВЛЕНО: было 15.0
+        max_price_deviation_percent = buy_order_monitor_cfg.get("max_price_deviation_percent", 3.0)
+        check_interval_seconds = buy_order_monitor_cfg.get("check_interval_seconds", 10)
+        min_time_between_recreations_minutes = buy_order_monitor_cfg.get("min_time_between_recreations_minutes", 0.0)
+        
+        logger.info(f"🔧 BuyOrderMonitor настройки: max_age={max_age_minutes}мин, deviation={max_price_deviation_percent}%, interval={check_interval_seconds}с")
+        
         buy_order_monitor = BuyOrderMonitor(
             order_service=order_service,
+            deal_service=deal_service,
             exchange_connector=pro_exchange_connector_sandbox,
-            max_age_minutes=15.0,           # 15 минут максимум
-            max_price_deviation_percent=3.0, # 3% отклонение цены
-            check_interval_seconds=60       # Проверка каждую минуту
+            max_age_minutes=max_age_minutes,
+            max_price_deviation_percent=max_price_deviation_percent,
+            check_interval_seconds=check_interval_seconds,
+            min_time_between_recreations_minutes=min_time_between_recreations_minutes
         )
-
-        logger.info("✅ Торговые сервисы созданы")
-        logger.info(f"   🎛️ OrderService: Enhanced с реальным API")
-        logger.info(f"   💼 DealService: Standard")
-        logger.info(f"   🚀 OrderExecutionService: НОВЫЙ главный сервис")
-        logger.info(f"   🕒 BuyOrderMonitor: Мониторинг протухших BUY ордеров")
-
-        # 6. 🧪 ТЕСТ ПОДКЛЮЧЕНИЯ К БИРЖЕ
-        logger.info("🧪 Тестирование подключения к бирже...")
-
-        connection_test = await pro_exchange_connector_sandbox.test_connection()
-        if connection_test:
-            logger.info("✅ Подключение к бирже успешно")
-
-            # Показываем баланс
-            try:
-                balance = await pro_exchange_connector_sandbox.fetch_balance()
-                usdt_balance = balance.get('USDT', {}).get('free', 0.0)
-                logger.info(f"💰 Доступный баланс: {usdt_balance:.4f} USDT")
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to fetch balance: {e}")
-        else:
-            logger.error("❌ Подключение к бирже неудачно")
-            logger.error("❌ Завершение работы...")
-            return
-
-        # 7. ⚙️ НАСТРОЙКА OrderExecutionService
-        logger.info("⚙️ Настройка OrderExecutionService...")
-
-        order_execution_service.configure_execution_settings(
-            max_execution_time_sec=30.0,       # 30 секунд на выполнение
-            enable_risk_checks=True,           # Включить проверки рисков
-            enable_balance_checks=True,        # Включить проверки баланса
-            enable_slippage_protection=True    # Включить защиту от слиппеджа
-        )
-
-        settings = order_execution_service.get_current_settings()
-        logger.info("✅ OrderExecutionService настроен:")
-        for key, value in settings.items():
-            logger.info(f"   📊 {key}: {value}")
-
-        # 8. 🕒 ЗАПУСК МОНИТОРИНГА ТУХЛЯКОВ
-        logger.info("🕒 Запуск мониторинга протухших BUY ордеров...")
         asyncio.create_task(buy_order_monitor.start_monitoring())
-
-        monitor_stats = buy_order_monitor.get_statistics()
-        logger.info("✅ BuyOrderMonitor запущен:")
-        logger.info(f"   ⏱️ Максимальный возраст: {monitor_stats['max_age_minutes']} минут")
-        logger.info(f"   📈 Максимальное отклонение цены: {monitor_stats['max_price_deviation_percent']}%")
-        logger.info(f"   🔄 Интервал проверки: {monitor_stats['check_interval_seconds']} секунд")
-
-        # 9. 📊 ПОКАЗЫВАЕМ СТАТИСТИКУ СИСТЕМЫ
-        logger.info("📊 Статистика системы:")
-
-        # Статистика репозиториев
-        orders_stats = orders_repo.get_statistics()
-        logger.info(f"   📦 Orders repository: {orders_stats['total_orders']} ордеров")
-
-        # Статистика сервисов
-        order_stats = order_service.get_statistics()
-        execution_stats = order_execution_service.get_execution_statistics()
-        logger.info(f"   🎛️ OrderService: {order_stats['success_rate']:.1f}% success rate")
-        logger.info(f"   🚀 OrderExecutionService: {execution_stats['total_executions']} executions")
-
-        # 10. 🚀 ЗАПУСК ТОРГОВЛИ
-        logger.info("🚀 СИСТЕМА ГОТОВА К ЗАПУСКУ ТОРГОВЛИ")
-        logger.info(f"   💱 Валютная пара: {symbol_display}")
-        logger.info(f"   💰 Бюджет на сделку: {currency_pair.deal_quota} USDT")
-        logger.info(f"   🎯 Целевая прибыль: {currency_pair.profit_markup}%")
-        logger.info(f"   📊 Реальная торговля: ✅ ВКЛЮЧЕНА (Issue #7)")
-        logger.info(f"   🕒 Мониторинг тухляков: ✅ ВКЛЮЧЕН")
-        logger.info(f"   🧪 Режим: Sandbox (безопасно)")
+        logger.info("✅ BuyOrderMonitor запущен")
+        
+        # 7. Запуск мониторинга завершения сделок
+        deal_completion_monitor = DealCompletionMonitor(
+            deal_service=deal_service,
+            order_service=order_service,
+            exchange_connector=pro_exchange_connector_sandbox,
+            check_interval_seconds=30
+        )
+        asyncio.create_task(deal_completion_monitor.start_monitoring())
+        logger.info("✅ DealCompletionMonitor запущен")
+        
+        # 8. Запуск синхронизации ордеров с биржей
+        order_sync_monitor = OrderSyncMonitor(
+            order_service=order_service,
+            sync_interval_seconds=30
+        )
+        asyncio.create_task(order_sync_monitor.start_monitoring())
+        logger.info("✅ OrderSyncMonitor запущен")
+        
+        # 9. Запуск системной аналитики
+        system_stats_monitor = SystemStatsMonitor(
+            order_service=order_service,
+            deal_service=deal_service,
+            buy_order_monitor=buy_order_monitor,
+            deal_completion_monitor=deal_completion_monitor,
+            order_sync_monitor=order_sync_monitor,
+            stats_interval_seconds=60
+        )
+        asyncio.create_task(system_stats_monitor.start_monitoring())
+        logger.info("✅ SystemStatsMonitor запущен")
+        
+        # 10. Настройка стоп-лосса (если включен)
+        risk_config = config.get("risk_management", {})
+        if risk_config.get("enable_stop_loss", False):
+            smart_config = risk_config.get("smart_stop_loss", {})
+            
+            stop_loss_monitor = StopLossMonitor(
+                deal_service=deal_service,
+                order_execution_service=order_execution_service,
+                exchange_connector=pro_exchange_connector_sandbox,
+                orderbook_analyzer=orderbook_analyzer,
+                stop_loss_percent=risk_config.get("stop_loss_percent", 2.0),
+                check_interval_seconds=risk_config.get("stop_loss_check_interval_seconds", 60),
+                warning_percent=smart_config.get("warning_percent", 5.0),
+                critical_percent=smart_config.get("critical_percent", 10.0),
+                emergency_percent=smart_config.get("emergency_percent", 15.0)
+            )
+            asyncio.create_task(stop_loss_monitor.start_monitoring())
+            logger.info("✅ StopLossMonitor запущен с умным анализом стакана")
+        
+        # 11. Проверка подключения и баланса
+        if not await pro_exchange_connector_sandbox.test_connection():
+            logger.error("❌ Подключение к бирже неудачно. Завершение работы...")
+            return
+        
+        balance = await pro_exchange_connector_sandbox.fetch_balance()
+        usdt_balance = balance.get('USDT', {}).get('free', 0.0)
+        logger.info(f"💰 Доступный баланс в песочнице: {usdt_balance:.4f} USDT")
+        
+        # 12. Информация о готовности системы
         logger.info("="*80)
-
-        # Запуск торгового цикла с новыми сервисами
+        logger.info("🚀 СИСТЕМА ГОТОВА К ЗАПУСКУ ТОРГОВЛИ")
+        logger.info(f"   - Валютная пара: {currency_pair.symbol}")
+        logger.info(f"   - Бюджет на сделку: {currency_pair.deal_quota} USDT")
+        logger.info(f"   - Режим: Sandbox (безопасно)")
+        logger.info("="*80)
+        
+        # 13. Запуск торгового цикла
         await run_realtime_trading(
             pro_exchange_connector_prod=pro_exchange_connector_prod,
             pro_exchange_connector_sandbox=pro_exchange_connector_sandbox,
             currency_pair=currency_pair,
             deal_service=deal_service,
-            order_execution_service=order_execution_service,  # 🆕 Передаем новый сервис
-            buy_order_monitor=buy_order_monitor  # 🕒 Передаем монитор тухляков
+            order_execution_service=order_execution_service,
+            buy_order_monitor=buy_order_monitor,
+            orderbook_analyzer=orderbook_analyzer,
+            deal_completion_monitor=deal_completion_monitor,
+            stop_loss_monitor=stop_loss_monitor if 'stop_loss_monitor' in locals() else None
         )
-
+        
     except Exception as e:
-        logger.error(f"❌ Критическая ошибка в main(): {e}")
-        raise
+        logger.error(f"❌ Критическая ошибка в main(): {e}", exc_info=True)
     finally:
-        # Закрываем соединения
-        try:
-            # Останавливаем мониторинг тухляков
-            if buy_order_monitor:
-                buy_order_monitor.stop_monitoring()
-                logger.info("🔴 BuyOrderMonitor остановлен")
-
-        except Exception as e:
-            logger.error(f"❌ Error closing connections: {e}")
-
-
-
+        logger.info("🔴 Завершение работы, закрытие соединений...")
+        if buy_order_monitor:
+            buy_order_monitor.stop_monitoring()
+        if deal_completion_monitor:
+            deal_completion_monitor.stop_monitoring()
+        if order_sync_monitor:
+            order_sync_monitor.stop_monitoring()
+        if system_stats_monitor:
+            system_stats_monitor.stop_monitoring()
+        if 'stop_loss_monitor' in locals() and stop_loss_monitor:
+            stop_loss_monitor.stop_monitoring()
+        if pro_exchange_connector_prod:
+            await pro_exchange_connector_prod.close()
+        if pro_exchange_connector_sandbox:
+            await pro_exchange_connector_sandbox.close()
+        if repository_factory:
+            await repository_factory.close()
+            logger.info("✅ RepositoryFactory закрыт")
+        logger.info("👋 AutoTrade завершен")
 
 if __name__ == "__main__":
     try:
@@ -312,6 +295,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("🛑 Программа остановлена пользователем")
     except Exception as e:
-        logger.error(f"❌ Критическая ошибка: {e}")
+        logger.error(f"❌ Критическая ошибка при запуске: {e}", exc_info=True)
     finally:
         logger.info("👋 AutoTrade завершен")
