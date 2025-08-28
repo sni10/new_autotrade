@@ -76,12 +76,7 @@ services:
         done &&
         echo '✅ PostgreSQL is ready!' &&
         echo '🚀 Starting tests...' &&
-        python -m pytest tests/ -v --tb=short --maxfail=5 
-          --cov=src 
-          --cov-report=html:/app/htmlcov 
-          --cov-report=term-missing 
-          --cov-report=xml:/app/coverage.xml
-          -x
+        python -m pytest tests/ -v --tb=short --maxfail=5 --cov=src --cov-report=html:/app/htmlcov --cov-report=term-missing --cov-report=xml:/app/coverage.xml -x
       "
 
 networks:
