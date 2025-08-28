@@ -1,7 +1,12 @@
 # 📌 Dockerfile for Testing Environment with PostgreSQL Support
+# Optimized for Docker layer caching in CI/CD
 FROM python:3.10-slim
 
-# 🧰 Install system dependencies for TA-Lib and PostgreSQL client
+# 🏷️ Add labels for better cache management
+LABEL org.opencontainers.image.source="https://github.com/sni10/new_autotrade"
+LABEL org.opencontainers.image.description="AutoTrade Test Runner with PostgreSQL and TA-Lib"
+
+# 🧰 Install system dependencies (cached layer - changes rarely)
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
@@ -11,7 +16,7 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# 🧱 Install TA-Lib from source (required for trading indicators)
+# 🧱 Install TA-Lib from source (heavy operation - cached layer)
 RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-src.tar.gz && \
     tar -xzf ta-lib-0.6.4-src.tar.gz && \
     cd ta-lib-0.6.4 && \
@@ -24,13 +29,14 @@ RUN wget https://github.com/TA-Lib/ta-lib/releases/download/v0.6.4/ta-lib-0.6.4-
 # 📁 Set up working directory
 WORKDIR /app
 
-# 🔧 Install Python dependencies
+# 🔧 Install Python dependencies (separate layer for better caching)
+# Copy only requirements.txt first to leverage Docker layer caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir pytest-cov
+    pip install --no-cache-dir pytest-cov pytest-xdist
 
-# 🧪 Copy test configuration and entrypoint script
+# 🧪 Copy configuration files (these change less frequently)
 COPY src/config/config.json /app/src/config/config.json
 COPY docker/test/entrypoint.sh /app/entrypoint.sh
 
@@ -46,4 +52,4 @@ ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 # 📋 Default command - will be overridden by docker-compose
-CMD ["echo", "Container is ready for testing"]
+CMD ["echo", "🐳 AutoTrade test container ready"]

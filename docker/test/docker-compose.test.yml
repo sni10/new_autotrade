@@ -35,8 +35,10 @@ services:
     networks:
       - test_network
 
-  # Test runner service
+  # Test runner service - now using pre-built image
   test-runner:
+    # Use pre-built image from GitHub Container Registry or build locally as fallback
+    image: ${TEST_IMAGE_TAG:-local-test-runner}
     build:
       context: ../..
       dockerfile: docker/test/Dockerfile.test

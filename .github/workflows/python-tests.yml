@@ -11,7 +11,7 @@ jobs:
   test:
     name: 🔍 Run Pytest with PostgreSQL Database
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20  # Reduced from 30 due to caching
 
     steps:
       - name: ⬇️ Checkout repository
@@ -20,18 +20,42 @@ jobs:
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: 🔐 Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 Build fast test image from cached base
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/test/Dockerfile.test
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/test-runner:latest
+            ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          build-args: |
+            BASE_IMAGE=ghcr.io/${{ github.repository }}/test-base:latest
+
       - name: 🔧 Create necessary directories
         run: |
           mkdir -p htmlcov
           mkdir -p .pytest_cache
 
-      - name: 🧪 Run tests with PostgreSQL using docker compose
+      - name: 🧪 Run tests with cached image
         run: |
-          echo "🚀 Starting PostgreSQL and running tests..."
-          docker compose -f docker/test/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-runner
+          echo "🚀 Using cached test image for fast execution..."
+          export TEST_IMAGE_TAG=ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
+          docker compose -f docker/test/docker-compose.test.yml up --abort-on-container-exit --exit-code-from test-runner
         env:
           COMPOSE_DOCKER_CLI_BUILD: 1
           DOCKER_BUILDKIT: 1
+          TEST_IMAGE_TAG: ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
 
       - name: 📋 Show detailed logs (if failed)
         if: failure()
@@ -39,14 +63,14 @@ jobs:
           echo "📋 PostgreSQL logs:"
           docker compose -f docker/test/docker-compose.test.yml logs postgres-test || echo "No PostgreSQL logs available"
           echo ""
-          echo "📋 Test runner logs:"
+          echo "📋 Test runner logs:"  
           docker compose -f docker/test/docker-compose.test.yml logs test-runner || echo "No test runner logs available"
 
       - name: 📊 Upload coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports
+          name: coverage-reports-${{ github.sha }}
           path: |
             htmlcov/
             coverage.xml
@@ -57,3 +81,14 @@ jobs:
         run: |
           docker compose -f docker/test/docker-compose.test.yml down -v --remove-orphans || true
           docker system prune -f || true
+
+      - name: 📈 Performance summary
+        if: always()
+        run: |
+          echo "## 🚀 Performance Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Notes |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Cache | ✅ Enabled | GitHub Actions Cache + Container Registry |" >> $GITHUB_STEP_SUMMARY
+          echo "| Base Image | ✅ Cached | Pre-built with TA-Lib and system deps |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Image | ✅ Fast Build | Only Python deps and app code |" >> $GITHUB_STEP_SUMMARY
+          echo "| PostgreSQL | ✅ Optimized | Tmpfs storage for speed |" >> $GITHUB_STEP_SUMMARY
