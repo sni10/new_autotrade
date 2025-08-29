@@ -3,6 +3,7 @@ import asyncio
 import logging
 import time
 from typing import List
+from datetime import datetime
 
 from domain.services.deals.deal_service import DealService
 from domain.services.orders.order_service import OrderService
@@ -109,7 +110,9 @@ class DealCompletionMonitor:
                 return 10
 
             def _recency(o: Order) -> int:
-                return int(getattr(o, 'last_update', getattr(o, 'created_at', 0)) or 0)
+                ts = getattr(o, 'last_update', None) or getattr(o, 'created_at', None)
+                sec = self._to_unix_sec(ts)
+                return sec if isinstance(sec, int) and sec >= 0 else 0
 
             buy_orders_sorted = sorted(buy_orders, key=lambda o: (_status_weight(o), _recency(o)), reverse=True)
             sell_orders_sorted = sorted(sell_orders, key=lambda o: (_status_weight(o), _recency(o)), reverse=True)
@@ -247,26 +250,63 @@ class DealCompletionMonitor:
         """Возвращает статистику работы монитора."""
         return self.stats
 
-    def _get_order_age_seconds(self, order: Order) -> float:
-        """Вычисляет возраст ордера в секундах"""
+    # Вспомогательные методы для безопасной нормализации временных меток
+    def _to_unix_ms(self, value):
+        """Преобразует различные типы времени в миллисекунды Unix.
+        Поддерживает: int/float (секунды или миллисекунды), объекты с .timestamp(),
+        объекты наподобие pandas.Timestamp (duck-typing), числовые строки.
+        Возвращает None, если преобразование невозможно.
+        """
         try:
-            current_time = int(time.time() * 1000)
-            
-            # Безопасное преобразование created_at к int (миллисекунды)
-            if hasattr(order.created_at, 'timestamp'):
-                # Если это pandas Timestamp, конвертируем в миллисекунды
-                created_at_ms = int(order.created_at.timestamp() * 1000)
-            elif isinstance(order.created_at, (int, float)):
-                # Если это уже число, используем как есть
-                created_at_ms = int(order.created_at)
-            else:
-                # Fallback: возвращаем 0 (ордер считается новым)
-                logger.warning(f"⚠️ Неизвестный тип created_at для ордера {order.order_id}: {type(order.created_at)}")
+            if value is None:
+                return None
+            # Числовые строки
+            if isinstance(value, str):
+                try:
+                    value = float(value.strip())
+                except Exception:
+                    return None
+            # Числа: определяем секунды или миллисекунды по эвристике
+            if isinstance(value, (int, float)):
+                v = float(value)
+                # Если значение слишком велико для секундного таймстампа — это миллисекунды
+                if v > 10_000_000_000:  # ~2286 год в секундах
+                    return int(v)
+                return int(v * 1000)
+            # Объекты, у которых есть метод timestamp() -> секунды
+            ts_method = getattr(value, 'timestamp', None)
+            if callable(ts_method):
+                seconds = float(ts_method())
+                return int(seconds * 1000)
+            # Объекты, похожие на pandas.Timestamp, у которых есть to_pydatetime()
+            to_py = getattr(value, 'to_pydatetime', None)
+            if callable(to_py):
+                dt = to_py()
+                seconds = float(dt.timestamp())
+                return int(seconds * 1000)
+            return None
+        except Exception:
+            return None
+
+    def _to_unix_sec(self, value):
+        ms = self._to_unix_ms(value)
+        return int(ms // 1000) if ms is not None else None
+
+    def _get_order_age_seconds(self, order: Order) -> float:
+        """Вычисляет возраст ордера в секундах (безопасно для любых типов timestamp)."""
+        try:
+            current_ms = int(time.time() * 1000)
+
+            created_ms = self._to_unix_ms(getattr(order, 'created_at', None))
+            if created_ms is None:
+                created_ms = self._to_unix_ms(getattr(order, 'last_update', None))
+
+            if created_ms is None:
+                # Не удалось определить время создания — считаем возраст 0
                 return 0.0
-            
-            age_seconds = (current_time - created_at_ms) / 1000
-            return max(0.0, age_seconds)  # Не может быть отрицательным
-            
+
+            age_seconds = (current_ms - int(created_ms)) / 1000.0
+            return age_seconds if age_seconds >= 0 else 0.0
         except Exception as e:
-            logger.error(f"❌ Ошибка вычисления возраста ордера {order.order_id}: {e}")
+            logger.error(f"❌ Ошибка вычисления возраста ордера {getattr(order, 'order_id', 'n/a')}: {e}")
             return 0.0
